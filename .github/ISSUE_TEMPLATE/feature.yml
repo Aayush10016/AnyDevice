@@ -1,0 +1,13 @@
+name: Feature request
+description: Propose a supported evidence source or workflow
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem and expected evidence
+    validations:
+      required: true
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Safety, privacy and abstention requirements

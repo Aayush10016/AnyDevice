@@ -1,0 +1,168 @@
+{
+  "schemaVersion": "1.0",
+  "appVersion": "0.1.0",
+  "collectedAt": "2026-01-01T12:00:00.000Z",
+  "os": "Windows (version withheld)",
+  "complete": true,
+  "sanitized": true,
+  "devices": [
+    {
+      "id": "device-1",
+      "name": null,
+      "category": "Mouse",
+      "manufacturer": null,
+      "hardwareIds": [],
+      "parent": null,
+      "location": null,
+      "status": "OK",
+      "problemCode": 0,
+      "vid": "046D",
+      "pid": "C077",
+      "transport": "USB",
+      "observedAt": "2026-01-01T12:00:00.000Z",
+      "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
+    },
+    {
+      "id": "device-2",
+      "name": null,
+      "category": "Mouse",
+      "manufacturer": null,
+      "hardwareIds": [],
+      "parent": null,
+      "location": null,
+      "status": "ERROR",
+      "problemCode": 43,
+      "vid": "046D",
+      "pid": "C077",
+      "transport": "USB",
+      "observedAt": "2026-01-01T12:00:00.000Z",
+      "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
+    },
+    {
+      "id": "device-3",
+      "name": null,
+      "category": null,
+      "manufacturer": null,
+      "hardwareIds": [],
+      "parent": null,
+      "location": null,
+      "status": null,
+      "problemCode": null,
+      "vid": null,
+      "pid": null,
+      "transport": "USB",
+      "observedAt": "2026-01-01T12:00:00.000Z",
+      "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
+    },
+    {
+      "id": "device-4",
+      "name": null,
+      "category": "Mouse",
+      "manufacturer": null,
+      "hardwareIds": [],
+      "parent": null,
+      "location": null,
+      "status": "UNKNOWN",
+      "problemCode": null,
+      "vid": "046D",
+      "pid": "C077",
+      "transport": "USB",
+      "observedAt": "2026-01-01T12:00:00.000Z",
+      "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
+    },
+    {
+      "id": "device-5",
+      "name": null,
+      "category": "USBDevice",
+      "manufacturer": null,
+      "hardwareIds": [],
+      "parent": null,
+      "location": null,
+      "status": "ERROR",
+      "problemCode": 10,
+      "vid": "18D1",
+      "pid": "4EE1",
+      "transport": "USB",
+      "observedAt": "2026-01-01T12:00:00.000Z",
+      "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-1",
+      "deviceId": "device-2",
+      "title": "Windows reports a device problem",
+      "severity": "error",
+      "classification": "Windows-reported error",
+      "confidence": "high",
+      "facts": [
+        "See sanitized device observations or collection errors."
+      ],
+      "explanation": "Windows reports a problem; the root cause has not been established.",
+      "evidence": [
+        "devices/device-2"
+      ],
+      "recommendation": "Review this entry in Device Manager. Reconnect through a known-good cable and port when safe, then scan again.",
+      "limitations": "A Windows problem code alone cannot prove a hardware fault or a cable failure."
+    },
+    {
+      "id": "finding-2",
+      "deviceId": "device-3",
+      "title": "Some device properties are unavailable",
+      "severity": "info",
+      "classification": "Confirmed observation",
+      "confidence": "high",
+      "facts": [
+        "See sanitized device observations or collection errors."
+      ],
+      "explanation": "Windows did not expose all expected properties in this scan.",
+      "evidence": [
+        "devices/device-3"
+      ],
+      "recommendation": "Refresh the inventory and compare with Device Manager if details are needed.",
+      "limitations": "Missing metadata is not evidence of defective hardware."
+    },
+    {
+      "id": "finding-3",
+      "deviceId": "device-4",
+      "title": "Some device properties are unavailable",
+      "severity": "info",
+      "classification": "Confirmed observation",
+      "confidence": "high",
+      "facts": [
+        "See sanitized device observations or collection errors."
+      ],
+      "explanation": "Windows did not expose all expected properties in this scan.",
+      "evidence": [
+        "devices/device-4"
+      ],
+      "recommendation": "Refresh the inventory and compare with Device Manager if details are needed.",
+      "limitations": "Missing metadata is not evidence of defective hardware."
+    },
+    {
+      "id": "finding-4",
+      "deviceId": "device-5",
+      "title": "Windows reports a device problem",
+      "severity": "error",
+      "classification": "Windows-reported error",
+      "confidence": "high",
+      "facts": [
+        "See sanitized device observations or collection errors."
+      ],
+      "explanation": "Windows reports a problem; the root cause has not been established.",
+      "evidence": [
+        "devices/device-5"
+      ],
+      "recommendation": "Review this entry in Device Manager. Reconnect through a known-good cable and port when safe, then scan again.",
+      "limitations": "A Windows problem code alone cannot prove a hardware fault or a cable failure."
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "SYNTHETIC EXAMPLE ONLY — generated from labelled test fixtures, not connected hardware.",
+    "PnP entries are logical interfaces, not a count of physical devices.",
+    "HID transport is unknown unless the entry itself is USB.",
+    "No battery, charging-circuit, Bluetooth, Android MTP, protocol capture, or repair diagnosis is performed.",
+    "Only complete scans are compared for disappearance; history is held in memory for this session."
+  ]
+}

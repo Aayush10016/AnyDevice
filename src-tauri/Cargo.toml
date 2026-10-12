@@ -1,0 +1,18 @@
+[package]
+name = "anydevice"
+version = "0.1.0"
+description = "Local-first Windows USB Doctor"
+authors = ["AnyDevice contributors"]
+edition = "2021"
+license = "MIT"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde_json = "1"
+base64 = "0.22"
+tokio = { version = "1", features = ["process", "time", "sync", "macros", "io-util"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+rfd = "0.15"

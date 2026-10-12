@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anydevice.local/report.schema.json",
+  "title": "AnyDevice USB Doctor report 1.0",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "appVersion",
+    "collectedAt",
+    "os",
+    "complete",
+    "sanitized",
+    "devices",
+    "findings",
+    "errors",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "appVersion": { "const": "0.1.0" },
+    "collectedAt": { "type": "string" },
+    "os": { "type": ["string", "null"] },
+    "complete": { "type": "boolean" },
+    "sanitized": { "type": "boolean" },
+    "devices": { "type": "array", "items": { "$ref": "#/$defs/device" } },
+    "previous": {
+      "type": "object",
+      "required": ["collectedAt", "devices"],
+      "properties": {
+        "collectedAt": { "type": "string" },
+        "devices": { "type": "array", "items": { "$ref": "#/$defs/device" } }
+      },
+      "additionalProperties": false
+    },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "message"],
+        "properties": {
+          "kind": {
+            "enum": ["permission", "property", "enumeration", "malformed"]
+          },
+          "message": { "type": "string" },
+          "deviceId": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "device": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "category",
+        "manufacturer",
+        "hardwareIds",
+        "parent",
+        "location",
+        "status",
+        "problemCode",
+        "vid",
+        "pid",
+        "transport",
+        "observedAt",
+        "source"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": ["string", "null"] },
+        "category": { "type": ["string", "null"] },
+        "manufacturer": { "type": ["string", "null"] },
+        "hardwareIds": { "type": "array", "items": { "type": "string" } },
+        "parent": { "type": ["string", "null"] },
+        "location": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "problemCode": { "type": ["integer", "null"], "minimum": 0 },
+        "vid": { "type": ["string", "null"], "pattern": "^[0-9A-F]{4}$" },
+        "pid": { "type": ["string", "null"], "pattern": "^[0-9A-F]{4}$" },
+        "transport": { "enum": ["USB", "HID (transport unknown)"] },
+        "observedAt": { "type": "string" },
+        "source": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "finding": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "severity",
+        "classification",
+        "confidence",
+        "facts",
+        "explanation",
+        "evidence",
+        "recommendation",
+        "limitations"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "deviceId": { "type": "string" },
+        "title": { "type": "string" },
+        "severity": { "enum": ["info", "warning", "error"] },
+        "classification": {
+          "enum": ["Windows-reported error", "Confirmed observation"]
+        },
+        "confidence": { "enum": ["high", "limited"] },
+        "facts": { "type": "array", "items": { "type": "string" } },
+        "explanation": { "type": "string" },
+        "evidence": { "type": "array", "items": { "type": "string" } },
+        "recommendation": { "type": "string" },
+        "limitations": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

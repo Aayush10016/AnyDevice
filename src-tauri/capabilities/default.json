@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main",
+  "description": "Only the main local window may call app commands; no shell, network or filesystem plugins.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
