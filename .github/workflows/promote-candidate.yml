@@ -39,6 +39,7 @@ jobs:
           BUILD_RUN_ID: ${{ inputs.build_run_id }}
         run: |
           cd release
+          sed -i 's/\r$//' SHA256SUMS.txt
           sha256sum --check SHA256SUMS.txt
           cd ..
           cat > notes.md <<'NOTES'
