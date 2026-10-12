@@ -290,4 +290,33 @@ mod tests {
         .await;
         assert!(result.unwrap_err().contains("adapter failed"));
     }
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn service_unavailability_and_permission_denial_are_distinct() {
+        for (failure, expected) in [
+            (
+                "throw 'Access to a CIM resource was not available to the client.'",
+                "enumeration",
+            ),
+            (
+                "throw [System.UnauthorizedAccessException]::new('Access denied.')",
+                "permission",
+            ),
+        ] {
+            // A synthetic provider failure inside a temporary child process; no real device changes.
+            let script = format!(
+                "function global:Get-PnpDevice {{ {failure} }}\n{}",
+                include_str!("../scripts/discover.ps1")
+            );
+            let result = run_adapter(
+                test_command(&script),
+                CancellationToken::new(),
+                std::time::Duration::from_secs(15),
+            )
+            .await
+            .unwrap();
+            assert_eq!(result["complete"], false);
+            assert_eq!(result["errors"][0]["kind"], expected);
+        }
+    }
 }

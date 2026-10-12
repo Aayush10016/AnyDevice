@@ -6,7 +6,7 @@ $devices = New-Object System.Collections.Generic.List[object]
 $complete = $true
 function Add-CollectionError($record, $deviceId) {
     $kind = 'property'
-    if ($record.CategoryInfo.Category -eq 'PermissionDenied' -or $record.Exception.Message -match 'Access.*denied|CIM resource|Unauthorized') { $kind = 'permission' }
+    if ($record.CategoryInfo.Category -eq 'PermissionDenied' -or $record.Exception.Message -match 'Access.*denied|Unauthorized') { $kind = 'permission' }
     $errors.Add(@{kind=$kind;message=$record.Exception.Message;deviceId=$deviceId})
 }
 try {
