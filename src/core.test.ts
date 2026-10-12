@@ -9,6 +9,15 @@ import {
   fixtureScan,
 } from "./fixtures";
 describe("normalization", () => {
+  it("extracts identifiers from a standard instance ID when hardware IDs are unavailable", () => {
+    expect(identifiers([healthyMouse.instanceId])).toEqual({
+      vid: "046D",
+      pid: "C077",
+    });
+    const d = normalize(fixtureScan([incompleteMetadata])).devices[0];
+    expect(d.vid).toBe("ABCD");
+    expect(d.pid).toBe("0001");
+  });
   it("parses valid VID/PID and preserves interface identity", () => {
     expect(identifiers(["USB\\VID_046d&PID_c077&MI_00"])).toEqual({
       vid: "046D",

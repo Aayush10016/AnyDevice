@@ -25,6 +25,8 @@ jobs:
           jq -e '.conclusion == "success" and .name == "Windows desktop build" and (.event == "push" or .event == "workflow_dispatch") and .head_repository.full_name == "Aayush10016/AnyDevice"' run.json
           sha=$(jq -r .head_sha run.json)
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          gh release view v0.1.0-candidate.1 --repo "$GITHUB_REPOSITORY" --json isDraft,targetCommitish > release.json
+          jq -e --arg sha "$sha" '.isDraft == true and .targetCommitish == $sha' release.json
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@v4
         with:
@@ -51,4 +53,4 @@ jobs:
           NOTES
           echo "Validated source: $SOURCE_SHA" >> notes.md
           echo "Build: https://github.com/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" >> notes.md
-          gh release create v0.1.0-candidate.1 release/* --repo "$GITHUB_REPOSITORY" --target "$SOURCE_SHA" --draft --prerelease --title "AnyDevice v0.1.0 — USB Doctor Windows candidate" --notes-file notes.md
+          gh release upload v0.1.0-candidate.1 release/* --repo "$GITHUB_REPOSITORY"

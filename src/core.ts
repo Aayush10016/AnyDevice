@@ -12,7 +12,7 @@ export function identifiers(ids: string[]): {
 } {
   for (const id of ids) {
     const match =
-      /(?:^|[\\&])VID_([0-9A-F]{4})(?=&|$).*?(?:^|&)PID_([0-9A-F]{4})(?=&|$)/i.exec(
+      /(?:^|[\\&])VID_([0-9A-F]{4})(?=&|$).*?(?:^|&)PID_([0-9A-F]{4})(?=[&\\]|$)/i.exec(
         id,
       );
     if (match)
