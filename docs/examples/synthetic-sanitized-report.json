@@ -32,8 +32,8 @@
       "location": null,
       "status": "ERROR",
       "problemCode": 43,
-      "vid": "046D",
-      "pid": "C077",
+      "vid": "1234",
+      "pid": "5678",
       "transport": "USB",
       "observedAt": "2026-01-01T12:00:00.000Z",
       "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
@@ -64,8 +64,8 @@
       "location": null,
       "status": "UNKNOWN",
       "problemCode": null,
-      "vid": "046D",
-      "pid": "C077",
+      "vid": "1111",
+      "pid": "2222",
       "transport": "USB",
       "observedAt": "2026-01-01T12:00:00.000Z",
       "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"

@@ -14,6 +14,7 @@ export const windowsProblem = {
   ...healthyMouse,
   instanceId: "USB\\VID_1234&PID_5678\\SYNTHETIC-PROBLEM",
   name: "Synthetic problem device",
+  hardwareIds: ["USB\\VID_1234&PID_5678"],
   status: "ERROR",
   problemCode: 43,
 };
@@ -23,6 +24,7 @@ export const incompleteMetadata = {
 export const insufficientEvidence = {
   ...healthyMouse,
   instanceId: "USB\\VID_1111&PID_2222\\SYNTHETIC-UNKNOWN",
+  hardwareIds: ["USB\\VID_1111&PID_2222"],
   status: "UNKNOWN",
   problemCode: null,
 };

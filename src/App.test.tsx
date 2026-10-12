@@ -7,6 +7,7 @@ vi.mock("./bridge", () => ({
   discover: vi.fn(),
   cancelScan: vi.fn(),
   saveReport: vi.fn(),
+  openProjectPage: vi.fn(),
 }));
 beforeEach(() => {
   localStorage.clear();

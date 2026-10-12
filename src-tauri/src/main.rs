@@ -40,14 +40,22 @@ async fn collect(token: CancellationToken) -> Result<Value, String> {
     let executable =
         std::path::PathBuf::from(root).join("System32/WindowsPowerShell/v1.0/powershell.exe");
     let mut command = tokio::process::Command::new(executable);
+    command.args([
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-EncodedCommand",
+        &encoded_script(),
+    ]);
+    run_adapter(command, token, std::time::Duration::from_secs(45)).await
+}
+
+async fn run_adapter(
+    mut command: tokio::process::Command,
+    token: CancellationToken,
+    timeout: std::time::Duration,
+) -> Result<Value, String> {
     command
-        .args([
-            "-NoLogo",
-            "-NoProfile",
-            "-NonInteractive",
-            "-EncodedCommand",
-            &encoded_script(),
-        ])
         .kill_on_drop(true)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
@@ -59,8 +67,8 @@ async fn collect(token: CancellationToken) -> Result<Value, String> {
         .map_err(|e| format!("Cannot start the fixed Windows discovery adapter: {e}"))?;
     let output = tokio::select! {
         _ = token.cancelled() => return Err("Scan cancelled; previous inventory retained".into()),
-        result = tokio::time::timeout(std::time::Duration::from_secs(45),child.wait_with_output()) =>
-            result.map_err(|_| "Scan timed out after 45 seconds; previous inventory retained")?.map_err(|e|format!("Discovery process failed: {e}"))?
+        result = tokio::time::timeout(timeout,child.wait_with_output()) =>
+            result.map_err(|_| "Scan timed out; previous inventory retained")?.map_err(|e|format!("Discovery process failed: {e}"))?
     };
     if !output.status.success() {
         return Err(
@@ -102,6 +110,55 @@ fn validate_report(content: &str) -> Result<(), String> {
     Ok(())
 }
 
+fn project_url(page: &str) -> Result<&'static str, String> {
+    match page {
+        "repository" => Ok("https://github.com/Aayush10016/AnyDevice"),
+        "documentation" => Ok("https://github.com/Aayush10016/AnyDevice#documentation"),
+        "license" => Ok("https://github.com/Aayush10016/AnyDevice/blob/main/LICENSE"),
+        _ => Err("Unsupported project link".into()),
+    }
+}
+
+#[tauri::command]
+fn open_project_page(page: String) -> Result<(), String> {
+    let url = project_url(&page)?;
+    #[cfg(windows)]
+    {
+        #[link(name = "shell32")]
+        extern "system" {
+            fn ShellExecuteW(
+                window: *mut std::ffi::c_void,
+                operation: *const u16,
+                file: *const u16,
+                parameters: *const u16,
+                directory: *const u16,
+                show: i32,
+            ) -> *mut std::ffi::c_void;
+        }
+        let file: Vec<u16> = url.encode_utf16().chain(Some(0)).collect();
+        // The URL comes only from the fixed allowlist above; no metadata or user URL is accepted.
+        let result = unsafe {
+            ShellExecuteW(
+                std::ptr::null_mut(),
+                std::ptr::null(),
+                file.as_ptr(),
+                std::ptr::null(),
+                std::ptr::null(),
+                1,
+            )
+        };
+        if result as isize <= 32 {
+            return Err("Could not open the project link in your browser".into());
+        }
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = url;
+        Err("Project links require Windows".into())
+    }
+}
+
 #[tauri::command]
 async fn save_report(content: String) -> Result<Option<String>, String> {
     validate_report(&content)?;
@@ -130,7 +187,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             scan_devices,
             cancel_scan,
-            save_report
+            save_report,
+            open_project_page
         ])
         .run(tauri::generate_context!())
         .expect("Unable to launch AnyDevice");
@@ -157,11 +215,69 @@ mod tests {
         assert!(validate_report("garbage").is_err());
         assert!(validate_report(r#"{"schemaVersion":"2.0","devices":[],"findings":[]}"#).is_err());
     }
+    #[test]
+    fn project_links_are_allowlisted() {
+        assert_eq!(
+            project_url("repository").unwrap(),
+            "https://github.com/Aayush10016/AnyDevice"
+        );
+        assert!(project_url("https://untrusted.invalid").is_err());
+    }
+    #[cfg(windows)]
+    fn test_command(script: &str) -> tokio::process::Command {
+        let mut command = tokio::process::Command::new(
+            std::path::PathBuf::from(std::env::var_os("SystemRoot").unwrap())
+                .join("System32/WindowsPowerShell/v1.0/powershell.exe"),
+        );
+        command.args(["-NoProfile", "-NonInteractive", "-Command", script]);
+        command
+    }
+    #[cfg(windows)]
     #[tokio::test]
-    async fn cancellation_is_observable() {
+    async fn cancelled_child_returns_no_inventory() {
         let token = CancellationToken::new();
         token.cancel();
-        token.cancelled().await;
-        assert!(token.is_cancelled());
+        let result = run_adapter(
+            test_command("Start-Sleep -Seconds 5"),
+            token,
+            std::time::Duration::from_secs(10),
+        )
+        .await;
+        assert!(result.unwrap_err().contains("cancelled"));
+    }
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn timed_out_child_returns_no_inventory() {
+        let result = run_adapter(
+            test_command("Start-Sleep -Seconds 5"),
+            CancellationToken::new(),
+            std::time::Duration::from_millis(20),
+        )
+        .await;
+        assert!(result.unwrap_err().contains("timed out"));
+    }
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn malformed_child_response_is_rejected() {
+        let result = run_adapter(
+            test_command("Write-Output '{invalid}'"),
+            CancellationToken::new(),
+            std::time::Duration::from_secs(10),
+        )
+        .await;
+        assert!(result
+            .unwrap_err()
+            .contains("Invalid Windows discovery response"));
+    }
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn failed_child_returns_no_inventory() {
+        let result = run_adapter(
+            test_command("exit 3"),
+            CancellationToken::new(),
+            std::time::Duration::from_secs(10),
+        )
+        .await;
+        assert!(result.unwrap_err().contains("adapter failed"));
     }
 }

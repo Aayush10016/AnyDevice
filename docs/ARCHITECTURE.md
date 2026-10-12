@@ -1,6 +1,6 @@
 # Architecture
 
-Tauri 2 supplies a real Windows shell with native title bar, React/TypeScript/Vite supplies the embedded UI, and Rust exposes three purpose-specific commands: scan, cancel, and save report. Lucide SVG icons and Segoe UI avoid downloaded fonts or decorative network assets. System title bar is deliberately retained for native resize, keyboard and accessibility behavior.
+Tauri 2 supplies a real Windows shell with native title bar, React/TypeScript/Vite supplies the embedded UI, and Rust exposes four purpose-specific commands: scan, cancel, save report, and open an allowlisted project/documentation/license link in the system browser. Lucide SVG icons and Segoe UI avoid downloaded fonts or decorative network assets. System title bar is deliberately retained for native resize, keyboard and accessibility behavior.
 
 ## Layers and files
 

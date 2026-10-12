@@ -12,7 +12,7 @@ Validation on 12 October 2026 (Asia/Kolkata), Windows x64, Node 24.18.0. This is
 | Fixed PnpDevice adapter against actual Windows hardware | **Complete scan: 30 entries, 0 collection errors** |
 | Real scan through normalization/diagnostics/report serialization | **Passed**; 30 OK statuses, 30 problem-code values all zero, 18 VID/PID pairs, 0 supported findings |
 | GitHub repository creation | **Succeeded**, owner verified as Aayush10016, name AnyDevice |
-| Rust unit tests / native local packaging | Attempt underway; Windows compiler/linker prerequisites were absent at environment inspection |
+| Rust unit tests / native local packaging | **Blocked locally**: `link.exe` not found; Visual C++ Build Tools/Windows SDK required. Native tests are delegated to the Windows CI runner, not claimed as passed locally. |
 | Browser preview visual capture | Available in-app browser could not reach localhost; no screenshot claimed |
 | Installed desktop visual/accessibility QA | Not yet performed |
 | Disconnect/reconnect, actual error device, cancellation/timeout on physical hardware | Not yet performed; synthetic domain/UI cases tested |

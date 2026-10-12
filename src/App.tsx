@@ -16,7 +16,7 @@ import {
   X,
   AlertTriangle,
 } from "lucide-react";
-import { cancelScan, discover, saveReport } from "./bridge";
+import { cancelScan, discover, saveReport, openProjectPage } from "./bridge";
 import { diagnose, limitations, makeReport, normalize } from "./core";
 import type { Device, Finding, Scan } from "./models";
 type Route = "Overview" | "Devices" | "Diagnostics" | "Reports" | "Settings";
@@ -671,9 +671,27 @@ export default function App() {
                   </p>
                   <p>
                     Documentation and the master specification are included with
-                    the source. Intended repository: Aayush10016/AnyDevice.
-                    Remote creation is pending account access.
+                    the source. Repository: Aayush10016/AnyDevice.
                   </p>
+                  <div className="segmented">
+                    {(["repository", "documentation", "license"] as const).map(
+                      (page) => (
+                        <button
+                          key={page}
+                          onClick={async () => {
+                            try {
+                              await openProjectPage(page);
+                            } catch (e) {
+                              setMessage(String(e));
+                              setFailure(true);
+                            }
+                          }}
+                        >
+                          {page[0].toUpperCase() + page.slice(1)}
+                        </button>
+                      ),
+                    )}
+                  </div>
                 </section>
               </>
             )}

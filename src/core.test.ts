@@ -175,7 +175,7 @@ describe("reporting", () => {
     const json = JSON.stringify(report);
     expect(json).not.toContain("SYNTHETIC");
     expect(json).not.toContain(windowsProblem.instanceId);
-    expect(report.devices[0].vid).toBe("046D");
+    expect(report.devices[0].vid).toBe("1234");
     expect(scan.devices[0].id).toBe(windowsProblem.instanceId);
   });
   it("scrubs malicious free-text properties including status and category", () => {
