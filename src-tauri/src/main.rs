@@ -305,7 +305,7 @@ mod tests {
         ] {
             // A synthetic provider failure inside a temporary child process; no real device changes.
             let script = format!(
-                "function global:Get-PnpDevice {{ {failure} }}\n{}",
+                "function global:Import-Module {{ [CmdletBinding()] param([string]$Name) }}\nfunction global:Get-PnpDevice {{ {failure} }}\n{}",
                 include_str!("../scripts/discover.ps1")
             );
             let result = run_adapter(
