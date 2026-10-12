@@ -182,6 +182,11 @@ async fn save_report(content: String) -> Result<Option<String>, String> {
 }
 
 fn main() {
+    #[cfg(not(debug_assertions))]
+    assert!(
+        !tauri::is_dev(),
+        "Production builds must embed their frontend and cannot use a development server"
+    );
     tauri::Builder::default()
         .manage(ScanState::default())
         .invoke_handler(tauri::generate_handler![
@@ -197,6 +202,11 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "custom-protocol")]
+    #[test]
+    fn production_mode_uses_embedded_assets() {
+        assert!(!tauri::is_dev());
+    }
     #[test]
     fn embedded_script_round_trips() {
         let bytes = STANDARD.decode(encoded_script()).unwrap();

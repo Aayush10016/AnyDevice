@@ -21,4 +21,4 @@ The raw collection timestamp was `2026-10-12T17:17:11.5148676+00:00` (22:47:11 I
 
 The 30 passing tests include 22 normalization/diagnostic/report tests, 5 component workflow tests, 2 JSON Schema tests and 1 opt-in integration test over actual adapter output. CI without `ANYDEVICE_HARDWARE_JSON` skips that last test rather than inventing hardware.
 
-Windows CI and packaging outcomes will be updated after the first remote run. Source implementation alone does not satisfy the master spec's definition of a finished desktop release.
+Initial Windows CI built an installer and standalone executable successfully. A second run passed 7 Rust tests and built both files, then the stronger installed-binary checksum comparison detected Tauri's per-bundle marker patching. Packaging now disables that unused updater marker feature and explicitly enables embedded production assets, with a release startup assertion. The final installer run is pending. Source implementation alone does not satisfy the master spec's definition of a finished desktop release.

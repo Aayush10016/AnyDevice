@@ -13,6 +13,8 @@ npm run package
 
 NSIS output is normally `src-tauri/target/release/bundle/nsis/AnyDevice_0.1.0_x64-setup.exe`; standalone binary is `src-tauri/target/release/anydevice.exe`. These are expected paths, **not a claim that files currently exist**. `offlineInstaller` bundles the Microsoft WebView2 installer so end-user installation does not require Node/Rust/Python. Build-time network access is needed to obtain dependencies and bundler resources.
 
+The packaging command explicitly enables `custom-protocol` to embed the frontend. A release startup assertion rejects development mode. `--no-binary-patching` keeps the installed and standalone executable byte-identical: Tauri's per-bundle updater marker patching is unnecessary because AnyDevice has no updater plugin. CI keeps a strict SHA-256 equality check between installed and release binaries.
+
 Workflow `.github/workflows/windows.yml` runs frontend tests/type checking, Rust tests, the fixed discovery adapter, NSIS packaging, silent installation into the runner's temporary folder, installed-binary checksum comparison, process-launch smoke test and silent uninstallation. It uploads unsigned versioned installer/portable artifacts and SHA-256 checksums. A `v0.1.0` tag creates a **draft** GitHub release after success. Draft publication requires manually passing the gates below. Hosted CI may have no physical USB devices; empty results are valid. Process survival does not verify visual UI or physical hardware behavior.
 
 ## Signing strategy

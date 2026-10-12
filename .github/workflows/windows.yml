@@ -26,7 +26,7 @@ jobs:
       - name: Rust formatting and unit tests
         run: |
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
-          cargo test --manifest-path src-tauri/Cargo.toml --locked
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --features custom-protocol
       - name: Read-only Windows discovery smoke test
         shell: powershell
         run: |
@@ -46,7 +46,10 @@ jobs:
           if ($setup.ExitCode -ne 0) { throw "Installer failed: $($setup.ExitCode)" }
           $exe = Join-Path $installPath 'anydevice.exe'
           if (-not (Test-Path -LiteralPath $exe)) { throw 'Installed executable was not found' }
-          if ((Get-FileHash $exe).Hash -ne (Get-FileHash ./src-tauri/target/release/anydevice.exe).Hash) { throw 'Installed binary differs from release binary' }
+          $installedHash = (Get-FileHash $exe).Hash
+          $releaseHash = (Get-FileHash ./src-tauri/target/release/anydevice.exe).Hash
+          Write-Host "Installed SHA256: $installedHash; release SHA256: $releaseHash"
+          if ($installedHash -ne $releaseHash) { throw 'Installed binary differs from release binary' }
           $app = Start-Process -FilePath $exe -PassThru -WindowStyle Hidden
           Start-Sleep -Seconds 8
           if ($app.HasExited) { throw "Packaged application exited: $($app.ExitCode)" }

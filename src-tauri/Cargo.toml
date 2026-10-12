@@ -6,6 +6,9 @@ authors = ["AnyDevice contributors"]
 edition = "2021"
 license = "MIT"
 
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
