@@ -1,6 +1,6 @@
 # Build and release
 
-Supported build host: Windows x64 with Node 22+, Rust stable `x86_64-pc-windows-msvc`, Visual Studio C++ Build Tools and Windows SDK, WebView2, Windows PowerShell 5.1 and PnpDevice.
+Supported build host: Windows x64 with Node 22.12+ or 24 LTS, Rust stable `x86_64-pc-windows-msvc`, Visual Studio C++ Build Tools and Windows SDK, WebView2, Windows PowerShell 5.1 and PnpDevice.
 
 ```powershell
 npm ci
@@ -11,7 +11,7 @@ cargo test --manifest-path src-tauri/Cargo.toml
 npm run package
 ```
 
-NSIS output is normally `src-tauri/target/release/bundle/nsis/AnyDevice_0.1.0_x64-setup.exe`; standalone binary is `src-tauri/target/release/anydevice.exe`. These are expected paths, **not a claim that files currently exist**. `offlineInstaller` bundles the Microsoft WebView2 installer so end-user installation does not require Node/Rust/Python. Build-time network access is needed to obtain dependencies and bundler resources.
+Build output paths are `src-tauri/target/release/bundle/nsis/AnyDevice_0.1.0_x64-setup.exe` and `src-tauri/target/release/anydevice.exe`. These outputs were verified on Windows CI; the development host lacks the MSVC linker, so no local build output exists in those paths. Downloaded delivery binaries are in the sibling `AnyDevice-0.1.0-windows-x64` folder and the owner-visible draft release; see VALIDATION.md. `offlineInstaller` bundles the Microsoft WebView2 installer so end-user installation does not require Node/Rust/Python. Build-time network access is needed to obtain dependencies and bundler resources.
 
 The packaging command explicitly enables `custom-protocol` to embed the frontend. A release startup assertion rejects development mode. `--no-binary-patching` keeps the installed and standalone executable byte-identical: Tauri's per-bundle updater marker patching is unnecessary because AnyDevice has no updater plugin. CI keeps a strict SHA-256 equality check between installed and release binaries.
 

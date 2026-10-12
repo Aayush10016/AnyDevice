@@ -8,7 +8,7 @@ AnyDevice reads present USB and HID **PnP entries**, exposes Windows status and 
 
 This is an independently created project, separate from PACT and other folders. The master implementation specification is preserved in [MASTER-SPEC.md](MASTER-SPEC.md).
 
-Source, React interface, fixed Windows discovery adapter, diagnostic engine, tests, docs and Windows NSIS CI are implemented. See [VALIDATION.md](docs/VALIDATION.md) for actual results and outstanding release gates. **No Windows installer has been verified or published yet.** Do not treat this source candidate as a finished v0.1 release.
+Source, React interface, fixed Windows discovery adapter, diagnostic engine, tests, docs and Windows NSIS CI are implemented. **The Windows installer and standalone executable were built and verified in CI; the standalone also launched on the development host.** Both are staged in an [owner-visible draft prerelease](https://github.com/Aayush10016/AnyDevice/releases/tag/untagged-8a756fcda793eee58e44). See [VALIDATION.md](docs/VALIDATION.md) for actual results and outstanding release gates. This is an unsigned Windows candidate, not a completed stable v0.1 release.
 
 The new remote is [**Aayush10016/AnyDevice**](https://github.com/Aayush10016/AnyDevice). Its owner was verified. No different account was used. See [GitHub setup](docs/GITHUB.md).
 
@@ -56,7 +56,7 @@ The domain engine is independent of React and hardware. Rust controls process li
 
 ## Development and testing
 
-Windows developers need Node.js 22+, stable Rust with the MSVC toolchain, Microsoft C++ Build Tools/Windows SDK, and WebView2. Then:
+Windows developers need Node.js 22.12+ or 24 LTS, stable Rust with the MSVC toolchain, Microsoft C++ Build Tools/Windows SDK, and WebView2. Then:
 
 ```powershell
 npm ci
@@ -77,7 +77,7 @@ Screenshots are only to be added after capturing the implemented interface. Any 
 
 ## Next three priorities
 
-1. Verify Rust/Tauri compilation and NSIS installation on a prepared Windows build host; test the installed app offline on physical hardware.
+1. Complete packaged visual/accessibility/resizing QA, real scan/export/disconnect exercises, genuine screenshots and clean-machine Windows 10/11 tests.
 2. Replace the allowed PnpDevice fallback with SetupAPI/Configuration Manager discovery, compare coverage and permission behavior, and expand lifecycle tests.
 3. Conduct keyboard/screen-reader and resizing QA on the packaged app, add genuine desktop screenshots, and configure verified code signing before a public v0.1 release.
 
