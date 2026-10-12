@@ -6,7 +6,14 @@ $devices = New-Object System.Collections.Generic.List[object]
 $complete = $true
 function Add-CollectionError($record, $deviceId) {
     $kind = 'property'
-    if ($record.CategoryInfo.Category -eq 'PermissionDenied' -or $record.Exception.Message -match 'Access.*denied|Unauthorized') { $kind = 'permission' }
+    if ($record.CategoryInfo.Category -eq 'PermissionDenied') { $kind = 'permission' }
+    $exception = $record.Exception
+    while ($null -ne $exception) {
+        # Use structured Windows errors, never substrings that may contain device metadata.
+        if ($exception -is [System.UnauthorizedAccessException] -or $exception.HResult -eq -2147024891) { $kind = 'permission' }
+        if ($exception.GetType().FullName -eq 'Microsoft.Management.Infrastructure.CimException' -and $exception.NativeErrorCode -eq 2) { $kind = 'permission' }
+        $exception = $exception.InnerException
+    }
     $errors.Add(@{kind=$kind;message=$record.Exception.Message;deviceId=$deviceId})
 }
 try {

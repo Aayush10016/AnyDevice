@@ -295,6 +295,10 @@ mod tests {
     async fn service_unavailability_and_permission_denial_are_distinct() {
         for (failure, expected) in [
             (
+                "throw 'Device serial AccessDenied is no longer available.'",
+                "enumeration",
+            ),
+            (
                 "throw 'Access to a CIM resource was not available to the client.'",
                 "enumeration",
             ),
