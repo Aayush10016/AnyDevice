@@ -11,7 +11,7 @@ Tauri 2 embeds React/TypeScript/Vite. Rust exposes only scan, cancel, validated 
 | Normalization and rules | src/core.ts | Stable identity, explicit unknowns, allowed provenance, deterministic findings and same-source/scope abstention |
 | Investigation | src/investigation.ts | Bounded volatile snapshots, field comparison, user annotations and session-wide sanitized aliases |
 | Offline bytes | src/binary.ts | Size/extension validation, SHA-256, 256-byte hex pages, offset fields and bounded comparison output |
-| Export validation | src/reporting.ts, docs/*.schema.json | Ajv schema validation before IPC; native envelope and byte-limit validation before a user-selected write |
+| Export validation | src/reporting.ts, docs/*.schema.json | Build-time Ajv standalone schema validation before IPC; native envelope and byte-limit validation before a user-selected write |
 | UI | src/App.tsx, src/WorkspacePanels.tsx | Working navigation and previews; no planned feature routes |
 
 ```mermaid
@@ -42,3 +42,7 @@ The fallback script remains unchanged for parity. A failed scan retains the prio
 Investigations store at most 8 captures and 8 MiB serialized evidence, solely in memory. Binary imports hold at most two 1 MiB samples and 256 hypotheses; comparison reports the first 256 differing offsets while counting all differences. No parser is generated or executed. Version 2.0 diagnostic, investigation-1.0 and binary-analysis-1.0 exports are schema checked. Original report-v1.schema.json preserves the previous schema definition; there is no imported-report reader/migration claim.
 
 React renders untrusted strings as text. CSP remains local. Custom commands expose no arbitrary executable, command text, URL or destination path. Save writes only validated content through a native user-selected dialog. No shell, network or general filesystem plugin is exposed.
+
+Presence is read using the typed DEVPKEY_Device_IsPresent Boolean. Explicitly false nodes are excluded from present inventory; missing/invalid presence remains unknown, not healthy or defective. Enumeration and property reads are non-atomic. Parity verification retries up to three complete scan pairs to avoid interpreting a temporal difference as a confirmed coverage defect. A real-host comparison exposed extra HID nodes: an individual follow-up query reported one absent and another present, demonstrating why cross-source snapshot differences need independent inspection rather than assumptions.
+
+Validators are generated from repository-owned schemas during test/build and bundled as standalone functions. The runtime imports no Ajv compiler and requires no eval/new Function; a VM test disables string/wasm code generation and verifies real exports. Strict Tauri CSP is preserved. The earlier 9b7a83a candidate was superseded after this review; it must not be delivered as validated.

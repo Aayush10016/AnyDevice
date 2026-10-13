@@ -1,7 +1,7 @@
-# AnyDevice portable Windows x64 executable
+# AnyDevice standalone Windows x64 executable
 
-The standalone executable includes its frontend and the fixed Windows discovery adapter. It requires Windows 10/11 x64, Microsoft WebView2 Runtime already installed, and Windows PowerShell 5.1 with the built-in PnpDevice module. It needs no Node, Rust or Python installation.
+The standalone includes the embedded frontend and native Windows Configuration Manager provider. It requires Windows 10/11 x64 and Microsoft WebView2 Runtime already installed. Windows PowerShell 5.1/PnpDevice is optional, used only for the comparison fallback. End users need no Node, Rust, Python or developer tools.
 
-If WebView2 is absent, use the NSIS installer, which includes the offline WebView2 installer. Portable operation without WebView2 is unsupported. Compare your executable's SHA-256 with SHA256SUMS.txt. Both current binaries are unsigned (`NotSigned`). The packaged standalone executable was checksum-verified and launched on the development host with development servers stopped. This launch check does not replace visual/accessibility or interactive hardware QA.
+If WebView2 is absent, use the NSIS installer, which includes its offline installer. Compare the version-specific SHA-256 with SHA256SUMS.txt. Current candidates are unsigned and may trigger SmartScreen; no trusted publisher identity is claimed. See EXPANSION-VALIDATION.md for exact source/build/launch results and remaining release gates.
 
-0.2.0 uses native Windows inventory by default; Windows PowerShell/PnpDevice is optional for its comparison fallback. Prior 0.1.0 downloads remain separate; filenames and checksums are version-specific.
+A launch smoke check does not replace interactive scan/export, visual/accessibility, safe hardware reconnect or clean-machine upgrade testing. The original 0.1.0 candidate is preserved separately; do not mix versioned checksums or filenames.

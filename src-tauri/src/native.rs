@@ -95,6 +95,50 @@ fn device_id(node: u32) -> Result<String, u32> {
     String::from_utf16(&buffer[..len as usize]).map_err(|_| CR_INVALID_DATA)
 }
 
+fn decode_boolean(ty: u32, bytes: &[u8]) -> Option<bool> {
+    if ty != DEVPROP_TYPE_BOOLEAN {
+        return None;
+    }
+    match bytes {
+        [0] => Some(false),
+        [255] => Some(true),
+        _ => None,
+    }
+}
+
+fn presence(node: u32, id: &str, errors: &mut Vec<Value>) -> Option<bool> {
+    let mut ty = 0;
+    let mut size = 1;
+    let mut buffer = [0u8; 1];
+    // Unified device properties use DEVPROP_BOOLEAN (0 or 0xff), not Win32 BOOL.
+    let code = unsafe {
+        CM_Get_DevNode_PropertyW(
+            node,
+            &DEVPKEY_Device_IsPresent,
+            &mut ty,
+            buffer.as_mut_ptr(),
+            &mut size,
+            0,
+        )
+    };
+    if code == CR_NO_SUCH_VALUE {
+        return None;
+    }
+    if code != CR_SUCCESS {
+        errors.push(error(code, "Node presence", Some(id), "property"));
+        return None;
+    }
+    let result = if size == 1 {
+        decode_boolean(ty, &buffer)
+    } else {
+        None
+    };
+    if result.is_none() {
+        errors.push(json!({"kind":"property","deviceId":id,"message":"Unexpected presence property type or length"}));
+    }
+    result
+}
+
 fn selected(scope: &str, id: &str, category: Option<&str>) -> bool {
     scope == "all-pnp"
         || id.to_ascii_uppercase().starts_with("USB\\")
@@ -178,6 +222,12 @@ pub fn collect(scope: &str) -> Value {
         if !selected(scope, &id, category.as_deref()) {
             continue;
         }
+        let present = presence(node, &id, &mut errors);
+        if present == Some(false) {
+            // An explicitly absent node is excluded, not diagnosed as a fault. The list and
+            // properties are non-atomic OS observations; a failed locate still marks a scan partial.
+            continue;
+        }
         if devices.len() >= LIMIT {
             complete = false;
             errors.push(json!({"kind":"enumeration","message":"Inventory exceeded 4096 entries"}));
@@ -230,7 +280,7 @@ pub fn collect(scope: &str) -> Value {
             errors.push(error(code, "Node status", Some(&id), "property"));
             (None, None)
         };
-        let entry = json!({"instanceId":id,"name":name,"category":category,"hardwareIds":hardware,
+        let entry = json!({"instanceId":id,"name":name,"category":category,"hardwareIds":hardware,"present":present,
             "manufacturer":manufacturer,"location":location,"parent":parent,"status":status,"problemCode":problem_code});
         serialized_bytes += entry.to_string().len();
         if serialized_bytes > 12 * 1024 * 1024 {
@@ -277,6 +327,14 @@ mod tests {
             error(CR_FAILURE, "AccessDenied name", None, "enumeration")["kind"],
             "enumeration"
         );
+    }
+    #[test]
+    fn presence_decoding_keeps_unknowns_distinct_from_absence() {
+        assert_eq!(decode_boolean(DEVPROP_TYPE_BOOLEAN, &[255]), Some(true));
+        assert_eq!(decode_boolean(DEVPROP_TYPE_BOOLEAN, &[0]), Some(false));
+        assert_eq!(decode_boolean(DEVPROP_TYPE_BOOLEAN, &[1]), None);
+        assert_eq!(decode_boolean(DEVPROP_TYPE_STRING, &[255]), None);
+        assert_eq!(decode_boolean(DEVPROP_TYPE_BOOLEAN, &[]), None);
     }
     #[test]
     fn real_native_inventory_has_a_valid_envelope() {

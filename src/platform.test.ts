@@ -207,3 +207,11 @@ it("rejects unknown providers and native scopes instead of broadening silently",
     }),
   ).toThrow(/scope/);
 });
+
+it("preserves native unknown presence and marks disappearing nodes incomplete", () => {
+  const scan = native([{ ...healthyMouse, present: null }]);
+  expect(scan.devices[0].present).toBeNull();
+  const disappeared = native([{ ...healthyMouse, present: false }]);
+  expect(disappeared.devices).toHaveLength(0);
+  expect(disappeared.complete).toBe(false);
+});

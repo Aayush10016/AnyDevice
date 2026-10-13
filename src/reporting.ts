@@ -1,13 +1,8 @@
-import Ajv from "ajv/dist/2020";
-import report from "../docs/report.schema.json";
-import investigation from "../docs/investigation.schema.json";
-import binary from "../docs/binary-analysis.schema.json";
-const ajv = new Ajv({ strict: true });
-ajv.addSchema(report);
+import { diagnostic, investigation, analysis } from "./generated/validators";
 const validators = {
-  "2.0": ajv.getSchema(report.$id)!,
-  "investigation-1.0": ajv.compile(investigation),
-  "binary-analysis-1.0": ajv.compile(binary),
+  "2.0": diagnostic,
+  "investigation-1.0": investigation,
+  "binary-analysis-1.0": analysis,
 };
 export function validateExport(content: string): void {
   if (new TextEncoder().encode(content).length > 20 * 1024 * 1024)

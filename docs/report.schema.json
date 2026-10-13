@@ -27,7 +27,10 @@
       "type": "string"
     },
     "os": {
-      "type": ["string", "null"]
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "complete": {
       "type": "boolean"
@@ -43,7 +46,12 @@
     },
     "previous": {
       "type": "object",
-      "required": ["collectedAt", "devices", "provenance", "complete"],
+      "required": [
+        "collectedAt",
+        "devices",
+        "provenance",
+        "complete"
+      ],
       "properties": {
         "collectedAt": {
           "type": "string"
@@ -73,10 +81,18 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["kind", "message"],
+        "required": [
+          "kind",
+          "message"
+        ],
         "properties": {
           "kind": {
-            "enum": ["permission", "property", "enumeration", "malformed"]
+            "enum": [
+              "permission",
+              "property",
+              "enumeration",
+              "malformed"
+            ]
           },
           "message": {
             "type": "string"
@@ -119,20 +135,30 @@
         "source",
         "nodeKind",
         "physicalDeviceId",
-        "interfacePaths"
+        "interfacePaths",
+        "present"
       ],
       "properties": {
         "id": {
           "type": "string"
         },
         "name": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "category": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "manufacturer": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "hardwareIds": {
           "type": "array",
@@ -141,28 +167,50 @@
           }
         },
         "parent": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "location": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "status": {
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "problemCode": {
-          "type": ["integer", "null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "minimum": 0
         },
         "vid": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "pattern": "^[0-9A-F]{4}$"
         },
         "pid": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "pattern": "^[0-9A-F]{4}$"
         },
         "transport": {
-          "enum": ["USB", "HID (transport unknown)", "Unknown"]
+          "enum": [
+            "USB",
+            "HID (transport unknown)",
+            "Unknown"
+          ]
         },
         "observedAt": {
           "type": "string"
@@ -179,6 +227,12 @@
         "interfacePaths": {
           "type": "array",
           "maxItems": 0
+        },
+        "present": {
+          "type": [
+            "boolean",
+            "null"
+          ]
         }
       },
       "additionalProperties": false
@@ -208,13 +262,23 @@
           "type": "string"
         },
         "severity": {
-          "enum": ["info", "warning", "error"]
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
         },
         "classification": {
-          "enum": ["Windows-reported error", "Confirmed observation"]
+          "enum": [
+            "Windows-reported error",
+            "Confirmed observation"
+          ]
         },
         "confidence": {
-          "enum": ["high", "limited"]
+          "enum": [
+            "high",
+            "limited"
+          ]
         },
         "facts": {
           "type": "array",
@@ -242,16 +306,26 @@
     },
     "provenance": {
       "type": "object",
-      "required": ["provider", "providerVersion", "scope"],
+      "required": [
+        "provider",
+        "providerVersion",
+        "scope"
+      ],
       "properties": {
         "provider": {
-          "enum": ["windows-cfgmgr32", "windows-pnp-fallback"]
+          "enum": [
+            "windows-cfgmgr32",
+            "windows-pnp-fallback"
+          ]
         },
         "providerVersion": {
           "const": "1.0"
         },
         "scope": {
-          "enum": ["usb-hid", "all-pnp"]
+          "enum": [
+            "usb-hid",
+            "all-pnp"
+          ]
         }
       },
       "additionalProperties": false

@@ -5,19 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
-    "test": "vitest run",
+    "build": "npm run schemas && tsc --noEmit && vite build",
+    "test": "npm run schemas && vitest run",
     "tauri": "tauri",
     "desktop": "tauri dev",
     "package": "tauri build --bundles nsis --features custom-protocol --no-binary-patching",
-    "check:branding": "node scripts/check-branding.mjs"
+    "check:branding": "node scripts/check-branding.mjs",
+    "schemas": "node scripts/compile-schemas.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "ajv": "^8.20.0"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.8.0",
@@ -31,6 +31,8 @@
     "prettier": "^3.9.10",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.4",
+    "ajv": "^8.20.0",
+    "esbuild": "^0.25.12"
   }
 }

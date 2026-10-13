@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "2.0",
+  "appVersion": "0.2.0",
+  "provenance": {
+    "provider": "windows-pnp-fallback",
+    "providerVersion": "1.0",
+    "scope": "usb-hid"
+  },
+  "collectedAt": "2026-01-01T12:01:00Z",
+  "os": "Synthetic Windows fixture",
+  "complete": true,
+  "sanitized": false,
+  "devices": [
+    {
+      "nodeKind": "logical-pnp-node",
+      "physicalDeviceId": null,
+      "interfacePaths": [],
+      "id": "USB\\VID_1234&PID_5678\\SYNTHETIC-PROBLEM",
+      "name": "Synthetic problem device",
+      "category": "Mouse",
+      "manufacturer": "Synthetic vendor",
+      "hardwareIds": [
+        "USB\\VID_1234&PID_5678"
+      ],
+      "parent": "USB\\SYNTHETIC-HUB",
+      "location": "Synthetic Port 1",
+      "status": "ERROR",
+      "problemCode": 43,
+      "vid": "1234",
+      "pid": "5678",
+      "transport": "USB",
+      "observedAt": "2026-01-01T12:01:00Z",
+      "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
+    }
+  ],
+  "previous": {
+    "collectedAt": "2026-01-01T12:00:00.000Z",
+    "complete": true,
+    "provenance": {
+      "provider": "windows-pnp-fallback",
+      "providerVersion": "1.0",
+      "scope": "usb-hid"
+    },
+    "devices": [
+      {
+        "nodeKind": "logical-pnp-node",
+        "physicalDeviceId": null,
+        "interfacePaths": [],
+        "id": "USB\\VID_046D&PID_C077\\SYNTHETIC-SERIAL",
+        "name": "Synthetic USB mouse",
+        "category": "Mouse",
+        "manufacturer": "Synthetic vendor",
+        "hardwareIds": [
+          "USB\\VID_046D&PID_C077"
+        ],
+        "parent": "USB\\SYNTHETIC-HUB",
+        "location": "Synthetic Port 1",
+        "status": "OK",
+        "problemCode": 0,
+        "vid": "046D",
+        "pid": "C077",
+        "transport": "USB",
+        "observedAt": "2026-01-01T12:00:00.000Z",
+        "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "problem:USB\\VID_1234&PID_5678\\SYNTHETIC-PROBLEM",
+      "deviceId": "USB\\VID_1234&PID_5678\\SYNTHETIC-PROBLEM",
+      "title": "Windows reports a device problem",
+      "severity": "error",
+      "classification": "Windows-reported error",
+      "confidence": "high",
+      "facts": [
+        "Status: ERROR",
+        "Problem code: 43",
+        "Source: windows-pnp-fallback (usb-hid); observed at 2026-01-01T12:01:00Z."
+      ],
+      "explanation": "Windows reports a problem; the root cause has not been established.",
+      "evidence": [
+        "devices/USB\\VID_1234&PID_5678\\SYNTHETIC-PROBLEM/status",
+        "devices/USB\\VID_1234&PID_5678\\SYNTHETIC-PROBLEM/problemCode"
+      ],
+      "recommendation": "Review this entry in Device Manager. Reconnect through a known-good cable and port when safe, then scan again.",
+      "limitations": "A Windows problem code alone cannot prove a hardware fault or a cable failure."
+    },
+    {
+      "id": "absent:USB\\VID_046D&PID_C077\\SYNTHETIC-SERIAL",
+      "deviceId": "USB\\VID_046D&PID_C077\\SYNTHETIC-SERIAL",
+      "title": "Previously observed entry is no longer present",
+      "severity": "info",
+      "classification": "Confirmed observation",
+      "confidence": "limited",
+      "facts": [
+        "Present at 2026-01-01T12:00:00.000Z; absent at 2026-01-01T12:01:00Z.",
+        "Source: windows-pnp-fallback (usb-hid); observed at 2026-01-01T12:01:00Z."
+      ],
+      "explanation": "The entry may have disconnected, changed identity, or changed mode.",
+      "evidence": [
+        "previous/devices/USB\\VID_046D&PID_C077\\SYNTHETIC-SERIAL",
+        "collectedAt"
+      ],
+      "recommendation": "Reconnect if appropriate and refresh. Compare interfaces and modes before drawing conclusions.",
+      "limitations": "Absence alone cannot diagnose a defective device, battery, or cable."
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "PnP entries are logical device nodes, not enumerated interface paths or a count of physical devices.",
+    "HID transport is unknown unless the entry itself is USB.",
+    "No battery, charging-circuit, Bluetooth, Android MTP, protocol capture, or repair diagnosis is performed.",
+    "Only complete scans with matching source/scope are compared; history is held in memory for this session."
+  ]
+}

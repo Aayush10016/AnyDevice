@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "binary-analysis-1.0",
+  "appVersion": "0.2.0",
+  "sanitized": false,
+  "source": {
+    "name": "synthetic-primary.bin",
+    "length": 12,
+    "sha256": "9b6ea804877376af9d20ef8afbc618ac7c9039539ddebdbc88b806ebb2357f39"
+  },
+  "annotations": [
+    {
+      "offset": 0,
+      "length": 4,
+      "label": "Synthetic prefix hypothesis; invented bytes, no protocol interpretation.",
+      "status": "unvalidated hypothesis"
+    }
+  ],
+  "comparison": null,
+  "limitations": [
+    "User-imported raw bytes only. No parser, protocol identification, traffic capture or automatic execution.",
+    "Raw bytes are excluded. Lengths and offsets may still identify samples."
+  ]
+}

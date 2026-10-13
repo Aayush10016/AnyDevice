@@ -72,3 +72,12 @@ it("validates all new evidence exports and rejects incomplete or excessive struc
   ])
     expect(() => validateExport(JSON.stringify(malformed))).toThrow();
 });
+
+import { execFileSync } from "node:child_process";
+it("loads and validates exports with runtime code generation forbidden by the desktop CSP", () => {
+  expect(
+    execFileSync(process.execPath, ["scripts/check-csp.mjs"], {
+      encoding: "utf8",
+    }),
+  ).toContain("CSP validators passed");
+});

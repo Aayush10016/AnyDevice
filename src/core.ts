@@ -91,6 +91,14 @@ export function normalize(input: unknown): Scan {
       });
       continue;
     }
+    if (provider === "windows-cfgmgr32" && r.present === false) {
+      errors.push({
+        kind: "enumeration",
+        deviceId: id,
+        message: "A node no longer present during collection was omitted.",
+      });
+      continue;
+    }
     const hardwareIds = Array.isArray(r.hardwareIds)
       ? r.hardwareIds.map(text).filter((v): v is string => v !== null)
       : [];
@@ -101,6 +109,12 @@ export function normalize(input: unknown): Scan {
         ? r.problemCode
         : null;
     devices.push({
+      present:
+        provider === "windows-pnp-fallback"
+          ? true
+          : typeof r.present === "boolean"
+            ? r.present
+            : null,
       nodeKind: "logical-pnp-node",
       physicalDeviceId: null,
       interfacePaths: [],

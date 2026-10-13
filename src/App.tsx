@@ -93,6 +93,7 @@ function DeviceDetails({
   const [copyStatus, setCopyStatus] = useState("");
   const fields = [
     ["Identity", "Logical PnP node; physical grouping unavailable"],
+    ["Windows node presence", d.present === null ? null : String(d.present)],
     ["Class", d.category],
     ["Transport", d.transport],
     ["Manufacturer", d.manufacturer],
