@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import App from "./App";
 import { fixtureScan, healthyMouse, windowsProblem } from "./fixtures";
@@ -9,6 +9,7 @@ vi.mock("./bridge", () => ({
   saveReport: vi.fn(),
   openProjectPage: vi.fn(),
   inspectInputDevices: vi.fn().mockResolvedValue([]),
+  inspectAudio:vi.fn().mockResolvedValue({endpoints:[],errors:[],complete:true,source:"synthetic",observedAt:"2026-10-14T00:00:00Z"}),
   discardInputTest: vi.fn().mockResolvedValue(undefined),
 }));
 beforeEach(() => {
@@ -23,7 +24,7 @@ it("starts empty without fabricated devices", () => {
   expect(
     screen.getByText("Your inventory starts with a scan"),
   ).toBeInTheDocument();
-  expect(screen.queryByText(healthyMouse.name)).not.toBeInTheDocument();
+  expect(within(screen.getByRole("region",{name:"Recognisable devices"})).queryByRole("button",{name:/Synthetic USB mouse/})).not.toBeInTheDocument();
 });
 it("does not use infrastructure node counts as the ordinary device badge", async () => {
   vi.mocked(discover).mockResolvedValue(
@@ -48,9 +49,7 @@ it("opens a dedicated mouse workspace and returns to the inventory in the same w
   vi.mocked(discover).mockResolvedValue(fixtureScan([healthyMouse]));
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: "Scan devices" }));
-  const candidate = await screen.findByRole("button", {
-    name: /USB \/ HID mouse/,
-  });
+  const candidate = await within(screen.getByRole("region",{name:"Recognisable devices"})).findByRole("button", {name:/Synthetic USB mouse/});
   fireEvent.click(candidate);
   expect(
     screen.getByRole("region", { name: "Device workbench" }),
@@ -76,14 +75,14 @@ it("scans, searches, inspects and exports the sanitized preview", async () => {
   vi.mocked(saveReport).mockResolvedValue("C:/reports/test.json");
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: "Scan devices" }));
-  await screen.findByText(healthyMouse.name);
+  await within(screen.getByRole("region",{name:"Recognisable devices"})).findByRole("button", {name:/Synthetic USB mouse/});
   fireEvent.click(screen.getByRole("button", { name: "Devices 2" }));
-  fireEvent.change(screen.getByLabelText("Search devices"), {
+  fireEvent.change(screen.getByLabelText("Find a device"), {
     target: { value: "problem" },
   });
-  expect(screen.queryByText(healthyMouse.name)).not.toBeInTheDocument();
+  expect(within(screen.getByRole("region",{name:"Recognisable devices"})).queryByRole("button",{name:/Synthetic USB mouse/})).not.toBeInTheDocument();
   fireEvent.click(
-    screen.getByRole("button", { name: /Synthetic problem device/ }),
+    within(screen.getByRole("region",{name:"Recognisable devices"})).getByRole("button", { name: /Synthetic problem device/ }),
   );
   expect(
     screen.getByRole("region", { name: "Device workbench" }),
@@ -104,12 +103,12 @@ it("retains prior inventory after scan failure and marks it stale", async () => 
     .mockRejectedValueOnce(new Error("Scan timed out"));
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: "Scan devices" }));
-  await screen.findByText(healthyMouse.name);
+  await within(screen.getByRole("region",{name:"Recognisable devices"})).findByRole("button", {name:/Synthetic USB mouse/});
   fireEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
   await waitFor(() =>
     expect(screen.getByRole("status")).toHaveTextContent("Scan timed out"),
   );
-  expect(screen.getByText(healthyMouse.name)).toBeInTheDocument();
+  expect(within(screen.getByRole("region",{name:"Recognisable devices"})).getByRole("button",{name:/Synthetic USB mouse/})).toBeInTheDocument();
   expect(screen.getByText(/Stale — refresh to update/)).toBeInTheDocument();
 });
 it("offers cancellation while scanning", async () => {
@@ -150,7 +149,7 @@ it("records a baseline, refreshes, captures user action and exports an investiga
   vi.mocked(saveReport).mockResolvedValue("C:/reports/investigation.json");
   render(<App />);
   fireEvent.click(screen.getByRole("button", { name: "Scan devices" }));
-  await screen.findByText(healthyMouse.name);
+  await within(screen.getByRole("region",{name:"Recognisable devices"})).findByRole("button", {name:/Synthetic USB mouse/});
   fireEvent.click(screen.getByRole("button", { name: "Investigation" }));
   fireEvent.click(screen.getByRole("button", { name: "Record baseline" }));
   fireEvent.change(

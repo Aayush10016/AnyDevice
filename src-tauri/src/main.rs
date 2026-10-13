@@ -1,9 +1,17 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod activity;
+mod audio_metrics;
+#[cfg(windows)]
+mod audio_native;
+mod audio_service;
 mod input_service;
 #[cfg(windows)]
 mod native;
 #[cfg(windows)]
+mod process_job;
+#[cfg(windows)]
 mod raw_input;
+mod repair_service;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::Value;
 use std::sync::Mutex;
@@ -101,6 +109,23 @@ async fn run_adapter(
     let mut child = command
         .spawn()
         .map_err(|e| format!("Cannot start the fixed Windows discovery adapter: {e}"))?;
+    #[cfg(windows)]
+    let _job = match process_job::attach(child.id().ok_or("Collector PID unavailable")?) {
+        Ok(job) => Some(job),
+        Err(e) => {
+            if child
+                .try_wait()
+                .map_err(|_| "Collector state unavailable")?
+                .is_none()
+            {
+                let _ = child.kill().await;
+                let _ = child.wait().await;
+                return Err(e);
+            } else {
+                None
+            }
+        }
+    };
     let stdout = child.stdout.take().ok_or("Collector output unavailable")?;
     let operation = async {
         let read = async {
@@ -130,7 +155,11 @@ async fn run_adapter(
     }
     let json: Value = serde_json::from_slice(&bytes)
         .map_err(|e| format!("Invalid Windows discovery response: {e}"))?;
-    if !json["devices"].is_array() || !json["errors"].is_array() {
+    if (!json["devices"].is_array()
+        && !json["endpoints"].is_array()
+        && !(json["operation"] == "audio-mute" && json["afterMute"].is_boolean()))
+        || !json["errors"].is_array()
+    {
         return Err("Discovery response is incomplete".into());
     }
     Ok(json)
@@ -151,6 +180,12 @@ fn validate_report(content: &str) -> Result<(), String> {
     }
     let value: Value = serde_json::from_str(content).map_err(|_| "Report is not valid JSON")?;
     let valid = match value["schemaVersion"].as_str() {
+        Some("diagnostic-engine-1.0") => {
+            value["checks"].is_array()
+                && value["audioEndpoints"].is_array()
+                && value["audioSessions"].is_array()
+                && value["repairs"].is_array()
+        }
         Some("1.0") => value["devices"].is_array() && value["findings"].is_array(),
         Some("2.0") => {
             value["devices"].is_array()
@@ -295,6 +330,56 @@ fn main() {
                 Err(_) => std::process::exit(3),
             }
         }
+        if args.get(1).map(String::as_str) == Some("--approved-audio-mute") {
+            if args.len() != 6
+                || !["true", "false"].contains(&args[3].as_str())
+                || !["true", "false"].contains(&args[4].as_str())
+            {
+                std::process::exit(2);
+            }
+            let owner = raw_input::verify_parent(args[5].parse().unwrap_or(0));
+            let result = owner.and_then(|owner| {
+                if !owner.alive() {
+                    return Err("Approving app exited".into());
+                }
+                audio_native::change_mute(&args[2], args[3] == "true", args[4] == "true", &owner)
+            });
+            match result {
+                Ok(after) => println!(
+                    "{}",
+                    serde_json::json!({"operation":"audio-mute","afterMute":after,"errors":[]})
+                ),
+                Err(_) => std::process::exit(3),
+            }
+            return;
+        }
+        if args.get(1).map(String::as_str) == Some("--inspect-audio") {
+            if args.len() != 2 {
+                std::process::exit(2);
+            }
+            match audio_native::inventory() {
+                Ok(value) => println!("{value}"),
+                Err(e) => println!(
+                    "{}",
+                    serde_json::json!({"endpoints":[],"errors":[e],"complete":false,"source":"Windows Core Audio","observedAt":chrono::Utc::now().to_rfc3339()})
+                ),
+            }
+            return;
+        }
+        if args.get(1).map(String::as_str) == Some("--audio-test") {
+            if args.len() != 5 {
+                std::process::exit(2);
+            }
+            if let Err(reason) = audio_native::run(&args[2], &args[3], args[4].parse().unwrap_or(0))
+            {
+                println!(
+                    "{}",
+                    serde_json::json!({"type":"status","status":"failed","reason":reason})
+                );
+                std::process::exit(3);
+            }
+            return;
+        }
         if args.get(1).map(String::as_str) == Some("--inspect-input") {
             match raw_input::inventory() {
                 Ok(value) => println!("{value}"),
@@ -334,7 +419,17 @@ fn main() {
     tauri::Builder::default()
         .manage(ScanState::default())
         .manage(input_service::InputState::default())
+        .manage(audio_service::AudioState::default())
+        .manage(activity::Activity::default())
+        .manage(repair_service::RepairState::default())
         .invoke_handler(tauri::generate_handler![
+            repair_service::propose_audio_unmute,
+            repair_service::execute_audio_repair,
+            audio_service::inspect_audio,
+            audio_service::start_audio_test,
+            audio_service::audio_test_status,
+            audio_service::stop_audio_test,
+            audio_service::discard_audio_test,
             scan_devices,
             cancel_scan,
             save_report,

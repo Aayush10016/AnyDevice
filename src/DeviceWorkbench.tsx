@@ -80,7 +80,7 @@ export function DeviceWorkbench({
   );
   const available = endpoints.filter((e) =>
     candidate
-      ? e.kind === candidate.kind &&
+      ? (candidate.inputKinds??(candidate.kind?[candidate.kind]:[])).includes(e.kind) &&
         candidate.nodes.some(
           (n) => e.instanceId?.toUpperCase() === n.id.toUpperCase(),
         )
@@ -120,7 +120,7 @@ export function DeviceWorkbench({
         );
         const matches = rows.filter((e) =>
           candidate
-            ? e.kind === candidate.kind &&
+            ? (candidate.inputKinds??(candidate.kind?[candidate.kind]:[])).includes(e.kind) &&
               candidate.nodes.some(
                 (n) => e.instanceId?.toUpperCase() === n.id.toUpperCase(),
               )
@@ -299,7 +299,7 @@ export function DeviceWorkbench({
       >
         {[
           "Overview",
-          ...(candidate && !candidate.kind ? [] : ["Live Tests"]),
+          ...(candidate && !candidate.kind && !candidate.inputKinds?.length ? [] : ["Live Tests"]),
           "Report a Problem",
           "History & export",
         ].map((t) => (
@@ -320,7 +320,7 @@ export function DeviceWorkbench({
             observation, not a functional health verdict.
           </p>
           <p>
-            {candidate?.kind
+            {(candidate?.kind||candidate?.inputKinds?.length)
               ? "Open Live Tests to check this device’s input. Keep AnyDevice active while testing."
               : "Read-only diagnostics are available. A validated device-specific functional test is not available for this category."}
           </p>

@@ -14,6 +14,11 @@ use windows_sys::Win32::{
     UI::{Input::*, WindowsAndMessaging::*},
 };
 pub struct OwnedProcess(HANDLE);
+impl OwnedProcess {
+    pub fn alive(&self) -> bool {
+        (unsafe { WaitForSingleObject(self.0, 0) }) == WAIT_TIMEOUT
+    }
+}
 impl Drop for OwnedProcess {
     fn drop(&mut self) {
         unsafe {

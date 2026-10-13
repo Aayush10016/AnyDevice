@@ -3,8 +3,10 @@ import {
   investigation,
   analysis,
   workbench,
+  engine,
 } from "./generated/validators";
 const validators = {
+  "diagnostic-engine-1.0":engine,
   "device-workbench-1.0": workbench,
   "2.0": diagnostic,
   "investigation-1.0": investigation,

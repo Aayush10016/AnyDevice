@@ -4,8 +4,12 @@ export function DeviceInventory({
   candidates,
   onSelect,
   stale,
+  audio,
+  onAudioSelect,
 }: {
   candidates: Candidate[];
+  audio?: import("./audio").AudioInventory | null;
+  onAudioSelect?: (id: string) => void;
   onSelect: (candidate: Candidate) => void;
   stale: boolean;
 }) {
@@ -89,13 +93,48 @@ export function DeviceInventory({
                       : c.device.present === true
                         ? "Windows entry present; connection unverified"
                         : "Presence not confirmed"}{" "}
-                    · {c.kind ? "Open input tests" : "Open diagnostics"}
+                    ·{" "}
+                    {c.kind || c.inputKinds?.length
+                      ? "Open input tests"
+                      : "Open diagnostics"}
                   </small>
                 </button>
               ))}
           </div>
         </section>
       ))}
+      {view === "peripherals" && audio && (
+        <section>
+          <h3>Playback and microphone endpoints</h3>
+          <p>
+            Endpoint entries are audio paths, not counts of physical
+            peripherals. Active is Windows-reported availability; audibility
+            remains untested.
+          </p>
+          <div className="device-candidates">
+            {audio.endpoints
+              .filter((e) => e.state === "active")
+              .map((e) => (
+                <button
+                  key={e.id}
+                  className="candidate-button"
+                  onClick={() => onAudioSelect?.(e.id)}
+                >
+                  <strong>{e.name}</strong>
+                  <span>
+                    {e.kind === "recording"
+                      ? "Microphone input"
+                      : "Playback output"}{" "}
+                    · Windows {e.state}
+                  </span>
+                  <small>
+                    {e.mute === true ? "Muted · " : ""}Open audio tests
+                  </small>
+                </button>
+              ))}
+          </div>
+        </section>
+      )}
       {!filtered.length && (
         <p>
           No device candidates in this view. Check uncertain placement, run a
