@@ -464,7 +464,11 @@ export default function App() {
                         ? "Deterministic checks, with safe next tests and explicit limits."
                         : route === "Reports"
                           ? "Review the exact JSON before saving or sharing."
-                          : "A small set of preferences that work."}
+                          : route === "Investigation"
+                            ? "Compare controlled observations and keep claims separate from evidence."
+                            : route === "Binary workspace"
+                              ? "Inspect local bytes and record reproducible hypotheses."
+                              : "A small set of preferences that work."}
                 </p>
               </div>
               {route !== "Settings" && route !== "Binary workspace" && (
@@ -540,8 +544,9 @@ export default function App() {
                   )}
                 </section>
                 <p className="footnote">
-                  v0.1 inspects PnP status and properties. It cannot determine
-                  battery health, charging circuitry or Bluetooth status.
+                  AnyDevice inspects PnP status and properties. It cannot
+                  determine battery health, charging circuitry or Bluetooth
+                  status.
                 </p>
               </>
             )}
@@ -549,6 +554,9 @@ export default function App() {
               <>
                 {scan && (
                   <p className="snapshot">
+                    {scan
+                      ? `${scan.provider} / ${scan.scope} / ${scan.collectedAt} - `
+                      : ""}
                     Collected {new Date(scan.collectedAt).toLocaleString()} ·{" "}
                     {scan.complete ? "Complete" : "Partial"} ·{" "}
                     {stale

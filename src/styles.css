@@ -694,3 +694,18 @@ footer {
   font-size: 9px;
   letter-spacing: 0;
 }
+
+.segmented {
+  flex-wrap: wrap;
+}
+.field {
+  min-width: 0;
+}
+.field input,
+.field textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+section code {
+  overflow-wrap: anywhere;
+}

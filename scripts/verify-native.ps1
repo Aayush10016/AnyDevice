@@ -15,7 +15,7 @@ try {
     $mismatches = 0
     foreach ($d in $native.devices) {
         $other = $map[$d.instanceId.ToUpperInvariant()]
-        foreach ($key in @('category','problemCode','manufacturer','parent','location')) {
+        foreach ($key in @('name','category','status','problemCode','manufacturer','parent','location')) {
             if ($null -ne $d.$key -and $null -ne $other.$key -and [string]$d.$key -cne [string]$other.$key) { $mismatches++ }
         }
         if ((@($d.hardwareIds | Sort-Object) -join "`n") -cne (@($other.hardwareIds | Sort-Object) -join "`n")) { $mismatches++ }

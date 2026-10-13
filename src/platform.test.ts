@@ -172,3 +172,38 @@ it("sanitized analysis excludes raw bytes, filenames, fingerprints and hypothesi
   expect(json).not.toContain("private");
   expect(json).not.toContain('"bytes"');
 });
+
+import { webcrypto } from "node:crypto";
+import { vi } from "vitest";
+it("imports bounded raw bytes with a reproducible SHA-256 fingerprint", async () => {
+  vi.stubGlobal("crypto", webcrypto);
+  try {
+    const file = {
+      name: "synthetic.bin",
+      size: 3,
+      arrayBuffer: async () => new Uint8Array([97, 98, 99]).buffer,
+    } as File;
+    const sample = await readSample(file);
+    expect(sample.sha256).toBe(
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    );
+    expect(Array.from(sample.bytes)).toEqual([97, 98, 99]);
+    await expect(readSample({ ...file, size: 2 } as File)).rejects.toThrow(
+      /changed/,
+    );
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+it("rejects unknown providers and native scopes instead of broadening silently", () => {
+  expect(() =>
+    normalize({ ...fixtureScan(), provider: "third-party" }),
+  ).toThrow(/provider/);
+  expect(() =>
+    normalize({
+      ...fixtureScan(),
+      provider: "windows-cfgmgr32",
+      scope: "everything",
+    }),
+  ).toThrow(/scope/);
+});

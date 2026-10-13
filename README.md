@@ -1,4 +1,4 @@
-# AnyDevice — Understand. Diagnose. Investigate.
+# AnyDevice â€” Understand. Diagnose. Investigate.
 
 A local-first desktop toolkit for inspecting devices, collecting technical evidence, investigating problems, and progressively reverse-engineering supported interfaces.
 
@@ -50,9 +50,15 @@ npm run package
 
 The browser preview cannot collect hardware or save through native dialogs and loads no synthetic devices. Test fixtures and examples are explicitly synthetic. Real inventories must never be committed or uploaded to public CI logs.
 
+## Implemented interface preview
+
+![Actual frontend preview with an explicitly synthetic byte sample](docs/screenshots/binary-frontend-preview.jpg)
+
+Browser frontend capture, not a packaged Windows screenshot or a hardware inventory. Native screen-reader/dialog QA remains a release gate.
+
 ## Documentation
 
-[Architecture](docs/ARCHITECTURE.md) · [Capabilities](docs/CAPABILITIES.md) · [Implementation plan](docs/IMPLEMENTATION-PLAN.md) · [Rules](docs/RULES.md) · [Validation](docs/EXPANSION-VALIDATION.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Branding](docs/BRANDING.md) · [Contributing](CONTRIBUTING.md)
+[Architecture](docs/ARCHITECTURE.md) Â· [Capabilities](docs/CAPABILITIES.md) Â· [Implementation plan](docs/IMPLEMENTATION-PLAN.md) Â· [Rules](docs/RULES.md) Â· [Validation](docs/EXPANSION-VALIDATION.md) Â· [Privacy](PRIVACY.md) Â· [Security](SECURITY.md) Â· [Branding](docs/BRANDING.md) Â· [Contributing](CONTRIBUTING.md)
 
 The original [MASTER-SPEC.md](MASTER-SPEC.md) is preserved as historical input. The current product identity and staged expansion supersede its old tagline and narrow release subtitle.
 
