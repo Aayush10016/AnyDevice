@@ -58,7 +58,7 @@ export function DeviceWorkbench({
   const [preview, setPreview] = useState("");
   const session = useRef<number | null>(null);
   const mounted = useRef(true);
-  const archived = useRef(new Set<number>());
+  const archived = useRef<number | null>(null);
   const surface = useRef<HTMLDivElement>(null);
   const related = useMemo(
     () => relationships(device, devices),
@@ -71,19 +71,26 @@ export function DeviceWorkbench({
   const mode =
     endpoint?.kind === "mouse" ? "mouse" : xOnly ? "x-key" : "keyboard";
   const attempts = attemptText === "" ? null : Number(attemptText);
-  const running =
-    !!snapshot &&
-    !snapshot.cleanup &&
-    !["unsupported", "failed"].includes(snapshot.status);
+  const running = !!snapshot && !snapshot.cleanup;
   function receive(value: InputSnapshot) {
-    if (!mounted.current) return;
+    if (!mounted.current || value.sessionId !== session.current) return;
     setSnapshot(value);
-    if (value.cleanup && !archived.current.has(value.sessionId)) {
-      archived.current.add(value.sessionId);
+    if (value.cleanup && archived.current !== value.sessionId) {
+      archived.current = value.sessionId;
       setHistory((v) => [...v, value].slice(-8));
     }
   }
+  function clearCurrentTarget() {
+    const id = session.current;
+    session.current = null;
+    setSnapshot(null);
+    if (id !== null)
+      void discardInputTest(id).catch((e) => {
+        if (mounted.current) setMessage(String(e));
+      });
+  }
   async function inspect() {
+    clearCurrentTarget();
     try {
       const rows = await inspectInputDevices();
       if (mounted.current) {
@@ -107,7 +114,7 @@ export function DeviceWorkbench({
     };
   }, [device.id]);
   useEffect(() => {
-    if (session.current === null || snapshot?.cleanup) return;
+    if (!snapshot || session.current === null || snapshot.cleanup) return;
     let cancelled = false;
     let polling = false;
     const timer = window.setInterval(async () => {
@@ -353,6 +360,7 @@ export function DeviceWorkbench({
               disabled={running || busy}
               value={index}
               onChange={(e) => {
+                clearCurrentTarget();
                 setIndex(Number(e.target.value));
                 setXOnly(false);
               }}
@@ -389,7 +397,10 @@ export function DeviceWorkbench({
                   type="checkbox"
                   checked={xOnly}
                   disabled={running || busy}
-                  onChange={(e) => setXOnly(e.target.checked)}
+                  onChange={(e) => {
+                    clearCurrentTarget();
+                    setXOnly(e.target.checked);
+                  }}
                 />{" "}
                 Dedicated X-key test (other key data discarded)
               </label>
@@ -538,8 +549,8 @@ export function DeviceWorkbench({
           {snapshot && (
             <>
               <p>
-                Native event count: {snapshot.stats.events}. Latest 128
-                retained;{" "}
+                Native event count: {snapshot.stats.events}. Measured target:{" "}
+                {snapshot.targetId}. Latest 128 retained;{" "}
                 {snapshot.historyTruncated
                   ? "recent history truncated; aggregate counts retained"
                   : "history within limit"}

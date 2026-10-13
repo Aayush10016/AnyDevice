@@ -229,6 +229,17 @@ export function workbenchExport(
   history: InputSnapshot[],
   sanitized: boolean,
 ) {
+  const aliases = new Map<string, string>();
+  for (const test of history.slice(-8)) {
+    const key = test.targetId.toUpperCase();
+    if (!aliases.has(key))
+      aliases.set(
+        key,
+        key === selected.id.toUpperCase()
+          ? "selected-device"
+          : `input-endpoint-${aliases.size + 1}`,
+      );
+  }
   return {
     schemaVersion: "device-workbench-1.0",
     createdAt: new Date().toISOString(),
@@ -242,17 +253,15 @@ export function workbenchExport(
       conditions: sanitized ? null : conditions,
       physicalAttempts: sanitized ? null : attempts,
     },
-    tests: history
-      .slice(-8)
-      .map((s) => ({
-        targetId: sanitized ? "selected-input-endpoint" : s.targetId,
-        mode: s.mode,
-        startedAt: s.startedAt,
-        status: s.status,
-        cleanup: s.cleanup,
-        stats: s.stats,
-        historyTruncated: s.historyTruncated,
-      })),
+    tests: history.slice(-8).map((s) => ({
+      targetId: sanitized ? aliases.get(s.targetId.toUpperCase())! : s.targetId,
+      mode: s.mode,
+      startedAt: s.startedAt,
+      status: s.status,
+      cleanup: s.cleanup,
+      stats: s.stats,
+      historyTruncated: s.historyTruncated,
+    })),
     limitations: [
       "Aggregate key codes/counts are exported; no ordered key-event history or typed text is persisted.",
       "Input attribution confirms a logical Raw Input collection, not the separate physical peripheral behind a wireless receiver.",

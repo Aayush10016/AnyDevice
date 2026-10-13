@@ -156,3 +156,31 @@ it("stops the session when focus moves to an editable field", async () => {
   await waitFor(() => expect(bridge.stopInputTest).toHaveBeenCalledWith(7));
   input.remove();
 });
+
+it("clears previous measurements when the input endpoint changes", async () => {
+  vi.mocked(bridge.inspectInputDevices).mockResolvedValue(
+    ["HID\\A", "HID\\B"].map((id) => ({
+      instanceId: id,
+      path: "synthetic",
+      kind: "keyboard" as const,
+      ancestors: [device.id],
+      capabilities: null,
+      source: "synthetic",
+      observedAt: device.observedAt,
+    })),
+  );
+  mount();
+  await live();
+  current.targetId = "HID\\A";
+  current.stats.events = 3;
+  current.cleanup = true;
+  current.status = "completed";
+  fireEvent.click(screen.getByRole("button", { name: "Start Test" }));
+  await screen.findByText(/Native event count: 3/);
+  fireEvent.change(screen.getByLabelText("Selected input collection"), {
+    target: { value: "1" },
+  });
+  expect(screen.queryByText(/Native event count: 3/)).not.toBeInTheDocument();
+  expect(screen.getByText("Not tested")).toBeInTheDocument();
+  expect(bridge.discardInputTest).toHaveBeenCalledWith(7);
+});

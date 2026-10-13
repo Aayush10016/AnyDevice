@@ -159,3 +159,21 @@ it("rejects event-sequence injection and excessive workbench exports", () => {
     ),
   ).toThrow();
 });
+
+it("keeps distinct input identities distinct in sanitized history and reuses case-insensitive aliases", () => {
+  const result = workbenchExport(
+    d,
+    "",
+    "",
+    null,
+    [
+      session,
+      { ...session, sessionId: 2, targetId: "HID\\OTHER-COLLECTION" },
+      { ...session, sessionId: 3, targetId: d.id.toLowerCase() },
+    ],
+    true,
+  );
+  expect(result.tests[0].targetId).toBe(result.tests[2].targetId);
+  expect(result.tests[0].targetId).not.toBe(result.tests[1].targetId);
+  expect(() => validateExport(JSON.stringify(result))).not.toThrow();
+});
