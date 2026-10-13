@@ -58,6 +58,9 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "sessionId": {
+              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+            },
             "heardExpected": {
               "enum": [
                 "yes",
@@ -73,6 +76,7 @@
             }
           },
           "required": [
+            "sessionId",
             "heardExpected",
             "staticReported"
           ]

@@ -132,7 +132,7 @@ pub fn inventory() -> Result<Value, String> {
                 .map(|id| (id, (*label).into()))
         })
         .collect();
-        let list = unsafe { en.EnumAudioEndpoints(flow, DEVICE_STATEMASK_ALL) }
+        let list = unsafe { en.EnumAudioEndpoints(flow, DEVICE_STATE(DEVICE_STATEMASK_ALL)) }
             .map_err(|e| e.to_string())?;
         let count = unsafe { list.GetCount() }.map_err(|e| e.to_string())?;
         if count > 128 {

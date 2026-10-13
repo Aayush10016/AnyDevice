@@ -156,6 +156,7 @@ export function AudioWorkspace({
     setMessage("");
     setPreview("");
     setHeard("unknown");
+    setStaticReport(null);
     try {
       focus.current?.focus();
       const id = await startAudioTest(endpoint.id, mode);
@@ -463,6 +464,7 @@ export function AudioWorkspace({
           setPreview(
             JSON.stringify(
               diagnosticExport(null, [], inventory, history, true, repairs, {
+                sessionId: session?.sessionId ?? null,
                 heardExpected: heard,
                 staticReported: staticReport,
               }),

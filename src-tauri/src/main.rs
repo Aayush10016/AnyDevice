@@ -4,6 +4,8 @@ mod audio_metrics;
 #[cfg(windows)]
 mod audio_native;
 mod audio_service;
+#[cfg(windows)]
+mod hid_inspection;
 mod input_service;
 #[cfg(windows)]
 mod native;

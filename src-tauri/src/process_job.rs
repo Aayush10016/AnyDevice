@@ -43,3 +43,42 @@ pub fn attach(pid: u32) -> Result<ChildJob, String> {
     }
     Ok(job)
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn closing_job_terminates_owned_idle_child_without_hardware_access() {
+        use std::os::windows::process::CommandExt;
+        let mut child = std::process::Command::new("powershell.exe")
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "Start-Sleep -Seconds 30",
+            ])
+            .creation_flags(0x08000000)
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .unwrap();
+        let job = match attach(child.id()) {
+            Ok(job) => job,
+            Err(error) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                panic!("{error}");
+            }
+        };
+        drop(job);
+        for _ in 0..100 {
+            if child.try_wait().unwrap().is_some() {
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        let _ = child.kill();
+        let _ = child.wait();
+        panic!("Job close did not terminate its owned child within two seconds");
+    }
+}

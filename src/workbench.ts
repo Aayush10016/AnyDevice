@@ -66,6 +66,19 @@ export interface Endpoint {
   kind: "mouse" | "keyboard";
   ancestors: string[];
   capabilities: Record<string, number | boolean> | null;
+  hid?: {
+    profileVersion: string;
+    status: "observed" | "unavailable";
+    usagePage?: number;
+    usage?: number;
+    reports?: {
+      type: string;
+      maximumByteLengthIncludingId: number;
+      controls: Record<string, number | string>[];
+      errors: string[];
+    }[];
+    reason?: string;
+  };
   source: string;
   observedAt: string;
 }

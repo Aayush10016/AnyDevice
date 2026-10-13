@@ -103,6 +103,37 @@ export function systemChecks(
           "Open the input workspace, choose the exact responding logical source and perform a controlled test.",
         hypotheses: [],
       });
+    for (const [index, endpoint] of c.endpoints.entries()) {
+      const hid = endpoint.hid;
+      checks.push({
+        id: `hid:${c.id}:${index}`,
+        target: c.id,
+        test: "Read-only HID collection capabilities",
+        outcome: hid?.status === "observed" ? "Passed" : "Not supported",
+        confidence: "Windows-reported",
+        measurements: {
+          collection: index + 1,
+          usagePage: hid?.usagePage ?? null,
+          usage: hid?.usage ?? null,
+          inputMaximumBytes:
+            hid?.reports?.find((r) => r.type === "input")
+              ?.maximumByteLengthIncludingId ?? null,
+          outputMaximumBytes:
+            hid?.reports?.find((r) => r.type === "output")
+              ?.maximumByteLengthIncludingId ?? null,
+          featureMaximumBytes:
+            hid?.reports?.find((r) => r.type === "feature")
+              ?.maximumByteLengthIncludingId ?? null,
+        },
+        conclusion:
+          hid?.status === "observed"
+            ? "Windows parsed collection usages and maximum report lengths; protocol semantics and physical function remain unverified."
+            : "This source does not expose supported/bounded HID preparsed capabilities.",
+        nextStep:
+          "Review per-report IDs and numerical controls under Stats for nerds. Do not send output or feature reports without a validated model-specific protocol.",
+        hypotheses: [],
+      });
+    }
   }
   if (!audio)
     checks.push({
@@ -251,6 +282,7 @@ export function diagnosticExport(
   sanitized: boolean,
   repairs: import("./bridge").RepairAudit[] = [],
   userAudioReport: {
+    sessionId: number | null;
     heardExpected: string;
     staticReported: boolean | null;
   } | null = null,
