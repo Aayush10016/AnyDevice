@@ -8,6 +8,8 @@ vi.mock("./bridge", () => ({
   cancelScan: vi.fn(),
   saveReport: vi.fn(),
   openProjectPage: vi.fn(),
+  inspectInputDevices: vi.fn().mockResolvedValue([]),
+  discardInputTest: vi.fn().mockResolvedValue(undefined),
 }));
 beforeEach(() => {
   localStorage.clear();
@@ -22,6 +24,31 @@ it("starts empty without fabricated devices", () => {
     screen.getByText("Your inventory starts with a scan"),
   ).toBeInTheDocument();
   expect(screen.queryByText(healthyMouse.name)).not.toBeInTheDocument();
+});
+it("opens a dedicated mouse workspace and returns to the inventory in the same window", async () => {
+  vi.mocked(discover).mockResolvedValue(fixtureScan([healthyMouse]));
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: "Scan devices" }));
+  const candidate = await screen.findByRole("button", {
+    name: /USB \/ HID mouse/,
+  });
+  fireEvent.click(candidate);
+  expect(
+    screen.getByRole("region", { name: "Device workbench" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("region", { name: "Recognisable devices" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("complementary", { name: "Device inspection" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Back to devices" }));
+  expect(
+    screen.getByRole("region", { name: "Recognisable devices" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("region", { name: "Device workbench" }),
+  ).not.toBeInTheDocument();
 });
 it("scans, searches, inspects and exports the sanitized preview", async () => {
   vi.mocked(discover).mockResolvedValue(
@@ -40,7 +67,7 @@ it("scans, searches, inspects and exports the sanitized preview", async () => {
     screen.getByRole("button", { name: /Synthetic problem device/ }),
   );
   expect(
-    screen.getByRole("complementary", { name: "Device inspection" }),
+    screen.getByRole("region", { name: "Device workbench" }),
   ).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Reports" }));
   expect(screen.getByLabelText("Report preview").textContent).not.toContain(

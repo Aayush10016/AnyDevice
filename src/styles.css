@@ -794,3 +794,126 @@ section code {
   border-radius: 50%;
   background: var(--accent);
 }
+
+/* Contain horizontal movement to deliberate technical/keyboard scrollers. */
+html,
+body,
+#root {
+  max-width: 100%;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+.app-shell,
+main,
+.content {
+  min-width: 0;
+  max-width: 100%;
+}
+main {
+  overflow-x: clip;
+}
+.workbench {
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 0;
+}
+.workbench pre {
+  max-width: 100%;
+  overflow: auto;
+}
+.device-candidates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 12px;
+}
+.candidate-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 16px;
+  overflow-wrap: anywhere;
+}
+.keyboard-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+}
+.keyboard-layout {
+  display: flex;
+  gap: 14px;
+  min-width: 900px;
+}
+.keyboard-block:first-child {
+  flex: 1;
+  min-width: 620px;
+}
+.keyboard-block:nth-child(2) {
+  width: 135px;
+}
+.keyboard-block:nth-child(3) {
+  width: 165px;
+}
+.keyboard-layout .keyboard-row {
+  flex-wrap: nowrap;
+  gap: 3px;
+  margin: 5px 0;
+  min-height: 49px;
+}
+.keyboard-layout .test-key {
+  min-width: 0;
+  padding: 6px 2px;
+  font-size: 11px;
+  justify-content: center;
+}
+.keyboard-layout .test-key small {
+  font-size: 9px;
+  white-space: nowrap;
+}
+.keyboard-block:nth-child(2) .keyboard-row-2 {
+  padding: 0 45px;
+  margin-top: 55px;
+}
+.mouse-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.test-result {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.advanced-stats {
+  margin: 18px 0;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.number-pad {
+  display: grid;
+  grid-template-columns: repeat(4, 38px);
+  grid-template-rows: repeat(5, 49px);
+  gap: 3px;
+  margin: 5px 0;
+}
+.number-pad .test-key {
+  min-width: 0;
+  padding: 5px 0;
+  font-size: 11px;
+}
+.number-pad small {
+  font-size: 9px;
+}
+.pad-107 {
+  grid-column: 4;
+  grid-row: 2 / span 2;
+}
+.pad-13 {
+  grid-column: 4;
+  grid-row: 4 / span 2;
+}
+.pad-96 {
+  grid-column: 1 / span 2;
+}

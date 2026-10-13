@@ -1,7 +1,7 @@
 //! Explicit, short-lived input sessions. No text translation or persistent event storage.
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BTreeMap, VecDeque},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     sync::{
         atomic::{AtomicU64, Ordering},
         Arc, Mutex,
@@ -54,6 +54,8 @@ pub struct KeyCount {
 #[derive(Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Stats {
+    #[serde(skip)]
+    held_scans: BTreeSet<(u16, u16, u16)>,
     pub events: u64,
     pub movements: u64,
     pub x: i64,
@@ -83,7 +85,27 @@ impl Stats {
             InputEvent::MouseButton { button, down, .. } => {
                 update(self.buttons.entry(*button).or_default(), *down)
             }
-            InputEvent::Key { vk, down, .. } => update(self.keys.entry(*vk).or_default(), *down),
+            InputEvent::Key {
+                vk,
+                scan,
+                flags,
+                down,
+                ..
+            } => {
+                let identity = (*vk, *scan, *flags & 6);
+                let key = self.keys.entry(*vk).or_default();
+                if *down {
+                    if self.held_scans.insert(identity) {
+                        key.down += 1;
+                    } else {
+                        key.repeat += 1;
+                    }
+                } else {
+                    self.held_scans.remove(&identity);
+                    key.up += 1;
+                }
+                key.held = self.held_scans.iter().any(|(code, _, _)| code == vk);
+            }
             InputEvent::MouseWheel { axis, delta, .. } => {
                 if axis == "horizontal" {
                     self.horizontal += 1;
@@ -96,6 +118,7 @@ impl Stats {
         }
     }
     fn release(&mut self) {
+        self.held_scans.clear();
         for key in self.keys.values_mut().chain(self.buttons.values_mut()) {
             key.held = false;
         }
@@ -133,6 +156,7 @@ pub struct InputState(Arc<Mutex<Inner>>);
 struct Inner {
     snapshot: Option<Snapshot>,
     cancel: Option<CancellationToken>,
+    stop_reason: Option<String>,
 }
 static NEXT: AtomicU64 = AtomicU64::new(1);
 fn lock(state: &InputState) -> Result<std::sync::MutexGuard<'_, Inner>, String> {
@@ -269,34 +293,48 @@ pub async fn start_input_test(
             cleanup: false,
         });
         inner.cancel = Some(cancel.clone());
+        inner.stop_reason = None;
     }
     let owned = state.inner().clone();
     tokio::spawn(async move {
         let outcome = stream(&owned, id, &target_id, &mode, cancel).await;
         if let Ok(mut inner) = lock(&owned) {
+            let stopped = inner.stop_reason.take();
             if let Some(snapshot) = inner.snapshot.as_mut().filter(|s| s.session_id == id) {
-                if let Err(reason) = outcome {
-                    snapshot.status = "failed".into();
-                    snapshot.reason = reason;
-                } else if ["testing", "eventsObserved"].contains(&snapshot.status.as_str()) {
-                    snapshot.status = if snapshot.stats.events == 0 {
-                        "noEventsObserved"
-                    } else {
-                        "completed"
-                    }
-                    .into();
-                    snapshot.reason = "Session stopped; absence of events is inconclusive".into();
-                }
-                if snapshot.status == "completed" && snapshot.stats.events == 0 {
-                    snapshot.status = "noEventsObserved".into();
-                }
-                snapshot.cleanup = true;
-                snapshot.stats.release();
+                finalize(snapshot, outcome, stopped);
                 inner.cancel = None;
             }
         }
     });
     Ok(id)
+}
+fn finalize(snapshot: &mut Snapshot, outcome: Result<(), String>, stopped: Option<String>) {
+    if let Err(reason) = outcome {
+        snapshot.status = "failed".into();
+        snapshot.reason = reason;
+    } else if ["testing", "eventsObserved"].contains(&snapshot.status.as_str()) {
+        snapshot.status = if snapshot.stats.events == 0 {
+            "noEventsObserved"
+        } else {
+            "completed"
+        }
+        .into();
+        snapshot.reason = "Session stopped; absence of events is inconclusive".into();
+    }
+    if snapshot.status == "completed" && snapshot.stats.events == 0 {
+        snapshot.status = "noEventsObserved".into();
+    }
+    if let Some(reason) = stopped {
+        snapshot.status = if reason == "focusLost" {
+            "focusLost"
+        } else {
+            "cancelled"
+        }
+        .into();
+        snapshot.reason = format!("Session interrupted: {reason}");
+    }
+    snapshot.cleanup = true;
+    snapshot.stats.release();
 }
 async fn stream(
     state: &InputState,
@@ -409,8 +447,18 @@ pub fn input_test_status(
         .ok_or("Input session unavailable".into())
 }
 #[tauri::command]
-pub fn stop_input_test(state: tauri::State<'_, InputState>, session_id: u64) -> Result<(), String> {
-    let inner = lock(&state)?;
+pub fn stop_input_test(
+    state: tauri::State<'_, InputState>,
+    session_id: u64,
+    reason: Option<String>,
+) -> Result<(), String> {
+    if reason
+        .as_deref()
+        .is_some_and(|r| !["focusLost", "navigation", "reset"].contains(&r))
+    {
+        return Err("Invalid stop reason".into());
+    }
+    let mut inner = lock(&state)?;
     if inner
         .snapshot
         .as_ref()
@@ -418,6 +466,9 @@ pub fn stop_input_test(state: tauri::State<'_, InputState>, session_id: u64) -> 
     {
         if let Some(cancel) = &inner.cancel {
             cancel.cancel();
+            if reason.is_some() {
+                inner.stop_reason = reason;
+            }
         }
         Ok(())
     } else {
@@ -427,6 +478,111 @@ pub fn stop_input_test(state: tauri::State<'_, InputState>, session_id: u64) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn interruption_survives_last_queued_event_and_clears_held_state() {
+        for cause in ["focusLost", "navigation", "reset"] {
+            let mut snapshot = Snapshot {
+                session_id: 1,
+                target_id: "synthetic".into(),
+                mode: "keyboard".into(),
+                status: "testing".into(),
+                reason: String::new(),
+                started_at: "synthetic".into(),
+                stats: Stats::default(),
+                recent: VecDeque::new(),
+                history_truncated: false,
+                cleanup: false,
+            };
+            apply(
+                &mut snapshot,
+                Packet::Event {
+                    event: InputEvent::Key {
+                        at: "synthetic".into(),
+                        vk: 88,
+                        scan: 45,
+                        flags: 0,
+                        down: true,
+                    },
+                },
+            )
+            .unwrap();
+            finalize(&mut snapshot, Ok(()), Some(cause.into()));
+            assert_eq!(
+                snapshot.status,
+                if cause == "focusLost" {
+                    "focusLost"
+                } else {
+                    "cancelled"
+                }
+            );
+            assert!(snapshot.cleanup);
+            assert!(!snapshot.stats.keys[&88].held);
+            assert_eq!(snapshot.stats.keys[&88].down, 1);
+        }
+    }
+    #[test]
+    fn same_virtual_key_distinct_scans_do_not_suppress_down_transitions() {
+        let mut s = Stats::default();
+        for (flags, down) in [(0, true), (2, true), (3, false)] {
+            s.observe(&InputEvent::Key {
+                at: "synthetic".into(),
+                vk: 13,
+                scan: 28,
+                flags,
+                down,
+            });
+        }
+        assert_eq!(s.keys[&13].down, 2);
+        assert_eq!(s.keys[&13].repeat, 0);
+        assert!(s.keys[&13].held);
+        s.observe(&InputEvent::Key {
+            at: "synthetic".into(),
+            vk: 13,
+            scan: 28,
+            flags: 1,
+            down: false,
+        });
+        assert_eq!(s.keys[&13].up, 2);
+        assert!(!s.keys[&13].held);
+        s.release();
+        assert!(s.held_scans.is_empty());
+    }
+    #[test]
+    fn rapid_pairs_repeats_and_simultaneous_keys_retain_exact_counts() {
+        let mut s = Stats::default();
+        for _ in 0..5000 {
+            for (vk, scan, down) in [
+                (88, 45, true),
+                (65, 30, true),
+                (88, 45, true),
+                (88, 45, false),
+                (65, 30, false),
+            ] {
+                s.observe(&InputEvent::Key {
+                    at: "synthetic".into(),
+                    vk,
+                    scan,
+                    flags: if down { 0 } else { 1 },
+                    down,
+                });
+            }
+        }
+        assert_eq!(s.keys[&88].down, 5000);
+        assert_eq!(s.keys[&88].up, 5000);
+        assert_eq!(s.keys[&88].repeat, 5000);
+        assert_eq!(s.keys[&65].down, 5000);
+        assert_eq!(s.events, 25000);
+        assert!(!s.keys[&88].held);
+        s.release();
+        s.observe(&InputEvent::Key {
+            at: "synthetic".into(),
+            vk: 88,
+            scan: 45,
+            flags: 0,
+            down: true,
+        });
+        assert_eq!(s.keys[&88].down, 5001);
+    }
     #[test]
     fn repeats_do_not_count_as_physical_attempts() {
         let mut s = Stats::default();

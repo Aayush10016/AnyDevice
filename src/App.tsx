@@ -16,7 +16,13 @@ import {
   X,
   AlertTriangle,
 } from "lucide-react";
-import { cancelScan, discover, saveReport, openProjectPage } from "./bridge";
+import {
+  cancelScan,
+  discover,
+  saveReport,
+  openProjectPage,
+  inspectInputDevices,
+} from "./bridge";
 import { diagnose, limitations, makeReport, normalize } from "./core";
 import {
   InvestigationPanel,
@@ -24,6 +30,9 @@ import {
   type BinaryWorkspace,
 } from "./WorkspacePanels";
 import { DeviceWorkbench } from "./DeviceWorkbench";
+import { DeviceInventory } from "./DeviceInventory";
+import { buildInventory } from "./inventoryModel";
+import type { Endpoint } from "./workbench";
 import type { Investigation } from "./investigation";
 import type {
   Device,
@@ -84,87 +93,9 @@ export function FindingView({ finding: f }: { finding: Finding }) {
     </article>
   );
 }
-function DeviceDetails({
-  device: d,
-  onClose,
-}: {
-  device: Device;
-  onClose: () => void;
-}) {
-  const [copyStatus, setCopyStatus] = useState("");
-  const fields = [
-    ["Identity", "Logical PnP node; physical grouping unavailable"],
-    ["Windows node presence", d.present === null ? null : String(d.present)],
-    ["Class", d.category],
-    ["Transport", d.transport],
-    ["Manufacturer", d.manufacturer],
-    ["Vendor / product", d.vid && d.pid ? `${d.vid} / ${d.pid}` : null],
-    ["Windows status", d.status],
-    ["Problem code", d.problemCode === null ? null : String(d.problemCode)],
-    ["Parent", d.parent],
-    ["Connection", d.location],
-    ["Collected", new Date(d.observedAt).toLocaleString()],
-    ["Source", d.source],
-  ];
-  return (
-    <aside className="inspector" aria-label="Device inspection">
-      <div className="row">
-        <span className="eyebrow">INSPECTION</span>
-        <button
-          className="icon-button"
-          aria-label="Close inspection"
-          onClick={onClose}
-        >
-          <X size={18} />
-        </button>
-      </div>
-      {d.transport === "USB" ? (
-        <Usb size={28} className="accent" />
-      ) : (
-        <Monitor size={28} className="accent" />
-      )}
-      <h2>{d.name ?? "Unnamed device"}</h2>
-      <p className="muted">Windows device entry</p>
-      <div className="identifier">
-        <code>{d.id}</code>
-        <button
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(d.id);
-              setCopyStatus("Identifier copied");
-            } catch {
-              setCopyStatus(
-                "Copy unavailable. Select the identifier text to copy.",
-              );
-            }
-          }}
-        >
-          <Clipboard size={14} /> Copy ID
-        </button>
-        <small role="status">{copyStatus}</small>
-      </div>
-      <dl>
-        {fields.map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value ?? "Unavailable"}</dd>
-          </div>
-        ))}
-      </dl>
-      <details>
-        <summary>Hardware identifiers</summary>
-        <pre>{d.hardwareIds.join("\n") || "Unavailable"}</pre>
-      </details>
-      <details>
-        <summary>Raw normalized evidence</summary>
-        <pre>{JSON.stringify(d, null, 2)}</pre>
-      </details>
-    </aside>
-  );
-}
 export default function App() {
   const [provider, setProvider] = useState<ProviderId>("windows-cfgmgr32");
-  const [scope, setScope] = useState<DiscoveryScope>("usb-hid");
+  const [scope, setScope] = useState<DiscoveryScope>("all-pnp");
   const [investigation, setInvestigation] = useState<Investigation>();
   const [binaryWorkspace, setBinaryWorkspace] = useState<BinaryWorkspace>({
     annotations: [],
@@ -182,6 +113,8 @@ export default function App() {
   const [status, setStatus] = useState("all");
   const [category, setCategory] = useState("all");
   const [selected, setSelected] = useState<string>();
+  const [candidateId, setCandidateId] = useState<string>();
+  const [inputEndpoints, setInputEndpoints] = useState<Endpoint[]>([]);
   const [events, setEvents] = useState<string[]>([]);
   const [saved, setSaved] = useState<string[]>([]);
   const [preferences, setPreferences] = useState(loadPreferences);
@@ -210,16 +143,20 @@ export default function App() {
   }, [preferences]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if (selected) return;
       if (e.ctrlKey && e.key.toLowerCase() === "f") {
         e.preventDefault();
         setRoute("Devices");
         requestAnimationFrame(() => searchRef.current?.focus());
       }
-      if (e.key === "Escape") setSelected(undefined);
+      if (e.key === "Escape") {
+        setSelected(undefined);
+        setCandidateId(undefined);
+      }
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, []);
+  }, [selected]);
   useEffect(() => {
     if (!scan) return;
     const timer = window.setTimeout(() => setStale(true), 60000);
@@ -244,6 +181,20 @@ export default function App() {
       const last = scan;
       setPrevious(last);
       setScan(next);
+      setInputEndpoints([]);
+      try {
+        setInputEndpoints(await inspectInputDevices());
+      } catch {
+        /* Inventory remains usable without an input provider. */
+      }
+      if (
+        next.complete &&
+        selected &&
+        !next.devices.some((d) => d.id === selected)
+      ) {
+        setSelected(undefined);
+        setCandidateId(undefined);
+      }
       setFindings(diagnose(next, last));
       setStale(false);
       const info = `${new Date(next.collectedAt).toLocaleTimeString()} · ${next.devices.length} entries collected${next.complete ? "" : " · partial scan"}`;
@@ -284,7 +235,27 @@ export default function App() {
         (d.problemCode ?? 0) > 0 ||
         ["ERROR", "DEGRADED"].includes(d.status?.toUpperCase() ?? ""),
     ).length ?? 0;
-  const device = scan?.devices.find((d) => d.id === selected);
+  const candidates = useMemo(
+    () => buildInventory(scan?.devices ?? [], inputEndpoints),
+    [scan, inputEndpoints],
+  );
+  const candidate = candidates.find((c) => c.id === candidateId);
+  const device = candidateId
+    ? candidate?.device
+    : scan?.devices.find((d) => d.id === selected);
+  const workspaceOpen =
+    !!device && (route === "Devices" || route === "Overview");
+  const inventory = (
+    <DeviceInventory
+      candidates={candidates}
+      stale={stale || failure || !scan?.complete}
+      onSelect={(c) => {
+        setSelected(c.device.id);
+        setCandidateId(c.id);
+        setRoute("Devices");
+      }}
+    />
+  );
   const navigation = [
     { name: "Overview", icon: LayoutDashboard },
     { name: "Devices", icon: Monitor },
@@ -508,15 +479,35 @@ export default function App() {
             </div>
             {device && (route === "Devices" || route === "Overview") && (
               <DeviceWorkbench
-                key={device.id}
+                key={`${candidateId ?? device.id}:${scan?.collectedAt}`}
                 device={device}
                 devices={scan?.devices ?? []}
                 findings={findings}
                 sanitized={preferences.sanitize}
-                onClose={() => setSelected(undefined)}
+                candidate={
+                  candidate ?? {
+                    id: "advanced-node",
+                    device,
+                    nodes: [device],
+                    category: "Unknown devices",
+                    name: device.name ?? "Windows node diagnostics",
+                    placement: "Unknown or ambiguous",
+                    evidence: [
+                      "Advanced Windows node. Return to the device inventory to choose an attributed input workspace.",
+                    ],
+                    endpoints: [],
+                  }
+                }
+                onClose={() => {
+                  setSelected(undefined);
+                  setCandidateId(undefined);
+                  requestAnimationFrame(() =>
+                    document.getElementById("device-inventory-title")?.focus(),
+                  );
+                }}
               />
             )}
-            {route === "Overview" && (
+            {route === "Overview" && !workspaceOpen && (
               <>
                 <section className="summary">
                   <div>
@@ -540,7 +531,11 @@ export default function App() {
                   <h2>Device inventory</h2>
                   <span className="muted">Logical Windows entries</span>
                 </div>
-                {table}
+                {inventory}
+                <details>
+                  <summary>Stats for nerds — all Windows nodes</summary>
+                  {table}
+                </details>
                 <section className="activity">
                   <h2>Recent activity</h2>
                   {events.length ? (
@@ -562,7 +557,7 @@ export default function App() {
                 </p>
               </>
             )}
-            {route === "Devices" && (
+            {route === "Devices" && !workspaceOpen && (
               <>
                 {scan && (
                   <p className="snapshot">
@@ -576,7 +571,11 @@ export default function App() {
                       : "Recent snapshot; devices may have changed since collection"}
                   </p>
                 )}
-                {table}
+                {inventory}
+                <details>
+                  <summary>Stats for nerds — all Windows nodes</summary>
+                  {table}
+                </details>
               </>
             )}
             {route === "Diagnostics" && (
@@ -824,13 +823,6 @@ export default function App() {
               </>
             )}
           </main>
-          {device && (route === "Devices" || route === "Overview") && (
-            <DeviceDetails
-              key={device.id}
-              device={device}
-              onClose={() => setSelected(undefined)}
-            />
-          )}
         </div>
         <footer>
           <span>

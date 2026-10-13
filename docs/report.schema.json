@@ -254,6 +254,29 @@
           "items": {
             "type": "string"
           }
+        },
+        "deviceCapabilities": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "removalPolicy": {
+          "enum": [
+            null,
+            1,
+            2,
+            3
+          ]
+        },
+        "enumeratorName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 8192
         }
       },
       "additionalProperties": false

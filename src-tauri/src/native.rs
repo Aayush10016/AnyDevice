@@ -139,6 +139,19 @@ fn presence(node: u32, id: &str, errors: &mut Vec<Value>) -> Option<bool> {
     result
 }
 
+fn uint_property(node: u32, key: &DEVPROPKEY) -> Option<u32> {
+    let mut ty = 0;
+    let mut size = 4;
+    let mut bytes = [0u8; 4];
+    let code =
+        unsafe { CM_Get_DevNode_PropertyW(node, key, &mut ty, bytes.as_mut_ptr(), &mut size, 0) };
+    if code == CR_SUCCESS && ty == DEVPROP_TYPE_UINT32 && size == 4 {
+        Some(u32::from_le_bytes(bytes))
+    } else {
+        None
+    }
+}
+
 fn container(node: u32) -> Option<String> {
     let mut ty = 0;
     let mut size = 16;
@@ -319,7 +332,7 @@ pub fn collect(scope: &str) -> Value {
         let container_id = container(node);
         let compatible = property(node, &DEVPKEY_Device_CompatibleIds, &id, &mut errors);
         let paths = property(node, &DEVPKEY_Device_LocationPaths, &id, &mut errors);
-        let entry = json!({"containerId":container_id,"compatibleIds":compatible,"locationPaths":paths,"instanceId":id,"name":name,"category":category,"hardwareIds":hardware,"present":present,
+        let entry = json!({"deviceCapabilities":uint_property(node, &DEVPKEY_Device_Capabilities),"removalPolicy":uint_property(node, &DEVPKEY_Device_RemovalPolicy),"enumeratorName":property(node, &DEVPKEY_Device_EnumeratorName, &id, &mut errors).first().cloned(),"containerId":container_id,"compatibleIds":compatible,"locationPaths":paths,"instanceId":id,"name":name,"category":category,"hardwareIds":hardware,"present":present,
             "manufacturer":manufacturer,"location":location,"parent":parent,"status":status,"problemCode":problem_code});
         serialized_bytes += entry.to_string().len();
         if serialized_bytes > 12 * 1024 * 1024 {

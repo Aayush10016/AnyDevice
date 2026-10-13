@@ -116,6 +116,29 @@ export function normalize(input: unknown): Scan {
             .filter((x): x is string => x !== null)
         : [];
     devices.push({
+      ...(Object.hasOwn(r, "deviceCapabilities")
+        ? {
+            deviceCapabilities:
+              typeof r.deviceCapabilities === "number" &&
+              Number.isInteger(r.deviceCapabilities) &&
+              r.deviceCapabilities >= 0 &&
+              r.deviceCapabilities <= 4294967295
+                ? r.deviceCapabilities
+                : null,
+          }
+        : {}),
+      ...(Object.hasOwn(r, "removalPolicy")
+        ? {
+            removalPolicy:
+              typeof r.removalPolicy === "number" &&
+              [1, 2, 3].includes(r.removalPolicy)
+                ? r.removalPolicy
+                : null,
+          }
+        : {}),
+      ...(Object.hasOwn(r, "enumeratorName")
+        ? { enumeratorName: text(r.enumeratorName) }
+        : {}),
       ...(Object.hasOwn(r, "containerId")
         ? {
             containerId:

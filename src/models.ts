@@ -4,6 +4,9 @@ export interface CollectionError {
   deviceId?: string;
 }
 export interface Device {
+  deviceCapabilities?: number | null;
+  removalPolicy?: number | null;
+  enumeratorName?: string | null;
   containerId?: string | null;
   compatibleIds?: string[];
   locationPaths?: string[];

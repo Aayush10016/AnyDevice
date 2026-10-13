@@ -1,4 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { Candidate } from "./inventoryModel";
+import {
+  keyboardLayout,
+  navigationLayout,
+  type LayoutKey,
+} from "./keyboardLayout";
+import { testOutcome } from "./testOutcome";
 import type { Device, Finding } from "./models";
 import {
   inspectInputDevices,
@@ -11,7 +18,6 @@ import {
 import {
   relationships,
   endpointRelationship,
-  keyName,
   xAssessment,
   symptomPlan,
   workbenchExport,
@@ -27,6 +33,7 @@ const statuses: Record<string, string> = {
   disconnected: "Inconclusive — disconnected",
   failed: "Failed",
   unsupported: "Unsupported",
+  cancelled: "Stopped early",
 };
 export function DeviceWorkbench({
   device,
@@ -34,8 +41,10 @@ export function DeviceWorkbench({
   findings,
   sanitized,
   onClose,
+  candidate,
 }: {
   device: Device;
+  candidate?: Candidate;
   devices: Device[];
   findings: Finding[];
   sanitized: boolean;
@@ -56,16 +65,26 @@ export function DeviceWorkbench({
   const [symptom, setSymptom] = useState("");
   const [conditions, setConditions] = useState("");
   const [preview, setPreview] = useState("");
+  useEffect(() => {
+    setPreview("");
+  }, [sanitized]);
   const session = useRef<number | null>(null);
   const mounted = useRef(true);
   const archived = useRef<number | null>(null);
   const surface = useRef<HTMLDivElement>(null);
+  const top = useRef<HTMLHeadingElement>(null);
+  const inspectionNonce = useRef(0);
   const related = useMemo(
     () => relationships(device, devices),
     [device, devices],
   );
   const available = endpoints.filter((e) =>
-    endpointRelationship(e, device, related),
+    candidate
+      ? e.kind === candidate.kind &&
+        candidate.nodes.some(
+          (n) => e.instanceId?.toUpperCase() === n.id.toUpperCase(),
+        )
+      : endpointRelationship(e, device, related),
   );
   const endpoint = available[index];
   const mode =
@@ -91,14 +110,23 @@ export function DeviceWorkbench({
   }
   async function inspect() {
     clearCurrentTarget();
+    const nonce = ++inspectionNonce.current;
     try {
       const rows = await inspectInputDevices();
-      if (mounted.current) {
+      if (mounted.current && nonce === inspectionNonce.current) {
         setEndpoints(rows);
         setInspection(
           `${rows.length} native input collections inspected. Mapping identifies logical Windows collections, not physical wireless peripherals.`,
         );
-        setIndex(0);
+        const matches = rows.filter((e) =>
+          candidate
+            ? e.kind === candidate.kind &&
+              candidate.nodes.some(
+                (n) => e.instanceId?.toUpperCase() === n.id.toUpperCase(),
+              )
+            : endpointRelationship(e, device, related),
+        );
+        setIndex(matches.length === 1 ? 0 : -1);
       }
     } catch (e) {
       if (mounted.current) setInspection(String(e));
@@ -109,6 +137,7 @@ export function DeviceWorkbench({
     void inspect();
     return () => {
       mounted.current = false;
+      ++inspectionNonce.current;
       const id = session.current;
       if (id !== null) void discardInputTest(id).catch(() => {});
     };
@@ -131,7 +160,7 @@ export function DeviceWorkbench({
     }, 250);
     const blur = () => {
       if (session.current !== null)
-        void stopInputTest(session.current).catch(() => {});
+        void stopInputTest(session.current, "focusLost").catch(() => {});
     };
     window.addEventListener("blur", blur);
     const hidden = () => {
@@ -156,10 +185,10 @@ export function DeviceWorkbench({
       document.removeEventListener("focusin", editing);
     };
   }, [snapshot?.sessionId, snapshot?.cleanup]);
-  async function stop() {
+  async function stop(reason?: "navigation" | "reset") {
     const id = session.current;
     if (id === null) return;
-    await stopInputTest(id);
+    await stopInputTest(id, reason);
     for (let n = 0; n < 20; n++) {
       const value = await inputTestStatus(id);
       receive(value);
@@ -183,6 +212,8 @@ export function DeviceWorkbench({
         await discardInputTest(id);
         return;
       }
+      setSnapshot(null);
+      setPreview("");
       receive(await inputTestStatus(id));
     } catch (e) {
       if (mounted.current) setMessage(String(e));
@@ -193,7 +224,7 @@ export function DeviceWorkbench({
   async function finish(reset = false) {
     setBusy(true);
     try {
-      await stop();
+      await stop(reset ? "reset" : undefined);
       if (reset) {
         session.current = null;
         setSnapshot(null);
@@ -210,7 +241,7 @@ export function DeviceWorkbench({
   async function changeTab(next: string) {
     if (running) {
       try {
-        await stop();
+        await stop("navigation");
       } catch (e) {
         setMessage(String(e));
         return;
@@ -218,143 +249,96 @@ export function DeviceWorkbench({
     }
     setTab(next);
   }
-  const keyboardRows = [
-    [27, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123],
-    [49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 8],
-    [9, 81, 87, 69, 82, 84, 89, 85, 73, 79, 80],
-    [65, 83, 68, 70, 71, 72, 74, 75, 76, 13],
-    [160, 90, 88, 67, 86, 66, 78, 77, 161],
-    [162, 164, 32, 165, 163, 37, 38, 40, 39],
-  ];
   const relevantFindings = findings.filter(
     (f) => f.deviceId?.toUpperCase() === device.id.toUpperCase(),
   );
+  function renderKeys(rows: LayoutKey[][], label: string) {
+    return (
+      <div className="keyboard-block" aria-label={label}>
+        {rows.map((row, i) => (
+          <div className={`keyboard-row keyboard-row-${i}`} key={i}>
+            {row.map((key) => {
+              const count = snapshot?.stats.keys[String(key.vk)];
+              return (
+                <span
+                  key={key.vk}
+                  style={{ flex: key.width ?? 1 }}
+                  className={`test-key ${count?.held ? "held" : ""} ${key.vk === 88 && xOnly ? "target-key" : ""}`}
+                  aria-label={`${key.label}: ${count?.down ?? 0} down, ${count?.up ?? 0} up, ${count?.repeat ?? 0} repeats${count?.held ? ", held" : ""}`}
+                >
+                  <span>{key.label}</span>
+                  <small>
+                    {count?.down ?? 0}↓ {count?.up ?? 0}↑
+                  </small>
+                </span>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <section className="workbench" aria-label="Device workbench">
-      <div className="row">
-        <div>
-          <div className="eyebrow">DEVICE WORKBENCH</div>
-          <h2>{device.name ?? "Unnamed Windows device"}</h2>
-        </div>
-        <button onClick={onClose}>Close workbench</button>
-      </div>
-      <p className="muted">
-        Selected Windows node • {device.category ?? "Class unknown"} • Windows{" "}
-        {device.status ?? "status unavailable"}. Physical identity and
-        external/internal placement remain unresolved.
+      <button onClick={onClose}>Back to devices</button>
+      <h2 ref={top} tabIndex={-1}>
+        {candidate?.name ?? device.name ?? "Device diagnostics"}
+      </h2>
+      <p>
+        {candidate?.category ?? device.category ?? "Unknown device"} ·{" "}
+        {device.manufacturer ?? "Manufacturer unavailable"}
+      </p>
+      <p>
+        Physical identity and external/internal placement remain unresolved
+        where Windows evidence is insufficient. {candidate?.placement}
       </p>
       <div
         className="workbench-tabs"
         role="tablist"
         aria-label="Workbench sections"
       >
-        {["Overview", "Live Tests", "Report a Problem", "History & export"].map(
-          (t) => (
-            <button
-              key={t}
-              role="tab"
-              aria-selected={tab === t}
-              onClick={() => void changeTab(t)}
-            >
-              {t}
-            </button>
-          ),
-        )}
+        {[
+          "Overview",
+          ...(candidate && !candidate.kind ? [] : ["Live Tests"]),
+          "Report a Problem",
+          "History & export",
+        ].map((t) => (
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => void changeTab(t)}
+          >
+            {t}
+          </button>
+        ))}
       </div>
       {tab === "Overview" && (
         <>
-          <dl>
-            <dt>Manufacturer / model evidence</dt>
-            <dd>
-              {device.manufacturer ?? "Unavailable"}; no model inferred from
-              friendly name
-            </dd>
-            <dt>Connection / vendor / product</dt>
-            <dd>
-              {device.transport} / {device.vid ?? "unknown"} /{" "}
-              {device.pid ?? "unknown"}
-            </dd>
-            <dt>Last observed</dt>
-            <dd>
-              {device.observedAt} — {device.source}
-            </dd>
-            <dt>Windows container</dt>
-            <dd>
-              <code>{device.containerId ?? "Unavailable"}</code> — an OS
-              grouping hint, not physical-object proof
-            </dd>
-            <dt>Problem code</dt>
-            <dd>
-              {device.problemCode ?? "Unavailable"}; OK does not prove
-              functional health
-            </dd>
-          </dl>
-          <h3>Related Windows entries</h3>
           <p>
-            Parent chains describe topology. Container matches are probable
-            associations. Neither merges a receiver and its wireless peripheral
-            into one physical object. Matching VID/PID alone is never used.
+            Windows reports {device.status ?? "no status"}. This is a connection
+            observation, not a functional health verdict.
           </p>
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Entry</th>
-                  <th>Relationship</th>
-                  <th>Evidence</th>
-                </tr>
-              </thead>
-              <tbody>
-                {related.map((r) => (
-                  <tr key={r.device.id}>
-                    <td>
-                      {r.device.name ?? r.device.id}
-                      <details>
-                        <summary>Instance ID</summary>
-                        <code>{r.device.id}</code>
-                      </details>
-                    </td>
-                    <td>{r.confidence}</td>
-                    <td>{r.evidence}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <h3>Capabilities and components</h3>
-          <p>{inspection}</p>
           <p>
-            {available.length} associated mouse/keyboard collections have mapped
-            native capabilities. Test movement, buttons, wheels or key
-            transitions in Live Tests; each component remains Not tested until
-            events are observed during your procedure.
+            {candidate?.kind
+              ? "Open Live Tests to check this device’s input. Keep AnyDevice active while testing."
+              : "Read-only diagnostics are available. A validated device-specific functional test is not available for this category."}
           </p>
-          <details>
-            <summary>Read-only interface and capability evidence</summary>
-            <pre>{JSON.stringify(available, null, 2)}</pre>
-          </details>
-          <p>
-            Protocol Lab: native input paths, usage-derived mouse/keyboard
-            classes and reported capabilities are inspectable. Raw HID report
-            descriptors, vendor protocol decoding, lighting control and hardware
-            repairs are unsupported in this milestone; no guessed commands are
-            sent.
-          </p>
+          {candidate?.evidence.map((e, i) => (
+            <p key={i}>{e}</p>
+          ))}
           {relevantFindings.map((f) => (
             <article className="finding" key={f.id}>
               <h3>{f.title}</h3>
               <p>{f.explanation}</p>
-              <p>{f.facts.join("; ")}</p>
-              <p>{f.limitations}</p>
             </article>
           ))}
         </>
       )}
       {tab === "Live Tests" && (
         <>
-          <p>{inspection}</p>
           <label>
-            Selected input collection{" "}
+            Selected input source{" "}
             <select
               aria-label="Selected input collection"
               disabled={running || busy}
@@ -363,35 +347,34 @@ export function DeviceWorkbench({
                 clearCurrentTarget();
                 setIndex(Number(e.target.value));
                 setXOnly(false);
+                setPreview("");
               }}
             >
+              <option value={-1}>Choose a source</option>
               {available.map((e, i) => (
                 <option key={`${e.instanceId}-${i}`} value={i}>
-                  {e.kind} — {e.instanceId ?? "Unresolved"}
+                  {e.kind === "mouse" ? "Mouse" : "Keyboard"} source {i + 1}
                 </option>
               ))}
             </select>
           </label>
-          {endpoint && (
+          {available.length > 1 && (
             <p>
-              <strong>
-                {endpointRelationship(endpoint, device, related)?.confidence}{" "}
-                logical attribution:
-              </strong>{" "}
-              {endpointRelationship(endpoint, device, related)?.evidence}.
-              Physical origin behind a wireless receiver remains unverified.
+              Several logical sources are associated with this device candidate.
+              Test each separately and perform the same actions to find the
+              responding source. Input behind a wireless receiver cannot
+              identify an individual radio peripheral.
             </p>
           )}
           {!available.length && (
             <p>
-              No safely mapped input collection associated with this node. Use
-              all-present-PnP inventory or select the observed
-              receiver/interface parent. Unmapped input is not treated as a
-              broken device.
+              No safely mapped input source is available. Refresh devices; an
+              unmapped source does not mean the hardware is broken.
             </p>
           )}
           {endpoint?.kind === "keyboard" && (
-            <>
+            <details>
+              <summary>Targeted test</summary>
               <label>
                 <input
                   type="checkbox"
@@ -400,8 +383,9 @@ export function DeviceWorkbench({
                   onChange={(e) => {
                     clearCurrentTarget();
                     setXOnly(e.target.checked);
+                    setPreview("");
                   }}
-                />{" "}
+                />
                 Dedicated X-key test (other key data discarded)
               </label>
               <label>
@@ -414,18 +398,17 @@ export function DeviceWorkbench({
                   step="1"
                   value={attemptText}
                   disabled={running}
-                  onChange={(e) => setAttemptText(e.target.value)}
+                  onChange={(e) => {
+                    setAttemptText(e.target.value);
+                    setPreview("");
+                  }}
                 />
               </label>
-            </>
+            </details>
           )}
           <p>
-            Explicit foreground-only collection, at most 120 seconds / 10,000
-            raw packets. Stops on Stop, leaving this workbench/test section,
-            focus loss or disconnection. Only selected-device raw codes are
-            observed; no characters are translated, no text is stored, and
-            exports omit ordered key history. Do not type passwords or personal
-            text during a keyboard test.
+            Keep AnyDevice active while testing. Stop before entering passwords
+            or personal text. No typed text is translated or saved.
           </p>
           <div className="row">
             <button
@@ -445,16 +428,9 @@ export function DeviceWorkbench({
               Refresh input interfaces
             </button>
           </div>
-          <div role="status">
-            <strong>
-              {snapshot
-                ? (statuses[snapshot.status] ?? "Unknown")
-                : "Not tested"}
-            </strong>{" "}
-            {snapshot?.reason}{" "}
-            {snapshot &&
-              ` • Cleanup ${snapshot.cleanup ? "confirmed: collector exited" : "pending / session active"}`}
-          </div>
+          <p role="status">
+            {snapshot ? (statuses[snapshot.status] ?? "Unknown") : "Not tested"}
+          </p>
           <div
             ref={surface}
             tabIndex={0}
@@ -470,17 +446,18 @@ export function DeviceWorkbench({
                   "ArrowDown",
                   "ArrowLeft",
                   "ArrowRight",
-                ].includes(e.key)
+                ].includes(e.key) &&
+                running
               )
                 e.preventDefault();
             }}
           >
             <p>
-              Keep this test area and AnyDevice focused. All counters below come
-              from native attributed input; clicking this visual keyboard does
-              not simulate a key.
+              {endpoint?.kind === "mouse"
+                ? "Move, click and scroll in this area."
+                : "Press keys on your keyboard. The display shows observed down/up transitions."}
             </p>
-            {endpoint?.kind === "mouse" ? (
+            {endpoint?.kind === "mouse" && (
               <>
                 <div className="movement-indicator">
                   <span
@@ -489,85 +466,94 @@ export function DeviceWorkbench({
                     }}
                   />
                 </div>
-                <p>
-                  Movement events: {snapshot?.stats.movements ?? 0} • X/Y:{" "}
-                  {snapshot?.stats.x ?? 0}/{snapshot?.stats.y ?? 0} (
-                  {snapshot?.stats.absolute
-                    ? "absolute coordinates"
-                    : "relative accumulation"}
-                  ; indicator is bounded). Sensor accuracy is unverified.
-                </p>
-                <div className="keyboard-row">
+                <p>Movement reports: {snapshot?.stats.movements ?? 0}</p>
+                <div className="mouse-buttons">
                   {["Left", "Right", "Middle", "Extra 1", "Extra 2"].map(
                     (name, i) => {
-                      const count = snapshot?.stats.buttons[String(i + 1)];
+                      const k = snapshot?.stats.buttons[String(i + 1)];
                       return (
                         <span
                           key={name}
-                          className={`test-key ${count?.held ? "held" : ""}`}
+                          className={`test-key ${k?.held ? "held" : ""}`}
                         >
-                          {name}: {count?.down ?? 0} down / {count?.up ?? 0} up
+                          {name}
+                          <small>
+                            {k?.down ?? 0} down / {k?.up ?? 0} up
+                          </small>
                         </span>
                       );
                     },
                   )}
                 </div>
                 <p>
-                  Vertical up: {snapshot?.stats.wheelUp ?? 0}; down:{" "}
-                  {snapshot?.stats.wheelDown ?? 0}; horizontal events:{" "}
-                  {snapshot?.stats.horizontal ?? 0}. Signed deltas appear in
-                  recent evidence.
+                  Scroll up: {snapshot?.stats.wheelUp ?? 0} · down:{" "}
+                  {snapshot?.stats.wheelDown ?? 0} · horizontal:{" "}
+                  {snapshot?.stats.horizontal ?? 0}
                 </p>
               </>
-            ) : endpoint?.kind === "keyboard" ? (
+            )}
+            {endpoint?.kind === "keyboard" && (
               <>
-                {keyboardRows.map((row, i) => (
-                  <div className="keyboard-row" key={i}>
-                    {row.map((vk) => {
-                      const k = snapshot?.stats.keys[String(vk)];
-                      return (
-                        <span
-                          key={vk}
-                          className={`test-key ${k?.held ? "held" : ""} ${vk === 88 && xOnly ? "target-key" : ""}`}
-                          aria-label={`${keyName(vk)} observed ${k?.down ?? 0} presses${k?.held ? ", held" : ""}`}
-                        >
-                          {keyName(vk)}
-                          <small>{k?.down ?? 0}</small>
-                        </span>
-                      );
-                    })}
+                <div className="keyboard-scroll">
+                  <div className="keyboard-layout">
+                    {renderKeys(keyboardLayout, "US ANSI reference keyboard")}
+                    {renderKeys(navigationLayout, "Navigation keys")}
+                    <div className="number-pad" aria-label="Number pad">
+                      {[
+                        144, 111, 106, 109, 103, 104, 105, 107, 100, 101, 102,
+                        97, 98, 99, 13, 96, 110,
+                      ].map((vk) => {
+                        const count = snapshot?.stats.keys[String(vk)];
+                        const label =
+                          vk === 13
+                            ? "Enter"
+                            : vk === 144
+                              ? "Num"
+                              : vk === 111
+                                ? "/"
+                                : vk === 106
+                                  ? "*"
+                                  : vk === 109
+                                    ? "−"
+                                    : vk === 107
+                                      ? "+"
+                                      : vk === 110
+                                        ? "."
+                                        : String(vk - 96);
+                        return (
+                          <span
+                            key={vk}
+                            className={`test-key pad-${vk} ${count?.held ? "held" : ""}`}
+                          >
+                            <span>{label}</span>
+                            <small>
+                              {count?.down ?? 0}↓ {count?.up ?? 0}↑
+                            </small>
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
-                ))}
+                </div>
                 <p>
-                  Generic virtual-key layout, not a verified model-specific
-                  physical layout. Held states clear on stop;
-                  modifiers/scancodes depend on the endpoint.
+                  US ANSI reference layout; your physical layout may differ.
+                  Virtual key codes can combine positions (including Enter and
+                  keypad Enter), and Num Lock can change keypad codes. Scan-code
+                  identities are tracked separately for repeats, but physical
+                  switch mapping is not verified.
                 </p>
               </>
-            ) : null}
+            )}
           </div>
-          {snapshot && (
-            <>
-              <p>
-                Native event count: {snapshot.stats.events}. Measured target:{" "}
-                {snapshot.targetId}. Latest 128 retained;{" "}
-                {snapshot.historyTruncated
-                  ? "recent history truncated; aggregate counts retained"
-                  : "history within limit"}
-                .
-              </p>
-              <details>
-                <summary>Per-key down/up/repeat counts</summary>
-                <pre>{JSON.stringify(snapshot.stats.keys, null, 2)}</pre>
-              </details>
-              <details>
-                <summary>
-                  Recent measured events and timestamps (volatile)
-                </summary>
-                <pre>{JSON.stringify(snapshot.recent, null, 2)}</pre>
-              </details>
-            </>
-          )}
+          <h3>Results and next steps</h3>
+          {testOutcome(snapshot, attempts).map((c) => (
+            <article className="test-result" key={c.name}>
+              <strong>
+                {c.name} — {c.state}
+              </strong>
+              <p>{c.explanation}</p>
+            </article>
+          ))}
           {xOnly && (
             <p className="recommendation">{xAssessment(attempts, snapshot)}</p>
           )}
@@ -581,8 +567,10 @@ export function DeviceWorkbench({
               aria-label="Device symptom"
               maxLength={2000}
               value={symptom}
-              onChange={(e) => setSymptom(e.target.value)}
-              placeholder="For example: My X key sometimes needs five attempts"
+              onChange={(e) => {
+                setSymptom(e.target.value);
+                setPreview("");
+              }}
             />
           </label>
           <label>
@@ -591,44 +579,43 @@ export function DeviceWorkbench({
               aria-label="Test conditions"
               maxLength={2000}
               value={conditions}
-              onChange={(e) => setConditions(e.target.value)}
+              onChange={(e) => {
+                setConditions(e.target.value);
+                setPreview("");
+              }}
             />
           </label>
           <p>
-            The exact text is a user report, not machine-confirmed evidence. It
-            stays local in this workbench until exported or closed.
+            Your report is kept separately from measured events and stays local
+            until you export it.
           </p>
           {symptomPlan(symptom, endpoint?.kind, snapshot).map((item, i) => (
-            <article className="finding" key={i}>
+            <article key={i}>
               <strong>{item.classification}</strong>
               <p>{item.text}</p>
-              <small>Source: {item.source}</small>
             </article>
           ))}
           <p>
-            Repair & Recovery: no compatible, validated state-changing repair
-            provider is installed. No switch/LED fault is declared and no
-            driver, firmware, registry or lighting change has been made. Repeat
-            the same test and compare results after any separately approved
-            remediation.
+            No repair or lighting command is available. Input tests cannot
+            verify an LED’s physical state.
           </p>
         </>
       )}
       {tab === "History & export" && (
         <>
           <p>
-            Up to eight completed sessions retained while this workbench is
-            open. Export before closing. Ordered key events are never exported;
-            aggregate key codes/counts and timing may still be sensitive.
+            Up to eight completed tests stay here until you leave this
+            workspace. Export before leaving. Ordered key events are excluded;
+            aggregate key codes and counts can still be sensitive.
           </p>
+          {!history.length && <p>No completed tests yet.</p>}
           {history.map((s) => (
             <article key={s.sessionId}>
               <strong>
                 {s.mode} — {statuses[s.status] ?? s.status}
               </strong>
               <p>
-                {s.startedAt}: {s.stats.events} events. Cleanup{" "}
-                {s.cleanup ? "confirmed" : "unconfirmed"}.
+                {s.stats.events} observed events at {s.startedAt}
               </p>
             </article>
           ))}
@@ -669,17 +656,74 @@ export function DeviceWorkbench({
             </button>
           </div>
           <p>
-            Current export preference:{" "}
             {sanitized
-              ? "sanitized (identities, symptom and conditions withheld)"
-              : "raw (review identities and user reports before sharing)"}
-            .
+              ? "Identities and your written report are withheld."
+              : "Raw export includes identities and your written report. Review before sharing."}
           </p>
-          {preview && (
-            <pre aria-label="Workbench report preview">{preview}</pre>
-          )}
         </>
       )}
+      <details className="advanced-stats">
+        <summary>Stats for nerds</summary>
+        <p>{inspection}</p>
+        <p>{snapshot?.reason}</p>
+        <p>
+          {snapshot
+            ? `Native event count: ${snapshot.stats.events}. Target: ${snapshot.targetId}. Cleanup: ${snapshot.cleanup ? "confirmed" : "pending"}.`
+            : "No input session exists."}
+        </p>
+        <details>
+          <summary>Identifiers, topology and mapping evidence</summary>
+          <pre>
+            {JSON.stringify(
+              {
+                selected: device,
+                classification: candidate?.evidence,
+                related,
+                available,
+              },
+              null,
+              2,
+            )}
+          </pre>
+        </details>
+        {snapshot && (
+          <>
+            <h3>Per-key down/up/repeat counts</h3>
+            {Object.keys(snapshot.stats.keys).length ? (
+              <pre>{JSON.stringify(snapshot.stats.keys, null, 2)}</pre>
+            ) : (
+              <p>
+                No per-key events were recorded in this session.{" "}
+                {snapshot.mode === "mouse"
+                  ? "This is a mouse test."
+                  : "Check the source, focus and session result above."}
+              </p>
+            )}
+            <details>
+              <summary>
+                Recent measured events and timestamps (volatile)
+              </summary>
+              {snapshot.recent.length ? (
+                <pre>{JSON.stringify(snapshot.recent, null, 2)}</pre>
+              ) : (
+                <p>No measured events recorded.</p>
+              )}
+            </details>
+          </>
+        )}
+        {preview && <pre aria-label="Workbench report preview">{preview}</pre>}
+      </details>
+      <button
+        onClick={() => {
+          document
+            .querySelectorAll<HTMLDetailsElement>(".workbench details")
+            .forEach((d) => (d.open = false));
+          top.current?.scrollIntoView?.({ block: "start" });
+          top.current?.focus();
+        }}
+      >
+        Back to top
+      </button>
       {message && <p role="alert">{message}</p>}
     </section>
   );
