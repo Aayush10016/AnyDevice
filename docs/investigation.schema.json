@@ -1,0 +1,113 @@
+{
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "appVersion",
+    "startedAt",
+    "sanitized",
+    "limitations",
+    "captures"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "investigation-1.0"
+    },
+    "appVersion": {
+      "const": "0.2.0"
+    },
+    "startedAt": {
+      "type": "string"
+    },
+    "sanitized": {
+      "type": "boolean"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "captures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["annotation", "report", "comparison"],
+        "properties": {
+          "annotation": {
+            "type": "object",
+            "required": ["source", "text"],
+            "properties": {
+              "source": {
+                "const": "user"
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 2000
+              }
+            },
+            "additionalProperties": false
+          },
+          "report": {
+            "$ref": "https://anydevice.local/report-v2.schema.json"
+          },
+          "comparison": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": ["comparable", "reason", "changes"],
+                "properties": {
+                  "comparable": {
+                    "type": "boolean"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "changes": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["id", "kind", "fields"],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "enum": ["added", "removed", "changed"]
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "enum": [
+                              "name",
+                              "category",
+                              "manufacturer",
+                              "hardwareIds",
+                              "parent",
+                              "location",
+                              "status",
+                              "problemCode"
+                            ]
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 8
+    }
+  },
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

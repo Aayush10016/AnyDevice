@@ -1,15 +1,17 @@
 {
   "name": "anydevice",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
-    "test": "vitest run",
+    "build": "npm run schemas && tsc --noEmit && vite build",
+    "test": "npm run schemas && vitest run",
     "tauri": "tauri",
     "desktop": "tauri dev",
-    "package": "tauri build --bundles nsis --features custom-protocol --no-binary-patching"
+    "package": "tauri build --bundles nsis --features custom-protocol --no-binary-patching",
+    "check:branding": "node scripts/check-branding.mjs",
+    "schemas": "node scripts/compile-schemas.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",
@@ -25,11 +27,12 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "ajv": "^8.20.0",
     "jsdom": "^26.0.0",
     "prettier": "^3.9.10",
     "typescript": "^5.7.3",
     "vite": "^6.0.7",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.4",
+    "ajv": "^8.20.0",
+    "esbuild": "^0.25.12"
   }
 }

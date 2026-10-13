@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0 development candidate
+
+Correct AnyDevice branding/tagline while preserving installation identity and 0.1.0 release assets. Add native Configuration Manager provider, explicit broad PnP scope, versioned provenance, matching-source/scope comparisons, bounded snapshot investigations, offline hex/byte comparison/hypotheses and conservative schema-validated exports. Retain the PowerShell comparison fallback and read-only safety model. No stable publication or new recovery/traffic-capture claims. See EXPANSION-VALIDATION.md for actual checks.
+
 ## 0.1.0 — draft Windows candidate
 
 - Initial Tauri 2 / React desktop implementation with fixed read-only PnpDevice discovery.

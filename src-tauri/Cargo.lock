@@ -43,15 +43,17 @@ dependencies = [
 
 [[package]]
 name = "anydevice"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
+ "chrono",
  "rfd",
  "serde_json",
  "tauri",
  "tauri-build",
  "tokio",
  "tokio-util",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

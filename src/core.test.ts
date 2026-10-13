@@ -165,7 +165,7 @@ describe("reporting", () => {
     const scan = normalize(fixtureScan([windowsProblem]));
     const report = makeReport(scan, diagnose(scan), false);
     expect(JSON.parse(JSON.stringify(report))).toEqual(report);
-    expect(report.schemaVersion).toBe("1.0");
+    expect(report.schemaVersion).toBe("2.0");
   });
   it("removes identifiers from all report fields without mutating observations", () => {
     const scan = normalize(

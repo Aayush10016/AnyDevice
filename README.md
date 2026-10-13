@@ -1,84 +1,71 @@
-# AnyDevice — USB Doctor v0.1
+# AnyDevice â€” Understand. Diagnose. Investigate.
 
-**Understand. Diagnose. Recover.** Local-first, read-only Windows device inspection with evidence-backed explanations.
+A local-first desktop toolkit for inspecting devices, collecting technical evidence, investigating problems, and progressively reverse-engineering supported interfaces.
 
-AnyDevice reads present USB and HID **PnP entries**, exposes Windows status and available properties, evaluates deterministic diagnostic rules, and saves versioned JSON reports with a sanitization preview. It does not diagnose batteries, charging circuits, Bluetooth connections, Android file-transfer mode, or universal device health. No repairs, driver changes, firmware flashing, telemetry, external AI or accounts are involved.
+## Current implementation
 
-## Actual delivery status
+The 0.2.0 development candidate builds on the working 0.1.0 Windows application. It adds native Windows Configuration Manager inventory, optional all-present-PnP collection, controlled snapshot investigations, and bounded offline binary sample inspection. Capability labels and test results are in [CAPABILITIES](docs/CAPABILITIES.md) and [EXPANSION-VALIDATION](docs/EXPANSION-VALIDATION.md).
 
-This is an independently created project, separate from PACT and other folders. The master implementation specification is preserved in [MASTER-SPEC.md](MASTER-SPEC.md).
+- Native present-node discovery: instance/hardware IDs, class, name or description, manufacturer, parent, location, Windows status/problem code when exposed. Normal user operation; no auto-elevation.
+- USB/HID scope by default; all-present-PnP scope can include Bluetooth, audio, camera, network, storage, volume and printer **nodes** when Windows exposes those classes. Unknown transport stays unknown. Physical grouping and interface paths are not collected.
+- Fixed read-only PowerShell PnpDevice adapter retained for USB/HID parity and fallback selection.
+- Search, class/status filtering, inspection and raw evidence; deterministic Windows problem-code, missing-property, collection-error and disappearance findings. Complete scans from the same provider/scope are required for absence comparisons.
+- Investigation baselines, up to eight captures, additions/removals/property changes, separate user annotations, timeline and sanitized local JSON export.
+- Offline .bin/.dat/.raw samples up to 1 MiB: paged hex/ASCII, offset annotations, aligned two-sample byte comparison, SHA-256 and exportable analysis metadata. Hypotheses remain unvalidated; imported bytes are never executed.
+- Light/dark/system appearance, local preferences, exact export previews, explicit native save dialogs and schema-validated exports.
 
-Source, React interface, fixed Windows discovery adapter, diagnostic engine, tests, docs and Windows NSIS CI are implemented. **The Windows installer and standalone executable were built and verified in CI; the standalone also launched on the development host.** Both are staged in an [owner-visible draft prerelease](https://github.com/Aayush10016/AnyDevice/releases/tag/untagged-8a756fcda793eee58e44). See [VALIDATION.md](docs/VALIDATION.md) for actual results and outstanding release gates. This is an unsigned Windows candidate, not a completed stable v0.1 release.
+An OK operating-system status does not establish complete physical health. There is no Bluetooth radio/connection inspection, audio stream analysis, SMART/volume health diagnosis, ADB/MTP connection diagnosis, USB traffic capture, format parser generation, device repair, firmware flashing or driver modification. No cloud backend, telemetry, external AI or mandatory accounts.
 
-The new remote is [**Aayush10016/AnyDevice**](https://github.com/Aayush10016/AnyDevice). Its owner was verified. No different account was used. See [GitHub setup](docs/GITHUB.md).
+## Windows downloads and release status
 
-## What works in this implementation
+Repository: [Aayush10016/AnyDevice](https://github.com/Aayush10016/AnyDevice). Windows 10/11 x64 is the supported target; macOS, Linux, ARM64 and x86 are unsupported/unverified.
 
-- On-demand present USB and HID discovery through a fixed Windows PowerShell PnpDevice adapter embedded in the Rust binary.
-- USB instance IDs are classified as USB; other HID entries retain unknown transport. Composite devices and interface entries stay distinct.
-- Instance ID, hardware IDs, friendly name, class, status, problem code, manufacturer, parent and location, when Windows supplies them.
-- Search and category/status filters; device inspection, copyable IDs and raw normalized evidence.
-- Observed Windows problems, missing metadata, collection/permission errors, and disappearance between complete scans in the same session.
-- Findings distinguish observations and Windows-reported errors from unknown root causes, and offer safe next tests.
-- Exact JSON preview, local native Save dialog, conservative sanitization, and previous-scan evidence for disappearance findings.
-- Light, dark and system appearance with persisted local preferences; keyboard focus, Ctrl+F search and Escape to close inspection.
-- A 45-second native timeout, cancellation with child-process termination, partial collection errors and retained stale inventories after failure.
+The existing unsigned [0.1.0 draft candidate](https://github.com/Aayush10016/AnyDevice/releases/tag/untagged-8a756fcda793eee58e44) and its source commit 28eed5435a1dca47963775caa38578f5e054f709 remain unchanged. The separate [0.2.0 candidate 3 draft](https://github.com/Aayush10016/AnyDevice/releases/tag/untagged-2bde4fe13fd5e676936a) contains the verified installer, standalone, checksums and instructions. Windows CI build 38384074477 and staging 38385045784 passed; the standalone was checksum-verified and launched locally. Native discovery/parity and raw/sanitized schemas were tested on this non-elevated host. See the expansion validation record for exact results. No stable release is automatically published.
 
-## Installation
+The NSIS installer includes the offline Microsoft WebView2 installer. The standalone executable requires installed WebView2. End users need no Node, Rust, Python or developer tools. Compare downloads with the provided SHA256SUMS.txt. Unsigned candidates may trigger SmartScreen and do not carry a verified publisher identity. See [build and release gates](docs/BUILD.md).
 
-Once a verified release exists, download its Windows x64 NSIS installer from the **Aayush10016/AnyDevice** Releases page, compare SHA-256 with `SHA256SUMS.txt`, and install for the current user. Installer CI includes the offline Microsoft WebView2 installer. End users need no Node, Rust, Python or developer tools. The portable `.exe` requires WebView2 already installed; see [PORTABLE.md](docs/PORTABLE.md).
+## Local use
 
-Current unsigned builds have no verified publisher identity and may trigger SmartScreen. Signing requirements and release gates are documented in [BUILD.md](docs/BUILD.md). No signature or antivirus assurance is claimed.
+Scan on Overview/Devices. Settings selects provider and inventory scope; changes require another scan and mark the old snapshot stale. Device details show actual source/time; missing properties are unavailable.
 
-| Platform | Status |
-| --- | --- |
-| Windows 10/11 x64 + Windows PowerShell 5.1 PnpDevice | Targeted; discovery adapter tested on the current Windows host |
-| Windows ARM64 / x86 | Not packaged or verified |
-| Linux / macOS | Unsupported; discovery returns an explicit error |
-| Locked-down Windows / unavailable CIM or PnpDevice | Structured collection errors; no bypass or auto-elevation |
+For a controlled investigation, scan a complete baseline, open Investigation and record it, perform your own safe action, refresh, annotate your action, then capture the new snapshot. Partial or different-scope captures retain evidence but abstain from comparison. Export before closing; evidence is volatile.
 
-## Architecture
+Binary workspace accepts raw byte samples only. Annotate a range using decimal offset and length. A common prefix is an observation, not a confirmed format header. Metadata exports exclude sample bytes; share source fixtures separately only when authorized.
 
-```mermaid
-flowchart LR
-  UI[React desktop interface] --> IPC[Tauri Rust commands]
-  IPC --> PS[Fixed read-only PnpDevice adapter]
-  PS --> WIN[Windows present PnP entries]
-  PS --> N[Typed normalization]
-  N --> D[Deterministic diagnostic engine]
-  D --> R[Versioned report and sanitizer]
-  R --> SAVE[Native save dialog and local JSON]
-  N --> UI
-  D --> UI
-```
+Reports and all workspace exports obey the sanitization preference in Settings. Sanitized exports remove free-text hardware metadata, identities and user annotations; analysis filenames/hashes/hypothesis labels are withheld. Timestamps, classes, VID/PID and offsets/lengths can still be sensitive. Review the exact preview.
 
-The domain engine is independent of React and hardware. Rust controls process lifecycle and report saving; PowerShell only obtains Windows observations. No backend server runs in production. The Vite server is development-only. See [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+## Build and tests
 
-## Development and testing
-
-Windows developers need Node.js 22.12+ or 24 LTS, stable Rust with the MSVC toolchain, Microsoft C++ Build Tools/Windows SDK, and WebView2. Then:
+Windows developers need Node 22.12+ or 24 LTS, Rust/MSVC C++ Build Tools and Windows SDK, and WebView2. Windows PowerShell/PnpDevice is needed only for the optional fallback/parity test.
 
 ```powershell
 npm ci
+npm run check:branding
 npm test
 npm run build
+cargo test --manifest-path src-tauri/Cargo.toml --locked --features custom-protocol
 npm run desktop
-cargo test --manifest-path src-tauri/Cargo.toml
 npm run package
 ```
 
-Browser preview (`npm run dev`) cannot scan hardware or save reports. It clearly reports this limitation and loads no fabricated devices. Synthetic fixtures live exclusively in `src/fixtures.ts` and tests. An example sanitized synthetic report is in `docs/examples/`.
+The browser preview cannot collect hardware or save through native dialogs and loads no synthetic devices. Test fixtures and examples are explicitly synthetic. Real inventories must never be committed or uploaded to public CI logs.
 
-Screenshots are only to be added after capturing the implemented interface. Any browser-only capture is labelled as a frontend preview, not a packaged Windows application. Real hardware inventories must not be committed to this public repository.
+## Implemented interface preview
+
+![Actual frontend preview with an explicitly synthetic byte sample](docs/screenshots/binary-frontend-preview.jpg)
+
+Browser frontend capture, not a packaged Windows screenshot or a hardware inventory. Native screen-reader/dialog QA remains a release gate.
 
 ## Documentation
 
-[Architecture](docs/ARCHITECTURE.md) · [Diagnostic rules](docs/RULES.md) · [Build and release](docs/BUILD.md) · [Validation](docs/VALIDATION.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+[Architecture](docs/ARCHITECTURE.md) Â· [Capabilities](docs/CAPABILITIES.md) Â· [Implementation plan](docs/IMPLEMENTATION-PLAN.md) Â· [Rules](docs/RULES.md) Â· [Validation](docs/EXPANSION-VALIDATION.md) Â· [Privacy](PRIVACY.md) Â· [Security](SECURITY.md) Â· [Branding](docs/BRANDING.md) Â· [Contributing](CONTRIBUTING.md)
 
-## Next three priorities
+The original [MASTER-SPEC.md](MASTER-SPEC.md) is preserved as historical input. The current product identity and staged expansion supersede its old tagline and narrow release subtitle.
 
-1. Complete packaged visual/accessibility/resizing QA, real scan/export/disconnect exercises, genuine screenshots and clean-machine Windows 10/11 tests.
-2. Replace the allowed PnpDevice fallback with SetupAPI/Configuration Manager discovery, compare coverage and permission behavior, and expand lifecycle tests.
-3. Conduct keyboard/screen-reader and resizing QA on the packaged app, add genuine desktop screenshots, and configure verified code signing before a public v0.1 release.
+## Next engineering priorities
 
-MIT licensed. See [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md).
+1. Packaged UI/export/keyboard/accessibility QA, safe physical unplug/replug and clean Windows 10/11 upgrade checks; capture genuine shareable screenshots.
+2. Extend native device-interface/topology observations, then introduce dedicated Bluetooth/audio/storage providers only with real evidence and independent tests.
+3. Add reproducible binary project import/fixtures and independently validated parsers before considering any explicitly approved software recovery operation.
+
+MIT licensed; see [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md).

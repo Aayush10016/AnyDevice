@@ -1,4 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#[cfg(windows)]
+mod native;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::Value;
 use std::sync::Mutex;
@@ -16,7 +18,24 @@ fn encoded_script() -> String {
 }
 
 #[tauri::command]
-async fn scan_devices(state: tauri::State<'_, ScanState>) -> Result<Value, String> {
+async fn scan_devices(
+    state: tauri::State<'_, ScanState>,
+    provider: Option<String>,
+    scope: Option<String>,
+) -> Result<Value, String> {
+    if !cfg!(windows) {
+        return Err("AnyDevice currently supports Windows only".into());
+    }
+    let provider = provider.as_deref().unwrap_or("windows-cfgmgr32");
+    let scope = scope.as_deref().unwrap_or("usb-hid");
+    if !["windows-cfgmgr32", "windows-pnp-fallback"].contains(&provider)
+        || !["usb-hid", "all-pnp"].contains(&scope)
+    {
+        return Err("Unsupported discovery provider or scope".into());
+    }
+    if provider == "windows-pnp-fallback" && scope != "usb-hid" {
+        return Err("The comparison fallback supports USB/HID only".into());
+    }
     let token = CancellationToken::new();
     {
         let mut active = state.0.lock().map_err(|_| "Scan state unavailable")?;
@@ -25,7 +44,19 @@ async fn scan_devices(state: tauri::State<'_, ScanState>) -> Result<Value, Strin
         }
         *active = Some(token.clone());
     }
-    let result = collect(token).await;
+    let result = if provider == "windows-cfgmgr32" {
+        let executable = std::env::current_exe().map_err(|e| e.to_string());
+        match executable {
+            Ok(exe) => {
+                let mut command = tokio::process::Command::new(exe);
+                command.args(["--collect-native", scope]);
+                run_adapter(command, token, std::time::Duration::from_secs(45)).await
+            }
+            Err(e) => Err(e),
+        }
+    } else {
+        collect(token).await
+    };
     if let Ok(mut active) = state.0.lock() {
         *active = None;
     }
@@ -34,7 +65,7 @@ async fn scan_devices(state: tauri::State<'_, ScanState>) -> Result<Value, Strin
 
 async fn collect(token: CancellationToken) -> Result<Value, String> {
     if !cfg!(windows) {
-        return Err("USB Doctor v0.1 supports Windows only".into());
+        return Err("AnyDevice currently supports Windows only".into());
     }
     let root = std::env::var_os("SystemRoot").ok_or("Windows system directory unavailable")?;
     let executable =
@@ -62,24 +93,39 @@ async fn run_adapter(
         .stderr(std::process::Stdio::piped());
     #[cfg(windows)]
     command.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    let child = command
+    use tokio::io::AsyncReadExt;
+    command.stderr(std::process::Stdio::null());
+    let mut child = command
         .spawn()
         .map_err(|e| format!("Cannot start the fixed Windows discovery adapter: {e}"))?;
-    let output = tokio::select! {
-        _ = token.cancelled() => return Err("Scan cancelled; previous inventory retained".into()),
-        result = tokio::time::timeout(timeout,child.wait_with_output()) =>
-            result.map_err(|_| "Scan timed out; previous inventory retained")?.map_err(|e|format!("Discovery process failed: {e}"))?
+    let stdout = child.stdout.take().ok_or("Collector output unavailable")?;
+    let operation = async {
+        let read = async {
+            let mut bytes = Vec::new();
+            stdout
+                .take(16 * 1024 * 1024 + 1)
+                .read_to_end(&mut bytes)
+                .await
+                .map_err(|e| e.to_string())?;
+            if bytes.len() > 16 * 1024 * 1024 {
+                return Err("Discovery response exceeded the safety limit".to_string());
+            }
+            Ok(bytes)
+        };
+        let wait = async { child.wait().await.map_err(|e| e.to_string()) };
+        tokio::try_join!(read, wait)
     };
-    if !output.status.success() {
+    let (bytes, status) = tokio::select! {
+        _ = token.cancelled() => return Err("Scan cancelled; previous inventory retained".into()),
+        result = tokio::time::timeout(timeout,operation) => result.map_err(|_|"Scan timed out; previous inventory retained")??
+    };
+    if !status.success() {
         return Err(
-            "Windows discovery adapter failed. Check PnpDevice availability and local policy."
+            "Windows discovery adapter failed. Check provider availability and local policy."
                 .into(),
         );
     }
-    if output.stdout.len() > 16 * 1024 * 1024 {
-        return Err("Discovery response exceeded the safety limit".into());
-    }
-    let json: Value = serde_json::from_slice(&output.stdout)
+    let json: Value = serde_json::from_slice(&bytes)
         .map_err(|e| format!("Invalid Windows discovery response: {e}"))?;
     if !json["devices"].is_array() || !json["errors"].is_array() {
         return Err("Discovery response is incomplete".into());
@@ -101,11 +147,32 @@ fn validate_report(content: &str) -> Result<(), String> {
         return Err("Report exceeds 20 MiB".into());
     }
     let value: Value = serde_json::from_str(content).map_err(|_| "Report is not valid JSON")?;
-    if value["schemaVersion"] != "1.0"
-        || !value["devices"].is_array()
-        || !value["findings"].is_array()
-    {
-        return Err("Unsupported report schema".into());
+    let valid = match value["schemaVersion"].as_str() {
+        Some("1.0") => value["devices"].is_array() && value["findings"].is_array(),
+        Some("2.0") => {
+            value["devices"].is_array()
+                && value["findings"].is_array()
+                && value["provenance"].is_object()
+        }
+        Some("investigation-1.0") => value["captures"].as_array().is_some_and(|captures| {
+            !captures.is_empty()
+                && captures.len() <= 8
+                && captures.iter().all(|c| {
+                    c["report"]["schemaVersion"] == "2.0" && c["annotation"]["source"] == "user"
+                })
+        }),
+        Some("binary-analysis-1.0") => {
+            value["source"]["length"]
+                .as_u64()
+                .is_some_and(|n| n > 0 && n <= 1024 * 1024)
+                && value["annotations"]
+                    .as_array()
+                    .is_some_and(|a| a.len() <= 256)
+        }
+        _ => false,
+    };
+    if !valid {
+        return Err("Unsupported or malformed evidence schema".into());
     }
     Ok(())
 }
@@ -164,7 +231,7 @@ async fn save_report(content: String) -> Result<Option<String>, String> {
     validate_report(&content)?;
     tauri::async_runtime::spawn_blocking(move || {
         let path = rfd::FileDialog::new()
-            .set_title("Save AnyDevice diagnostic report")
+            .set_title("Save AnyDevice evidence")
             .set_file_name("AnyDevice-report.json")
             .add_filter("JSON report", &["json"])
             .save_file();
@@ -182,6 +249,19 @@ async fn save_report(content: String) -> Result<Option<String>, String> {
 }
 
 fn main() {
+    #[cfg(windows)]
+    {
+        let args: Vec<String> = std::env::args().collect();
+        if args.get(1).map(String::as_str) == Some("--collect-native") {
+            let scope = args.get(2).map(String::as_str).unwrap_or("usb-hid");
+            if args.len() != 3 || !["usb-hid", "all-pnp"].contains(&scope) {
+                std::process::exit(2);
+            }
+            println!("{}", native::collect(scope));
+            return;
+        }
+    }
+
     #[cfg(not(debug_assertions))]
     assert!(
         !tauri::is_dev(),
@@ -223,7 +303,7 @@ mod tests {
     fn report_validation() {
         assert!(validate_report(r#"{"schemaVersion":"1.0","devices":[],"findings":[]}"#).is_ok());
         assert!(validate_report("garbage").is_err());
-        assert!(validate_report(r#"{"schemaVersion":"2.0","devices":[],"findings":[]}"#).is_err());
+        assert!(validate_report(r#"{"schemaVersion":"99.0"}"#).is_err());
     }
     #[test]
     fn project_links_are_allowlisted() {

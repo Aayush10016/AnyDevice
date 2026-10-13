@@ -1,5 +1,4 @@
 import type { CollectionError, Device, Finding, Report, Scan } from "./models";
-const source = "Windows PnpDevice / Get-PnpDeviceProperty (read-only)";
 const text = (v: unknown): string | null =>
   typeof v === "string" && v.trim() ? v.slice(0, 8192) : null;
 const record = (v: unknown): Record<string, unknown> =>
@@ -23,6 +22,33 @@ export function identifiers(ids: string[]): {
 export function normalize(input: unknown): Scan {
   const raw = record(input);
   const timestamp = text(raw.collectedAt);
+  if (
+    raw.provider !== undefined &&
+    !["windows-cfgmgr32", "windows-pnp-fallback"].includes(String(raw.provider))
+  )
+    throw new Error("Unsupported discovery provider");
+  if (
+    raw.provider === "windows-cfgmgr32" &&
+    !["usb-hid", "all-pnp"].includes(String(raw.scope))
+  )
+    throw new Error("Unsupported discovery scope");
+  const provider =
+    raw.provider === "windows-cfgmgr32"
+      ? "windows-cfgmgr32"
+      : "windows-pnp-fallback";
+  const scope =
+    provider === "windows-cfgmgr32" && raw.scope === "all-pnp"
+      ? "all-pnp"
+      : "usb-hid";
+  const source =
+    provider === "windows-cfgmgr32"
+      ? "Windows Configuration Manager (read-only)"
+      : "Windows PnpDevice / Get-PnpDeviceProperty (read-only)";
+  if (
+    (raw.devices instanceof Array && raw.devices.length > 4096) ||
+    (raw.errors instanceof Array && raw.errors.length > 32768)
+  )
+    throw new Error("Discovery response exceeds entry limits");
   if (
     !timestamp ||
     !Number.isFinite(Date.parse(timestamp)) ||
@@ -58,10 +84,18 @@ export function normalize(input: unknown): Scan {
     if (seen.has(id.toUpperCase())) continue;
     seen.add(id.toUpperCase());
     const category = text(r.category);
-    if (!/^USB\\/i.test(id) && category !== "HIDClass") {
+    if (scope === "usb-hid" && !/^USB\\/i.test(id) && category !== "HIDClass") {
       errors.push({
         kind: "malformed",
         message: "An out-of-scope entry was omitted.",
+      });
+      continue;
+    }
+    if (provider === "windows-cfgmgr32" && r.present === false) {
+      errors.push({
+        kind: "enumeration",
+        deviceId: id,
+        message: "A node no longer present during collection was omitted.",
       });
       continue;
     }
@@ -75,6 +109,15 @@ export function normalize(input: unknown): Scan {
         ? r.problemCode
         : null;
     devices.push({
+      present:
+        provider === "windows-pnp-fallback"
+          ? true
+          : typeof r.present === "boolean"
+            ? r.present
+            : null,
+      nodeKind: "logical-pnp-node",
+      physicalDeviceId: null,
+      interfacePaths: [],
       id,
       name: text(r.name),
       category,
@@ -85,12 +128,19 @@ export function normalize(input: unknown): Scan {
       status: text(r.status),
       problemCode,
       ...identifiers([...hardwareIds, id]),
-      transport: /^USB\\/i.test(id) ? "USB" : "HID (transport unknown)",
+      transport: /^USB\\/i.test(id)
+        ? "USB"
+        : category === "HIDClass"
+          ? "HID (transport unknown)"
+          : "Unknown",
       observedAt: timestamp,
       source,
     });
   }
   return {
+    provider,
+    providerVersion: "1.0",
+    scope,
     collectedAt: timestamp,
     os: text(raw.os),
     devices,
@@ -177,7 +227,12 @@ export function diagnose(scan: Scan, previous?: Scan): Finding[] {
       limitations: "Collection failure does not establish a device failure.",
     }),
   );
-  if (scan.complete && previous?.complete)
+  if (
+    scan.complete &&
+    previous?.complete &&
+    scan.scope === previous.scope &&
+    scan.provider === previous.provider
+  )
     for (const d of previous.devices)
       if (
         !scan.devices.some(
@@ -202,13 +257,19 @@ export function diagnose(scan: Scan, previous?: Scan): Finding[] {
           limitations:
             "Absence alone cannot diagnose a defective device, battery, or cable.",
         });
-  return findings;
+  return findings.map((f) => ({
+    ...f,
+    facts: [
+      ...f.facts,
+      `Source: ${scan.provider} (${scan.scope}); observed at ${scan.collectedAt}.`,
+    ],
+  }));
 }
 export const limitations = [
-  "PnP entries are logical interfaces, not a count of physical devices.",
+  "PnP entries are logical device nodes, not enumerated interface paths or a count of physical devices.",
   "HID transport is unknown unless the entry itself is USB.",
   "No battery, charging-circuit, Bluetooth, Android MTP, protocol capture, or repair diagnosis is performed.",
-  "Only complete scans are compared for disappearance; history is held in memory for this session.",
+  "Only complete scans with matching source/scope are compared; history is held in memory for this session.",
 ];
 export function makeReport(
   scan: Scan,
@@ -217,8 +278,13 @@ export function makeReport(
   previous?: Scan,
 ): Report {
   const report: Report = {
-    schemaVersion: "1.0",
-    appVersion: "0.1.0",
+    schemaVersion: "2.0",
+    appVersion: "0.2.0",
+    provenance: {
+      provider: scan.provider,
+      providerVersion: scan.providerVersion,
+      scope: scan.scope,
+    },
     collectedAt: scan.collectedAt,
     os: scan.os,
     complete: scan.complete,
@@ -228,6 +294,12 @@ export function makeReport(
       ? {
           previous: {
             collectedAt: previous.collectedAt,
+            complete: previous.complete,
+            provenance: {
+              provider: previous.provider,
+              providerVersion: previous.providerVersion,
+              scope: previous.scope,
+            },
             devices: structuredClone(previous.devices),
           },
         }
@@ -240,9 +312,11 @@ export function makeReport(
   // Strict allowlist: free-text metadata and evidence strings can contain serials or names.
   const aliases = new Map<string, string>();
   [...report.devices, ...(report.previous?.devices ?? [])].forEach((d) => {
-    if (!aliases.has(d.id)) aliases.set(d.id, `device-${aliases.size + 1}`);
+    if (!aliases.has(d.id.toUpperCase()))
+      aliases.set(d.id.toUpperCase(), `device-${aliases.size + 1}`);
   });
-  const alias = (id: string) => aliases.get(id) ?? "unresolved-device";
+  const alias = (id: string) =>
+    aliases.get(id.toUpperCase()) ?? "unresolved-device";
   report.os = "Windows (version withheld)";
   const scrub = (d: Device): Device => ({
     ...d,
@@ -256,6 +330,16 @@ export function makeReport(
       "Keyboard",
       "WPD",
       "USBDevice",
+      "Bluetooth",
+      "AudioEndpoint",
+      "MEDIA",
+      "Camera",
+      "Image",
+      "Net",
+      "DiskDrive",
+      "Volume",
+      "Printer",
+      "PrintQueue",
     ].includes(d.category ?? "")
       ? d.category
       : null,

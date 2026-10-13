@@ -1,7 +1,7 @@
 [package]
 name = "anydevice"
-version = "0.1.0"
-description = "Local-first Windows USB Doctor"
+version = "0.2.0"
+description = "Local-first device investigation platform"
 authors = ["AnyDevice contributors"]
 edition = "2021"
 license = "MIT"
@@ -19,3 +19,8 @@ base64 = "0.22"
 tokio = { version = "1", features = ["process", "time", "sync", "macros", "io-util"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 rfd = "0.15"
+
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Devices_DeviceAndDriverInstallation", "Win32_Devices_Properties", "Win32_Foundation"] }

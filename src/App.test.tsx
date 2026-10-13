@@ -93,3 +93,54 @@ it("persists working appearance and sanitization settings", () => {
     JSON.parse(localStorage.getItem("anydevice.preferences")!).sanitize,
   ).toBe(false);
 });
+
+it("records a baseline, refreshes, captures user action and exports an investigation", async () => {
+  vi.mocked(discover)
+    .mockResolvedValueOnce(fixtureScan([healthyMouse]))
+    .mockResolvedValueOnce({
+      ...fixtureScan([]),
+      collectedAt: "2026-01-01T12:01:00.000Z",
+    });
+  vi.mocked(saveReport).mockResolvedValue("C:/reports/investigation.json");
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: "Scan devices" }));
+  await screen.findByText(healthyMouse.name);
+  fireEvent.click(screen.getByRole("button", { name: "Investigation" }));
+  fireEvent.click(screen.getByRole("button", { name: "Record baseline" }));
+  fireEvent.change(
+    screen.getByLabelText("Your action or hypothesis (unverified)"),
+    { target: { value: "PRIVATE cable action" } },
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Capture current snapshot" }),
+    ).toBeEnabled(),
+  );
+  expect(screen.getByText("removed")).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Capture current snapshot" }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Save investigation JSON" }),
+  );
+  await waitFor(() => expect(saveReport).toHaveBeenCalledOnce());
+  const report = JSON.parse(vi.mocked(saveReport).mock.calls[0][0]);
+  expect(report.captures).toHaveLength(2);
+  expect(JSON.stringify(report)).not.toContain("PRIVATE");
+});
+it("changes discovery source and scope explicitly without inventing inventory", () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+  fireEvent.change(screen.getByLabelText("Inventory scope"), {
+    target: { value: "all-pnp" },
+  });
+  expect(screen.getByLabelText("Inventory scope")).toHaveValue("all-pnp");
+  fireEvent.change(screen.getByLabelText("Discovery provider"), {
+    target: { value: "windows-pnp-fallback" },
+  });
+  expect(screen.getByLabelText("Inventory scope")).toHaveValue("usb-hid");
+  expect(
+    screen.queryByRole("option", { name: "All present Windows PnP nodes" }),
+  ).not.toBeInTheDocument();
+});
