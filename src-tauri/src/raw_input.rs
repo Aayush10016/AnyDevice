@@ -6,12 +6,81 @@ use std::{
     mem::size_of,
     time::{Duration, Instant},
 };
+use windows_sys::Win32::System::{Diagnostics::ToolHelp::*, Threading::*};
 use windows_sys::Win32::{
     Devices::{DeviceAndDriverInstallation::*, Properties::*},
     Foundation::*,
     System::LibraryLoader::GetModuleHandleW,
     UI::{Input::*, WindowsAndMessaging::*},
 };
+pub struct OwnedProcess(HANDLE);
+impl Drop for OwnedProcess {
+    fn drop(&mut self) {
+        unsafe {
+            CloseHandle(self.0);
+        }
+    }
+}
+/// Verify the actual creator and exact executable path before any input registration.
+pub fn verify_parent(claimed: u32) -> Result<OwnedProcess, String> {
+    let snapshot = unsafe { CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0) };
+    if snapshot == INVALID_HANDLE_VALUE {
+        return Err("Cannot verify input collector owner".into());
+    }
+    let snapshot = OwnedProcess(snapshot);
+    let mut entry = PROCESSENTRY32W {
+        dwSize: size_of::<PROCESSENTRY32W>() as u32,
+        ..Default::default()
+    };
+    let mut found = None;
+    let mut present = unsafe { Process32FirstW(snapshot.0, &mut entry) };
+    for _ in 0..32768 {
+        if present == 0 {
+            break;
+        }
+        if entry.th32ProcessID == std::process::id() {
+            found = Some(entry.th32ParentProcessID);
+            break;
+        }
+        present = unsafe { Process32NextW(snapshot.0, &mut entry) };
+    }
+    if claimed == 0 || found != Some(claimed) {
+        return Err("Input collector requires its actual AnyDevice parent".into());
+    }
+    let parent = unsafe {
+        OpenProcess(
+            PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_SYNCHRONIZE,
+            0,
+            claimed,
+        )
+    };
+    if parent.is_null() {
+        return Err("Cannot validate AnyDevice parent image".into());
+    }
+    let parent = OwnedProcess(parent);
+    let mut path = vec![0u16; 32768];
+    let mut len = path.len() as u32;
+    if unsafe {
+        QueryFullProcessImageNameW(parent.0, PROCESS_NAME_WIN32, path.as_mut_ptr(), &mut len)
+    } == 0
+        || len as usize > path.len()
+    {
+        return Err("Cannot read input parent image".into());
+    }
+    let image =
+        String::from_utf16(&path[..len as usize]).map_err(|_| "Invalid input parent image")?;
+    let image = std::fs::canonicalize(image).map_err(|_| "Cannot resolve input parent image")?;
+    let current =
+        std::fs::canonicalize(std::env::current_exe().map_err(|_| "Executable unavailable")?)
+            .map_err(|_| "Cannot resolve collector image")?;
+    if !image
+        .to_string_lossy()
+        .eq_ignore_ascii_case(&current.to_string_lossy())
+    {
+        return Err("Input collector owner must be the matching AnyDevice executable".into());
+    }
+    Ok(parent)
+}
 fn wide(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(Some(0)).collect()
 }
@@ -317,6 +386,8 @@ pub fn run(target: &str, mode: &str, parent_pid: u32) -> Result<(), String> {
     if target.len() > 8192 || !["mouse", "keyboard", "x-key"].contains(&mode) || parent_pid == 0 {
         return Err("Invalid selected input session".into());
     }
+    #[cfg(not(test))]
+    let owner = verify_parent(parent_pid)?;
     let kind = if mode == "mouse" {
         RIM_TYPEMOUSE
     } else {
@@ -386,6 +457,10 @@ pub fn run(target: &str, mode: &str, parent_pid: u32) -> Result<(), String> {
     let started = Instant::now();
     let mut packets = 0;
     loop {
+        #[cfg(not(test))]
+        if unsafe { WaitForSingleObject(owner.0, 0) } == WAIT_OBJECT_0 {
+            return status("focusLost", "AnyDevice owner exited");
+        }
         if started.elapsed() > Duration::from_secs(120) || packets >= 10000 {
             return status("completed", "Session duration or packet budget reached");
         }
@@ -569,5 +644,10 @@ mod tests {
         } else {
             println!("Raw Input registration probe not exercised: no mapped input endpoint on this runner");
         }
+    }
+    #[test]
+    fn foreign_parent_is_rejected_before_input_registration() {
+        assert!(verify_parent(u32::MAX).is_err());
+        assert!(verify_parent(std::process::id()).is_err());
     }
 }

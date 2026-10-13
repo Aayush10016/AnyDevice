@@ -264,6 +264,37 @@ fn main() {
     #[cfg(windows)]
     {
         let args: Vec<String> = std::env::args().collect();
+        if args.get(1).map(String::as_str) == Some("--verify-input-owner") {
+            if args.len() != 3 {
+                std::process::exit(2);
+            }
+            let verified = raw_input::verify_parent(args[2].parse().unwrap_or(0)).is_ok();
+            println!("{}", serde_json::json!({"ownerVerified":verified}));
+            std::process::exit(if verified { 0 } else { 3 });
+        }
+        if args.get(1).map(String::as_str) == Some("--input-owner-smoke") {
+            if args.len() != 2 {
+                std::process::exit(2);
+            }
+            use std::os::windows::process::CommandExt;
+            let result = std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--verify-input-owner", &std::process::id().to_string()])
+                .creation_flags(0x08000000)
+                .output();
+            match result {
+                Ok(output) => {
+                    let valid = output.status.success()
+                        && serde_json::from_slice::<Value>(&output.stdout)
+                            .is_ok_and(|v| v["ownerVerified"] == true);
+                    println!(
+                        "{}",
+                        serde_json::json!({"ownerVerified":valid,"inputCollected":false})
+                    );
+                    std::process::exit(if valid { 0 } else { 3 });
+                }
+                Err(_) => std::process::exit(3),
+            }
+        }
         if args.get(1).map(String::as_str) == Some("--inspect-input") {
             match raw_input::inventory() {
                 Ok(value) => println!("{value}"),
