@@ -1,6 +1,6 @@
 # Capability matrix
 
-Status describes this source revision, not universal device support. See EXPANSION-VALIDATION.md for actual execution results.
+The table below records the earlier expansion milestone. The current audio/diagnostic branch adds Core Audio/WASAPI tests, conservative automatic diagnostics, approved reversible mute changes and read-only Windows HID capability inspection. See [current architecture and actual limits](AUDIO-DIAGNOSTIC-ARCHITECTURE.md) and [manual acceptance gates](AUDIO-MANUAL-ACCEPTANCE.md). No physical audio/input/repair success follows from an implemented source provider.
 
 | Capability | Implemented source | Verification / limits |
 | --- | --- | --- |

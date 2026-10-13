@@ -139,4 +139,16 @@ mod tests {
         encode(0.25, &mut f, true).unwrap();
         assert_eq!(decode(&f, true).unwrap(), 0.25);
     }
+    #[test]
+    fn labelled_uniform_digital_noise_has_expected_energy_without_quality_verdict() {
+        let mut noise = Accumulator::default();
+        // Synthetic uniform distribution, not recorded ambient audio.
+        for i in 0..10001 {
+            noise.add((i as f64 / 10000.0 * 2.0 - 1.0) * 0.05);
+        }
+        let level = noise.levels();
+        assert!((level.rms - 0.05 / 3.0f64.sqrt()).abs() < 0.00001);
+        assert_eq!(level.clipping_proportion, 0.0);
+        assert_eq!(level.peak, 0.05);
+    }
 }

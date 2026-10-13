@@ -397,6 +397,35 @@ mod tests {
     #[test]
     fn audio_packets_reject_stale_counts_invalid_levels_and_unbounded_channels() {
         let mut s = Snapshot::default();
+        let level = Levels {
+            samples: 1,
+            rms: 0.1,
+            rms_dbfs: -20.0,
+            peak: 0.2,
+            clipping_proportion: 0.0,
+            zero_proportion: 0.0,
+            invalid_samples: 0,
+        };
+        let packet = |frames, level: Levels| Packet::Measurement {
+            format: AudioFormat {
+                channels: 1,
+                sample_rate: 48000,
+                ..Default::default()
+            },
+            frames,
+            aggregate: vec![level.clone()],
+            window: vec![level],
+            discontinuities: 0,
+            timestamp_errors: 0,
+        };
+        assert!(apply(&mut s, packet(10, level.clone())).is_ok());
+        assert!(apply(&mut s, packet(9, level.clone())).is_err());
+        let mut invalid = level.clone();
+        invalid.rms = f64::NAN;
+        assert!(apply(&mut s, packet(10, invalid)).is_err());
+        let mut invalid = level;
+        invalid.zero_proportion = 1.1;
+        assert!(apply(&mut s, packet(10, invalid)).is_err());
         assert!(apply(
             &mut s,
             Packet::Measurement {
