@@ -383,6 +383,11 @@ pub async fn discard_audio_test(
                 token.cancel();
                 inner.interrupted = true;
             } else {
+                if inner.snapshot.as_ref().is_some_and(|s| !s.cleanup) {
+                    return Err(
+                        "Audio cleanup unverified; restart AnyDevice before another stream".into(),
+                    );
+                }
                 inner.snapshot = None;
                 return Ok(());
             }
