@@ -19,9 +19,7 @@
       "name": "Synthetic problem device",
       "category": "Mouse",
       "manufacturer": "Synthetic vendor",
-      "hardwareIds": [
-        "USB\\VID_1234&PID_5678"
-      ],
+      "hardwareIds": ["USB\\VID_1234&PID_5678"],
       "parent": "USB\\SYNTHETIC-HUB",
       "location": "Synthetic Port 1",
       "status": "ERROR",
@@ -30,7 +28,8 @@
       "pid": "5678",
       "transport": "USB",
       "observedAt": "2026-01-01T12:01:00Z",
-      "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
+      "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)",
+      "present": true
     }
   ],
   "previous": {
@@ -50,9 +49,7 @@
         "name": "Synthetic USB mouse",
         "category": "Mouse",
         "manufacturer": "Synthetic vendor",
-        "hardwareIds": [
-          "USB\\VID_046D&PID_C077"
-        ],
+        "hardwareIds": ["USB\\VID_046D&PID_C077"],
         "parent": "USB\\SYNTHETIC-HUB",
         "location": "Synthetic Port 1",
         "status": "OK",
@@ -61,7 +58,8 @@
         "pid": "C077",
         "transport": "USB",
         "observedAt": "2026-01-01T12:00:00.000Z",
-        "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)"
+        "source": "Windows PnpDevice / Get-PnpDeviceProperty (read-only)",
+        "present": true
       }
     ]
   },

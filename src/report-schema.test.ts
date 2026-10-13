@@ -81,3 +81,15 @@ it("loads and validates exports with runtime code generation forbidden by the de
     }),
   ).toContain("CSP validators passed");
 });
+
+import syntheticV2 from "../docs/examples/synthetic-report-v2.json";
+import syntheticInvestigation from "../docs/examples/synthetic-investigation.json";
+import syntheticAnalysis from "../docs/examples/synthetic-binary-analysis.json";
+it("validates every committed expansion example against the current standalone schemas", () => {
+  for (const example of [
+    syntheticV2,
+    syntheticInvestigation,
+    syntheticAnalysis,
+  ])
+    expect(() => validateExport(JSON.stringify(example))).not.toThrow();
+});
