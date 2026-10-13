@@ -20,7 +20,7 @@ An OK operating-system status does not establish complete physical health. There
 
 Repository: [Aayush10016/AnyDevice](https://github.com/Aayush10016/AnyDevice). Windows 10/11 x64 is the supported target; macOS, Linux, ARM64 and x86 are unsupported/unverified.
 
-The existing unsigned [0.1.0 draft candidate](https://github.com/Aayush10016/AnyDevice/releases/tag/untagged-8a756fcda793eee58e44) and its source commit 28eed5435a1dca47963775caa38578f5e054f709 remain unchanged. New development builds are separate GitHub Actions artifacts; consult the expansion validation record for the exact verified build. No stable release is automatically published.
+The existing unsigned [0.1.0 draft candidate](https://github.com/Aayush10016/AnyDevice/releases/tag/untagged-8a756fcda793eee58e44) and its source commit 28eed5435a1dca47963775caa38578f5e054f709 remain unchanged. The separate [0.2.0 candidate 3 draft](https://github.com/Aayush10016/AnyDevice/releases/tag/untagged-2bde4fe13fd5e676936a) contains the verified installer, standalone, checksums and instructions. Windows CI build 38384074477 and staging 38385045784 passed; the standalone was checksum-verified and launched locally. Native discovery/parity and raw/sanitized schemas were tested on this non-elevated host. See the expansion validation record for exact results. No stable release is automatically published.
 
 The NSIS installer includes the offline Microsoft WebView2 installer. The standalone executable requires installed WebView2. End users need no Node, Rust, Python or developer tools. Compare downloads with the provided SHA256SUMS.txt. Unsigned candidates may trigger SmartScreen and do not carry a verified publisher identity. See [build and release gates](docs/BUILD.md).
 
