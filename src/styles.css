@@ -709,3 +709,88 @@ footer {
 section code {
   overflow-wrap: anywhere;
 }
+
+.workbench {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.workbench-tabs,
+.keyboard-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+.workbench-tabs [aria-selected="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.workbench label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+}
+.workbench textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 12px;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.workbench select,
+.workbench input {
+  max-width: 100%;
+  min-width: 0;
+}
+.workbench code,
+.workbench dd {
+  overflow-wrap: anywhere;
+}
+.input-test-surface {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 16px;
+}
+.input-test-surface:focus {
+  outline: 2px solid var(--accent);
+}
+.test-key {
+  min-width: 35px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+.test-key.held {
+  background: var(--accent);
+  color: white;
+}
+.test-key.target-key {
+  border-color: var(--accent);
+}
+.movement-indicator {
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  overflow: hidden;
+}
+.movement-indicator span {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+}

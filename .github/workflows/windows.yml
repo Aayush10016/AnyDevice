@@ -27,7 +27,7 @@ jobs:
       - name: Rust formatting and unit tests
         run: |
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
-          cargo test --manifest-path src-tauri/Cargo.toml --locked --features custom-protocol
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --features custom-protocol -- --nocapture --test-threads=1
       - name: Read-only Windows discovery smoke test
         shell: powershell
         run: |
@@ -41,6 +41,22 @@ jobs:
       - name: Native discovery and fallback parity
         shell: pwsh
         run: ./scripts/verify-native.ps1 -Executable ./src-tauri/target/release/anydevice.exe
+      - name: Read-only native input mapping smoke
+        shell: pwsh
+        run: |
+          $owner = & ./src-tauri/target/release/anydevice.exe --input-owner-smoke | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $owner.ownerVerified -or $owner.inputCollected) { throw 'Trusted-owner smoke failed' }
+          $denied = & ./src-tauri/target/release/anydevice.exe --verify-input-owner $PID | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 3 -or $denied.ownerVerified) { throw 'Foreign-owner helper was not rejected' }
+          Write-Host 'Input helper owner: matching executable/actual parent accepted; shell parent rejected; no input collected.'
+          $path = Join-Path $env:RUNNER_TEMP 'input-metadata.json'
+          & ./src-tauri/target/release/anydevice.exe --inspect-input | Set-Content -LiteralPath $path -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { throw 'Native input inspection failed' }
+          $metadata = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+          if ($null -eq $metadata.endpoints -or $metadata.endpoints.Count -gt 256) { throw 'Invalid input metadata envelope' }
+          $mapped = @($metadata.endpoints | Where-Object { $_.instanceId }).Count
+          Write-Host "Raw Input: $($metadata.endpoints.Count) mouse/keyboard collections; $mapped mapped instance IDs. This does not test physical events."
+          Remove-Item -LiteralPath $path
       - name: Verify silent installation and installed desktop launch
         shell: pwsh
         run: |

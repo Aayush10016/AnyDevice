@@ -233,6 +233,27 @@
             "boolean",
             "null"
           ]
+        },
+        "containerId": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 128
+        },
+        "compatibleIds": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "string"
+          }
+        },
+        "locationPaths": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "type": "string"
+          }
         }
       },
       "additionalProperties": false

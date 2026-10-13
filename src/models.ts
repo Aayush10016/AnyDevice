@@ -4,6 +4,9 @@ export interface CollectionError {
   deviceId?: string;
 }
 export interface Device {
+  containerId?: string | null;
+  compatibleIds?: string[];
+  locationPaths?: string[];
   present: boolean | null;
   nodeKind: "logical-pnp-node";
   physicalDeviceId: null;

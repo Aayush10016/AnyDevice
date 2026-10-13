@@ -31,3 +31,48 @@ export async function saveReport(content: string): Promise<string | null> {
   validateExport(content);
   return invoke("save_report", { content });
 }
+
+export async function inspectInputDevices(): Promise<
+  import("./workbench").Endpoint[]
+> {
+  if (!isTauri())
+    throw new Error("Input inspection requires the Windows desktop app.");
+  const value = await invoke<{ endpoints: import("./workbench").Endpoint[] }>(
+    "inspect_input_devices",
+  );
+  if (
+    !value ||
+    !Array.isArray(value.endpoints) ||
+    value.endpoints.length > 4096 ||
+    value.endpoints.some(
+      (e) =>
+        !e ||
+        !["mouse", "keyboard"].includes(e.kind) ||
+        !Array.isArray(e.ancestors) ||
+        e.ancestors.length > 16 ||
+        (e.instanceId !== null && typeof e.instanceId !== "string"),
+    )
+  )
+    throw new Error("Invalid native input inventory");
+  return value.endpoints;
+}
+export async function startInputTest(
+  targetId: string,
+  mode: "mouse" | "keyboard" | "x-key",
+): Promise<number> {
+  if (!isTauri())
+    throw new Error("Real input tests require the Windows desktop app.");
+  return invoke("start_input_test", { targetId, mode });
+}
+export async function inputTestStatus(
+  sessionId: number,
+): Promise<import("./workbench").InputSnapshot> {
+  return invoke("input_test_status", { sessionId });
+}
+export async function stopInputTest(sessionId: number): Promise<void> {
+  if (isTauri()) await invoke("stop_input_test", { sessionId });
+}
+
+export async function discardInputTest(sessionId: number): Promise<void> {
+  if (isTauri()) await invoke("discard_input_test", { sessionId });
+}

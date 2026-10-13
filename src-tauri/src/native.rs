@@ -139,6 +139,42 @@ fn presence(node: u32, id: &str, errors: &mut Vec<Value>) -> Option<bool> {
     result
 }
 
+fn container(node: u32) -> Option<String> {
+    let mut ty = 0;
+    let mut size = 16;
+    let mut bytes = [0u8; 16];
+    if unsafe {
+        CM_Get_DevNode_PropertyW(
+            node,
+            &DEVPKEY_Device_ContainerId,
+            &mut ty,
+            bytes.as_mut_ptr(),
+            &mut size,
+            0,
+        )
+    } != CR_SUCCESS
+        || ty != DEVPROP_TYPE_GUID
+        || size != 16
+        || bytes.iter().all(|b| *b == 0)
+    {
+        return None;
+    }
+    Some(format!(
+        "{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+        u32::from_le_bytes(bytes[0..4].try_into().unwrap()),
+        u16::from_le_bytes(bytes[4..6].try_into().unwrap()),
+        u16::from_le_bytes(bytes[6..8].try_into().unwrap()),
+        bytes[8],
+        bytes[9],
+        bytes[10],
+        bytes[11],
+        bytes[12],
+        bytes[13],
+        bytes[14],
+        bytes[15]
+    ))
+}
+
 fn selected(scope: &str, id: &str, category: Option<&str>) -> bool {
     scope == "all-pnp"
         || id.to_ascii_uppercase().starts_with("USB\\")
@@ -280,7 +316,10 @@ pub fn collect(scope: &str) -> Value {
             errors.push(error(code, "Node status", Some(&id), "property"));
             (None, None)
         };
-        let entry = json!({"instanceId":id,"name":name,"category":category,"hardwareIds":hardware,"present":present,
+        let container_id = container(node);
+        let compatible = property(node, &DEVPKEY_Device_CompatibleIds, &id, &mut errors);
+        let paths = property(node, &DEVPKEY_Device_LocationPaths, &id, &mut errors);
+        let entry = json!({"containerId":container_id,"compatibleIds":compatible,"locationPaths":paths,"instanceId":id,"name":name,"category":category,"hardwareIds":hardware,"present":present,
             "manufacturer":manufacturer,"location":location,"parent":parent,"status":status,"problemCode":problem_code});
         serialized_bytes += entry.to_string().len();
         if serialized_bytes > 12 * 1024 * 1024 {

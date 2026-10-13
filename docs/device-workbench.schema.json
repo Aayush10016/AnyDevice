@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anydevice.local/device-workbench.schema.json",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "createdAt",
+    "sanitized",
+    "target",
+    "userReport",
+    "tests",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "device-workbench-1.0"
+    },
+    "createdAt": {
+      "type": "string"
+    },
+    "sanitized": {
+      "type": "boolean"
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 8192
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "userReport": {
+      "type": "object",
+      "required": [
+        "source",
+        "symptom",
+        "conditions",
+        "physicalAttempts"
+      ],
+      "properties": {
+        "source": {
+          "const": "user"
+        },
+        "symptom": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000
+        },
+        "conditions": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2000
+        },
+        "physicalAttempts": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 10000
+        }
+      },
+      "additionalProperties": false
+    },
+    "tests": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": [
+          "targetId",
+          "mode",
+          "startedAt",
+          "status",
+          "cleanup",
+          "stats",
+          "historyTruncated"
+        ],
+        "properties": {
+          "targetId": {
+            "type": "string",
+            "maxLength": 8192
+          },
+          "mode": {
+            "enum": [
+              "mouse",
+              "keyboard",
+              "x-key"
+            ]
+          },
+          "startedAt": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "testing",
+              "eventsObserved",
+              "noEventsObserved",
+              "completed",
+              "focusLost",
+              "disconnected",
+              "failed",
+              "unsupported"
+            ]
+          },
+          "cleanup": {
+            "type": "boolean"
+          },
+          "historyTruncated": {
+            "type": "boolean"
+          },
+          "stats": {
+            "type": "object",
+            "required": [
+              "events",
+              "movements",
+              "x",
+              "y",
+              "absolute",
+              "buttons",
+              "keys",
+              "wheelUp",
+              "wheelDown",
+              "horizontal"
+            ],
+            "properties": {
+              "events": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 150000
+              },
+              "movements": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 150000
+              },
+              "wheelUp": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 150000
+              },
+              "wheelDown": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 150000
+              },
+              "horizontal": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 150000
+              },
+              "x": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "integer"
+              },
+              "absolute": {
+                "type": "boolean"
+              },
+              "keys": {
+                "type": "object",
+                "maxProperties": 255,
+                "propertyNames": {
+                  "pattern": "^(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-4])$"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "required": [
+                    "down",
+                    "up",
+                    "repeat",
+                    "held"
+                  ],
+                  "properties": {
+                    "down": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 150000
+                    },
+                    "up": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 150000
+                    },
+                    "repeat": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 150000
+                    },
+                    "held": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "buttons": {
+                "type": "object",
+                "maxProperties": 5,
+                "propertyNames": {
+                  "pattern": "^[1-5]$"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "required": [
+                    "down",
+                    "up",
+                    "repeat",
+                    "held"
+                  ],
+                  "properties": {
+                    "down": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 150000
+                    },
+                    "up": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 150000
+                    },
+                    "repeat": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 150000
+                    },
+                    "held": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

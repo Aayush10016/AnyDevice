@@ -10,10 +10,12 @@ const ajv = new Ajv({ strict: true, code: { source: true, esm: true } });
 ajv.addSchema(report);
 ajv.addSchema(read("investigation"), "investigation");
 ajv.addSchema(read("binary-analysis"), "analysis");
+ajv.addSchema(read("device-workbench"), "workbench");
 const source = standalone(ajv, {
   diagnostic: report.$id,
   investigation: "investigation",
   analysis: "analysis",
+  workbench: "workbench",
 });
 // Bundle fixed validator runtime helpers so the app needs neither require() nor eval().
 const code = buildSync({
@@ -26,7 +28,9 @@ const code = buildSync({
 mkdirSync("src/generated", { recursive: true });
 const output =
   "// @ts-nocheck\n// Generated from repository-owned JSON schemas; regenerate with npm run schemas.\n" +
-  code;
+  code
+    .replace(/^(function validate\d+\()data,/gm, "$1data: any,")
+    .replace(/^(function validate\d+\(.*\)) \{$/gm, "$1: boolean {");
 if (process.argv.includes("--check")) {
   if (readFileSync("src/generated/validators.ts", "utf8") !== output)
     throw new Error("Generated validators are stale");

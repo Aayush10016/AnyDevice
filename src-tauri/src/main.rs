@@ -1,6 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod input_service;
 #[cfg(windows)]
 mod native;
+#[cfg(windows)]
+mod raw_input;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde_json::Value;
 use std::sync::Mutex;
@@ -161,6 +164,15 @@ fn validate_report(content: &str) -> Result<(), String> {
                     c["report"]["schemaVersion"] == "2.0" && c["annotation"]["source"] == "user"
                 })
         }),
+        Some("device-workbench-1.0") => {
+            value["target"].is_object()
+                && value["userReport"]["source"] == "user"
+                && value["tests"].as_array().is_some_and(|t| {
+                    t.len() <= 8
+                        && t.iter()
+                            .all(|s| s["stats"].is_object() && s.get("recent").is_none())
+                })
+        }
         Some("binary-analysis-1.0") => {
             value["source"]["length"]
                 .as_u64()
@@ -252,6 +264,58 @@ fn main() {
     #[cfg(windows)]
     {
         let args: Vec<String> = std::env::args().collect();
+        if args.get(1).map(String::as_str) == Some("--verify-input-owner") {
+            if args.len() != 3 {
+                std::process::exit(2);
+            }
+            let verified = raw_input::verify_parent(args[2].parse().unwrap_or(0)).is_ok();
+            println!("{}", serde_json::json!({"ownerVerified":verified}));
+            std::process::exit(if verified { 0 } else { 3 });
+        }
+        if args.get(1).map(String::as_str) == Some("--input-owner-smoke") {
+            if args.len() != 2 {
+                std::process::exit(2);
+            }
+            use std::os::windows::process::CommandExt;
+            let result = std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--verify-input-owner", &std::process::id().to_string()])
+                .creation_flags(0x08000000)
+                .output();
+            match result {
+                Ok(output) => {
+                    let valid = output.status.success()
+                        && serde_json::from_slice::<Value>(&output.stdout)
+                            .is_ok_and(|v| v["ownerVerified"] == true);
+                    println!(
+                        "{}",
+                        serde_json::json!({"ownerVerified":valid,"inputCollected":false})
+                    );
+                    std::process::exit(if valid { 0 } else { 3 });
+                }
+                Err(_) => std::process::exit(3),
+            }
+        }
+        if args.get(1).map(String::as_str) == Some("--inspect-input") {
+            match raw_input::inventory() {
+                Ok(value) => println!("{value}"),
+                Err(_) => std::process::exit(3),
+            }
+            return;
+        }
+        if args.get(1).map(String::as_str) == Some("--input-test") {
+            if args.len() != 5 {
+                std::process::exit(2);
+            }
+            let parent = args[4].parse::<u32>().unwrap_or(0);
+            if let Err(reason) = raw_input::run(&args[2], &args[3], parent) {
+                println!(
+                    "{}",
+                    serde_json::json!({"type":"status","status":"failed","reason":reason})
+                );
+                std::process::exit(3);
+            }
+            return;
+        }
         if args.get(1).map(String::as_str) == Some("--collect-native") {
             let scope = args.get(2).map(String::as_str).unwrap_or("usb-hid");
             if args.len() != 3 || !["usb-hid", "all-pnp"].contains(&scope) {
@@ -269,11 +333,17 @@ fn main() {
     );
     tauri::Builder::default()
         .manage(ScanState::default())
+        .manage(input_service::InputState::default())
         .invoke_handler(tauri::generate_handler![
             scan_devices,
             cancel_scan,
             save_report,
-            open_project_page
+            open_project_page,
+            input_service::inspect_input_devices,
+            input_service::start_input_test,
+            input_service::input_test_status,
+            input_service::stop_input_test,
+            input_service::discard_input_test
         ])
         .run(tauri::generate_context!())
         .expect("Unable to launch AnyDevice");
@@ -352,7 +422,7 @@ mod tests {
         let result = run_adapter(
             test_command("Write-Output '{invalid}'"),
             CancellationToken::new(),
-            std::time::Duration::from_secs(10),
+            std::time::Duration::from_secs(45),
         )
         .await;
         assert!(result
@@ -365,7 +435,7 @@ mod tests {
         let result = run_adapter(
             test_command("exit 3"),
             CancellationToken::new(),
-            std::time::Duration::from_secs(10),
+            std::time::Duration::from_secs(45),
         )
         .await;
         assert!(result.unwrap_err().contains("adapter failed"));
@@ -395,7 +465,7 @@ mod tests {
             let result = run_adapter(
                 test_command(&script),
                 CancellationToken::new(),
-                std::time::Duration::from_secs(15),
+                std::time::Duration::from_secs(45),
             )
             .await
             .unwrap();

@@ -23,6 +23,7 @@ import {
   BinaryPanel,
   type BinaryWorkspace,
 } from "./WorkspacePanels";
+import { DeviceWorkbench } from "./DeviceWorkbench";
 import type { Investigation } from "./investigation";
 import type {
   Device,
@@ -505,6 +506,16 @@ export default function App() {
                 </button>
               )}
             </div>
+            {device && (route === "Devices" || route === "Overview") && (
+              <DeviceWorkbench
+                key={device.id}
+                device={device}
+                devices={scan?.devices ?? []}
+                findings={findings}
+                sanitized={preferences.sanitize}
+                onClose={() => setSelected(undefined)}
+              />
+            )}
             {route === "Overview" && (
               <>
                 <section className="summary">

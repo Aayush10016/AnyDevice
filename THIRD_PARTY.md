@@ -5,3 +5,5 @@ React, React DOM, TypeScript, Vite, Vitest and testing-library: MIT. Tauri and t
 Segoe UI is provided by Windows and is not bundled as a redistributed font. WebView2 is Microsoft software distributed by the official Tauri bundler mechanism; Microsoft licensing applies. No proprietary UI assets were copied.
 
 Ajv (MIT) generates standalone schema validators; its small Unicode-length helper is bundled. esbuild (MIT) supplies build-time bundling and generated module helpers. windows-sys (MIT/Apache-2.0) supplies maintained Windows bindings. chrono (MIT/Apache-2.0) supplies observation timestamps. Included direct license notices are in docs/licenses/. This does not replace a complete transitive distribution-license audit.
+
+Serde 1.0.229 is now explicit for typed input packets/IPC; it was already locked transitively. MIT OR Apache-2.0 notices are preserved in docs/licenses/serde-MIT.txt and serde-APACHE.txt. Raw Input/Configuration Manager implementation is original; HIDAPI source was studied as a mapping reference and no upstream code/dependency was copied.
