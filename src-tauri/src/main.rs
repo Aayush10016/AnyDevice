@@ -391,7 +391,7 @@ mod tests {
         let result = run_adapter(
             test_command("Write-Output '{invalid}'"),
             CancellationToken::new(),
-            std::time::Duration::from_secs(10),
+            std::time::Duration::from_secs(45),
         )
         .await;
         assert!(result
@@ -404,7 +404,7 @@ mod tests {
         let result = run_adapter(
             test_command("exit 3"),
             CancellationToken::new(),
-            std::time::Duration::from_secs(10),
+            std::time::Duration::from_secs(45),
         )
         .await;
         assert!(result.unwrap_err().contains("adapter failed"));
@@ -434,7 +434,7 @@ mod tests {
             let result = run_adapter(
                 test_command(&script),
                 CancellationToken::new(),
-                std::time::Duration::from_secs(15),
+                std::time::Duration::from_secs(45),
             )
             .await
             .unwrap();

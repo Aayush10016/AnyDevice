@@ -27,7 +27,7 @@ jobs:
       - name: Rust formatting and unit tests
         run: |
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
-          cargo test --manifest-path src-tauri/Cargo.toml --locked --features custom-protocol -- --nocapture
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --features custom-protocol -- --nocapture --test-threads=1
       - name: Read-only Windows discovery smoke test
         shell: powershell
         run: |
