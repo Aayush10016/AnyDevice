@@ -240,6 +240,9 @@ export default function App() {
     [scan, inputEndpoints],
   );
   const candidate = candidates.find((c) => c.id === candidateId);
+  const externalCandidates = candidates.filter((c) =>
+    c.placement.includes("external"),
+  ).length;
   const device = candidateId
     ? candidate?.device
     : scan?.devices.find((d) => d.id === selected);
@@ -393,7 +396,7 @@ export default function App() {
             >
               <Icon size={18} />
               {name}
-              {name === "Devices" && scan && <span>{scan.devices.length}</span>}
+              {name === "Devices" && scan && <span>{externalCandidates}</span>}
             </button>
           ))}
         </div>
@@ -513,8 +516,8 @@ export default function App() {
                   <div>
                     <span className="eyebrow">LATEST OBSERVATION</span>
                     <p>
-                      <strong>{scan?.devices.length ?? "—"}</strong> device
-                      entries <span className="divider">/</span>{" "}
+                      <strong>{scan ? externalCandidates : "—"}</strong>{" "}
+                      external candidates <span className="divider">/</span>{" "}
                       <strong>{scan ? problems : "—"}</strong> observed problems
                     </p>
                     <small>
@@ -529,11 +532,17 @@ export default function App() {
                 </section>
                 <div className="section-heading">
                   <h2>Device inventory</h2>
-                  <span className="muted">Logical Windows entries</span>
+                  <span className="muted">
+                    Physical identity may be unresolved
+                  </span>
                 </div>
                 {inventory}
                 <details>
                   <summary>Stats for nerds — all Windows nodes</summary>
+                  <p>
+                    {scan?.devices.length ?? 0} Windows nodes · {scan?.provider}{" "}
+                    · {scan?.scope}
+                  </p>
                   {table}
                 </details>
                 <section className="activity">
@@ -561,9 +570,6 @@ export default function App() {
               <>
                 {scan && (
                   <p className="snapshot">
-                    {scan
-                      ? `${scan.provider} / ${scan.scope} / ${scan.collectedAt} - `
-                      : ""}
                     Collected {new Date(scan.collectedAt).toLocaleString()} ·{" "}
                     {scan.complete ? "Complete" : "Partial"} ·{" "}
                     {stale
@@ -574,6 +580,10 @@ export default function App() {
                 {inventory}
                 <details>
                   <summary>Stats for nerds — all Windows nodes</summary>
+                  <p>
+                    {scan?.devices.length ?? 0} Windows nodes · {scan?.provider}{" "}
+                    · {scan?.scope}
+                  </p>
                   {table}
                 </details>
               </>
@@ -830,7 +840,7 @@ export default function App() {
             {busy
               ? "Collecting evidence"
               : scan
-                ? `${scan.devices.length} entries · ${stale ? "stale" : scan.complete ? "complete snapshot" : "partial snapshot"}`
+                ? `${externalCandidates} external candidates · ${stale ? "stale" : scan.complete ? "complete snapshot" : "partial snapshot"}`
                 : "No scan yet"}
           </span>
           <span>Read-only · No elevated repairs</span>
