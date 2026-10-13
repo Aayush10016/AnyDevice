@@ -9,7 +9,8 @@
     "test": "vitest run",
     "tauri": "tauri",
     "desktop": "tauri dev",
-    "package": "tauri build --bundles nsis --features custom-protocol --no-binary-patching"
+    "package": "tauri build --bundles nsis --features custom-protocol --no-binary-patching",
+    "check:branding": "node scripts/check-branding.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",

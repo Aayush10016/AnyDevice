@@ -369,10 +369,10 @@ export default function App() {
       <nav aria-label="Main navigation">
         <div className="brand">
           <span className="brand-symbol">
-            <Usb size={22} />
+            <Monitor size={22} />
           </span>
           <div>
-            AnyDevice<small>USB DOCTOR · v0.1</small>
+            AnyDevice<small>Understand. Diagnose. Investigate.</small>
           </div>
         </div>
         <div className="nav-items">
@@ -401,7 +401,7 @@ export default function App() {
       <div className="workspace">
         <header className="topbar">
           <span>
-            USB Doctor <ChevronRight size={13} /> {route}
+            AnyDevice <ChevronRight size={13} /> {route}
           </span>
           <span className="muted">
             <Monitor size={14} /> Windows · local session
@@ -411,7 +411,7 @@ export default function App() {
           <main>
             <div className="page-heading">
               <div>
-                <div className="eyebrow">UNDERSTAND. DIAGNOSE. RECOVER.</div>
+                <div className="eyebrow">UNDERSTAND. DIAGNOSE. INVESTIGATE.</div>
                 <h1>
                   {route === "Overview"
                     ? "A clearer view of your devices"

@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "AnyDevice · USB Doctor",
+        "title": "AnyDevice",
         "width": 1200,
         "height": 800,
         "minWidth": 760,
@@ -29,7 +29,7 @@
     "icon": ["icons/icon.ico", "icons/icon.png"],
     "targets": ["nsis"],
     "category": "Utility",
-    "shortDescription": "Understand. Diagnose. Recover.",
+    "shortDescription": "Understand. Diagnose. Investigate.",
     "windows": {
       "webviewInstallMode": { "type": "offlineInstaller" },
       "nsis": { "installMode": "currentUser" }

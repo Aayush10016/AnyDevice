@@ -34,7 +34,7 @@ async fn scan_devices(state: tauri::State<'_, ScanState>) -> Result<Value, Strin
 
 async fn collect(token: CancellationToken) -> Result<Value, String> {
     if !cfg!(windows) {
-        return Err("USB Doctor v0.1 supports Windows only".into());
+        return Err("AnyDevice currently supports Windows only".into());
     }
     let root = std::env::var_os("SystemRoot").ok_or("Windows system directory unavailable")?;
     let executable =

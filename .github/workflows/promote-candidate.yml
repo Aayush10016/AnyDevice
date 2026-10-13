@@ -45,7 +45,7 @@ jobs:
           sha256sum --check SHA256SUMS.txt
           cd ..
           cat > notes.md <<'NOTES'
-          AnyDevice USB Doctor v0.1.0 Windows x64 candidate. Unsigned installer and standalone executable; SHA-256 checksums included.
+          AnyDevice v0.1.0 Windows x64 candidate. Unsigned installer and standalone executable; SHA-256 checksums included.
 
           Windows CI verifies frontend/domain/report tests, native boundary and production-asset tests, fixed PnP discovery, NSIS packaging, silent install, installed/release binary equality, launch, and uninstall. Physical-device discovery was separately verified on the development host.
 

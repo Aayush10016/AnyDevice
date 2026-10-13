@@ -1,8 +1,10 @@
-# AnyDevice â€” USB Doctor v0.1
+# AnyDevice — Understand. Diagnose. Investigate.
 
-**Understand. Diagnose. Recover.** Local-first, read-only Windows device inspection with evidence-backed explanations.
+A local-first desktop toolkit for inspecting devices, collecting technical evidence, investigating problems, and progressively reverse-engineering supported interfaces.
 
-AnyDevice reads present USB and HID **PnP entries**, exposes Windows status and available properties, evaluates deterministic diagnostic rules, and saves versioned JSON reports with a sanitization preview. It does not diagnose batteries, charging circuits, Bluetooth connections, Android file-transfer mode, or universal device health. No repairs, driver changes, firmware flashing, telemetry, external AI or accounts are involved.
+The existing Windows candidate provides Plug and Play inventory through a USB/HID-focused discovery adapter, deterministic findings, device inspection, and local JSON report export. Broader inventory, controlled investigations and offline format analysis are development milestones.
+
+It does not establish complete physical health or diagnose batteries, charging circuits, Bluetooth connections, Android file-transfer mode, firmware or arbitrary protocols. No repairs, telemetry, external AI or mandatory accounts are involved.
 
 ## Actual delivery status
 

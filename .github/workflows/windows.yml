@@ -21,6 +21,7 @@ jobs:
         with:
           workspaces: src-tauri -> target
       - run: npm ci
+      - run: npm run check:branding
       - run: npm test
       - run: npm run build
       - name: Rust formatting and unit tests
@@ -86,4 +87,4 @@ jobs:
       - name: Publish draft release for manual hardware and installer validation
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" release/* --repo "$GITHUB_REPOSITORY" --draft --title "AnyDevice $GITHUB_REF_NAME — USB Doctor" --notes "Unsigned Windows x64 candidate. Validate installation, UI, offline scanning, cancellation, and sanitized export on physical hardware before publishing. Portable executable requires WebView2."
+        run: gh release create "$GITHUB_REF_NAME" release/* --repo "$GITHUB_REPOSITORY" --draft --title "AnyDevice $GITHUB_REF_NAME" --notes "Unsigned Windows x64 candidate. Validate installation, UI, offline scanning, cancellation, and sanitized export on physical hardware before publishing. Portable executable requires WebView2."
