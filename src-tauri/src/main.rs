@@ -374,7 +374,10 @@ fn main() {
             }
             if let Err(reason) = audio_native::run(&args[2], &args[3], args[4].parse().unwrap_or(0))
             {
-                println!(
+                use std::io::Write;
+                // Broken consumer pipes must not turn a denied collector into a panic exit.
+                let _ = writeln!(
+                    std::io::stdout(),
                     "{}",
                     serde_json::json!({"type":"status","status":"failed","reason":reason})
                 );
