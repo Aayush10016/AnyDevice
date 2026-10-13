@@ -158,6 +158,10 @@ export function compareQuietSpeech(
     !speech.format ||
     quiet.format.sampleRate !== speech.format.sampleRate ||
     quiet.format.channels !== speech.format.channels ||
+    quiet.format.bits !== speech.format.bits ||
+    quiet.format.float !== speech.format.float ||
+    quiet.format.blockAlign !== speech.format.blockAlign ||
+    quiet.format.channelMask !== speech.format.channelMask ||
     !quiet.aggregate[0]?.samples ||
     !speech.aggregate[0]?.samples
   )

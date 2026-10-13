@@ -75,6 +75,13 @@ it("compares only completed equal-endpoint and equal-format quiet/speech interva
     compareQuietSpeech(session, {
       ...session,
       mode: "speech",
+      format: { ...format, bits: 16, float: false, blockAlign: 2 },
+    }),
+  ).toContain("Inconclusive");
+  expect(
+    compareQuietSpeech(session, {
+      ...session,
+      mode: "speech",
       aggregate: [{ ...level, rmsDbfs: -10 }],
     }),
   ).toContain("10.0 dB");
