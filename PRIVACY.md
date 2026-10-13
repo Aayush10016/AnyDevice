@@ -1,5 +1,7 @@
 # Privacy
 
+Discovery/workspace development builds also expose numeric Windows capability flags, removal policy and the enumerator name. These general metadata fields remain in sanitized reports and can contribute to fingerprinting. Typed text is never translated or persisted. Collection is still explicitly started and limited to an attributed logical input source; leaving the workspace discards its native session. Logical receiver associations do not establish which physical wireless peripheral produced input.
+
 No telemetry, analytics, external AI, uploads or accounts. Core scans run offline using Windows. Current/prior inventories and recent activity stay in application memory and disappear when closed. Appearance and sanitization preferences are stored in local WebView storage. Save paths are displayed only in the current session. No background scans or automatic hardware-report persistence.
 
 Report export opens a native file dialog and writes only the report the user reviewed. Raw reports can contain hardware/instance IDs, serial-like values, device names, manufacturers, parents, locations and error details. Default sanitized export removes free-text metadata, identifiers, hardware IDs and detailed error messages everywhere, including prior scans and findings; replaces references with report-local aliases; retains exact VID/PID, collection times and normalized status/problem codes. These remaining values may still identify device models or timing. Sanitization is a sharing aid, not a guarantee of anonymity. Review the preview before sharing.

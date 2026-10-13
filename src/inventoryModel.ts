@@ -31,6 +31,8 @@ export interface Candidate {
 const upper = (s: string) => s.toUpperCase();
 export function infrastructure(d: Device): boolean {
   return (
+    (d.category === "Bluetooth" && !/^BTHENUM\\DEV_/i.test(d.id)) ||
+    (d.category === "USBDevice" && /&MI_[0-9A-F]{2}/i.test(d.id)) ||
     /^(ROOT|SWD|HTREE|SW)\\/i.test(d.id) ||
     /^(USB|USBHub|System|SoftwareComponent|SoftwareDevice)$/i.test(
       d.category ?? "",
@@ -81,6 +83,13 @@ export function classify(
       ],
     };
   const chain = topology(d, devices);
+  if (/^BTHENUM\\DEV_/i.test(d.id))
+    return {
+      placement: "Unknown or ambiguous",
+      evidence: [
+        "Windows remote Bluetooth entry. Pairing/node presence does not establish a current radio connection; USB ancestry belongs to the host adapter.",
+      ],
+    };
   if (chain.some((n) => /^USB\\VID_/i.test(n.id)))
     return {
       placement: "Probable external peripheral",
@@ -180,9 +189,17 @@ export function buildInventory(
                   : info.placement === "Probable external peripheral"
                     ? "Other external devices"
                     : "Unknown devices";
-    groups.set(upper(d.id), {
-      id: upper(d.id),
-      device: d,
+    const root =
+      info.placement === "Supporting infrastructure" ? d : boundary(d, active);
+    const groupId = `${upper(root.id)}:${category}`;
+    const existing = groups.get(groupId);
+    if (existing) {
+      existing.nodes.push(d);
+      continue;
+    }
+    groups.set(groupId, {
+      id: groupId,
+      device: root,
       nodes: [d],
       category,
       name: d.name ?? category,

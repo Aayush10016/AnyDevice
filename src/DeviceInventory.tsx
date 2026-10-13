@@ -87,7 +87,7 @@ export function DeviceInventory({
                     {stale
                       ? "Availability needs refresh"
                       : c.device.present === true
-                        ? "Present when scanned"
+                        ? "Windows entry present; connection unverified"
                         : "Presence not confirmed"}{" "}
                     · {c.kind ? "Open input tests" : "Open diagnostics"}
                   </small>

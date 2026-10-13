@@ -119,3 +119,28 @@ it("normalizes bounded native capabilities without forcing fallback metadata", (
     normalize(fixtureScan([healthyMouse])).devices[0].deviceCapabilities,
   ).toBeUndefined();
 });
+it("separates Bluetooth services/radios from remote entries without inferring live connection from a USB adapter", () => {
+  const radio = node("USB\\VID_1234&PID_0001\\RADIO", null, "Bluetooth");
+  const service = node("BTHENUM\\{SERVICE}\\A", radio.id, "Bluetooth");
+  const remote = node("BTHENUM\\DEV_123456789012\\A", radio.id, "Bluetooth");
+  expect(classify(radio, [radio]).placement).toBe("Supporting infrastructure");
+  expect(classify(service, [radio, service]).placement).toBe(
+    "Supporting infrastructure",
+  );
+  expect(classify(remote, [radio, remote]).placement).toBe(
+    "Unknown or ambiguous",
+  );
+});
+it("groups repeated USB camera/audio interface nodes by bounded root and category, without crossing device roots", () => {
+  const root = node("USB\\VID_1234&PID_0001\\COMPOSITE", null, "USB");
+  root.compatibleIds = ["USB\\COMPOSITE"];
+  const a = node("USB\\VID_1234&PID_0001&MI_00\\A", root.id, "Camera");
+  const b = node("USB\\VID_1234&PID_0001&MI_01\\B", root.id, "Camera");
+  const audio = node("USB\\VID_1234&PID_0001&MI_02\\C", root.id, "MEDIA");
+  const list = buildInventory([root, a, b, audio], []);
+  expect(list.filter((c) => c.category === "Cameras")).toHaveLength(1);
+  expect(list.find((c) => c.category === "Cameras")?.nodes).toHaveLength(2);
+  expect(
+    list.filter((c) => c.category === "Audio devices and headsets"),
+  ).toHaveLength(1);
+});
