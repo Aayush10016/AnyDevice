@@ -279,7 +279,7 @@ pub fn inventory() -> Result<Value, String> {
 fn mouse_events(flags: u16, buttons: u16, data: u16, x: i32, y: i32) -> Vec<InputEvent> {
     let at = chrono::Utc::now().to_rfc3339();
     let mut out = Vec::new();
-    if x != 0 || y != 0 {
+    if flags & 1 != 0 || x != 0 || y != 0 {
         out.push(InputEvent::MouseMove {
             at: at.clone(),
             x,
@@ -577,6 +577,25 @@ mod tests {
         let e = mouse_events(0, 0x100 | 0x200 | 0x400, (-120i16) as u16, 0, 0);
         assert_eq!(e.len(), 3);
         assert!(matches!(e[2], InputEvent::MouseWheel { delta: -120, .. }));
+    }
+    #[test]
+    fn absolute_origin_and_all_button_pairs_are_retained() {
+        let origin = mouse_events(1, 0, 0, 0, 0);
+        assert!(matches!(
+            origin[0],
+            InputEvent::MouseMove {
+                x: 0,
+                y: 0,
+                absolute: true,
+                ..
+            }
+        ));
+        let buttons = mouse_events(0, 0x3ff, 0, 0, 0);
+        assert_eq!(buttons.len(), 10);
+        let horizontal = mouse_events(0, 0x800, (-120i16) as u16, 0, 0);
+        assert!(
+            matches!(&horizontal[0],InputEvent::MouseWheel{axis,delta:-120,..} if axis=="horizontal")
+        );
     }
     #[test]
     fn keeps_absolute_motion_distinct() {

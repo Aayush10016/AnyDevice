@@ -69,8 +69,12 @@ export async function inputTestStatus(
 ): Promise<import("./workbench").InputSnapshot> {
   return invoke("input_test_status", { sessionId });
 }
-export async function stopInputTest(sessionId: number): Promise<void> {
-  if (isTauri()) await invoke("stop_input_test", { sessionId });
+export async function stopInputTest(
+  sessionId: number,
+  reason?: "focusLost" | "navigation" | "reset",
+): Promise<void> {
+  if (isTauri())
+    await invoke("stop_input_test", { sessionId, reason: reason ?? null });
 }
 
 export async function discardInputTest(sessionId: number): Promise<void> {

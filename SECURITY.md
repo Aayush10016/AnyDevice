@@ -1,5 +1,7 @@
 # Security policy
 
+Discovery/workspace development builds do not authorize collection from container siblings or ancestor relationship lists. Category-specific candidate membership is checked against freshly inspected native instance IDs; the helper still requires a unique mapped instance/kind and filters hDevice/type. Ambiguous receiver or duplicate-interface mapping remains a limitation. Focus/navigation/reset cancellation reasons survive queued events and finalization, and the existing creator/executable ownership and foreground checks remain unchanged. No repair/write capabilities have been added.
+
 The current application is read-only: no driver/registry/firmware/device modifications, arbitrary shell execution, privileged repairs or auto-elevation. Treat all Windows device metadata as untrusted. React renders it as text; the fixed adapter passes instance IDs as parameters and never evaluates them as code. Native commands provide only fixed discovery, cancellation and report saving through a native dialog.
 
 Please report vulnerabilities privately through GitHub's private vulnerability reporting on Aayush10016/AnyDevice once enabled. Until that feature is configured, do not disclose secrets or hardware identifiers in public issues. No dedicated security email address is configured.

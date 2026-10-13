@@ -153,8 +153,49 @@ it("stops the session when focus moves to an editable field", async () => {
   const input = document.createElement("input");
   document.body.appendChild(input);
   fireEvent.focusIn(input);
-  await waitFor(() => expect(bridge.stopInputTest).toHaveBeenCalledWith(7));
+  await waitFor(() =>
+    expect(bridge.stopInputTest).toHaveBeenCalledWith(7, "focusLost"),
+  );
   input.remove();
+});
+it("does not offer input controls for a camera candidate", async () => {
+  render(
+    <DeviceWorkbench
+      device={device}
+      devices={[device]}
+      findings={[]}
+      sanitized
+      onClose={vi.fn()}
+      candidate={{
+        id: "camera",
+        device,
+        nodes: [device],
+        category: "Cameras",
+        name: "Camera",
+        placement: "Unknown or ambiguous",
+        evidence: ["synthetic"],
+        endpoints: [],
+      }}
+    />,
+  );
+  expect(
+    screen.queryByRole("tab", { name: "Live Tests" }),
+  ).not.toBeInTheDocument();
+  expect(bridge.startInputTest).not.toHaveBeenCalled();
+  await waitFor(() =>
+    expect(bridge.inspectInputDevices).toHaveBeenCalledOnce(),
+  );
+});
+it("back to top collapses evidence without resetting or stopping the test", async () => {
+  mount();
+  await live();
+  fireEvent.click(screen.getByRole("button", { name: "Start Test" }));
+  await waitFor(() => expect(bridge.inputTestStatus).toHaveBeenCalledWith(7));
+  const evidence = screen.getByText("Stats for nerds").closest("details")!;
+  evidence.open = true;
+  fireEvent.click(screen.getByRole("button", { name: "Back to top" }));
+  expect(evidence.open).toBe(false);
+  expect(bridge.stopInputTest).not.toHaveBeenCalled();
 });
 
 it("clears previous measurements when the input endpoint changes", async () => {
@@ -170,7 +211,16 @@ it("clears previous measurements when the input endpoint changes", async () => {
     })),
   );
   mount();
-  await live();
+  fireEvent.click(screen.getByRole("tab", { name: "Live Tests" }));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("option", { name: "Keyboard source 1" }),
+    ).toBeInTheDocument(),
+  );
+  expect(screen.getByRole("button", { name: "Start Test" })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Selected input collection"), {
+    target: { value: "0" },
+  });
   current.targetId = "HID\\A";
   current.stats.events = 3;
   current.cleanup = true;

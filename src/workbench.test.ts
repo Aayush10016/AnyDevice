@@ -90,6 +90,26 @@ it("does not diagnose an X switch fault from reported-versus-measured counts", (
   expect(xAssessment(1, { ...session, cleanup: false })).toContain("Testing");
   expect(xAssessment(-1, session)).toContain("must be an integer");
 });
+it("does not authorize collection using a related ancestor or container sibling", () => {
+  const e: Endpoint = {
+    instanceId: "HID\\unrelated",
+    kind: "mouse",
+    path: "synthetic",
+    ancestors: [],
+    capabilities: null,
+    source: "synthetic",
+    observedAt: d.observedAt,
+  };
+  expect(
+    endpointRelationship(e, d, [
+      {
+        device: { ...d, id: e.instanceId! },
+        confidence: "Probable",
+        evidence: "shared container",
+      },
+    ]),
+  ).toBeNull();
+});
 it("keeps LED/user symptoms separate from measured input and never offers guessed writes", () => {
   const findings = symptomPlan(
     "My X key's backlight fails",

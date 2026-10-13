@@ -129,10 +129,9 @@ export function endpointRelationship(
       evidence:
         "Raw Input collection's native Windows parent chain contains this node; not physical-radio attribution",
     };
-  const match = related.find((r) => same(r.device.id, endpoint.instanceId));
-  return match
-    ? { confidence: match.confidence, evidence: match.evidence }
-    : null;
+  // Related ancestors/container siblings remain evidence, never permission to collect.
+  void related;
+  return null;
 }
 export function xAssessment(
   attempts: number | null,

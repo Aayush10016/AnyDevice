@@ -92,6 +92,15 @@ jobs:
           name: AnyDevice-0.2.0-windows-x64-unsigned
           path: release/*
           if-no-files-found: error
+      - name: Upload portable discovery/workspace build for manual acceptance
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnyDevice-discovery-portable-unsigned
+          path: |
+            release/AnyDevice-0.2.0-windows-x64.exe
+            release/SHA256SUMS.txt
+            release/PORTABLE-README.md
+          if-no-files-found: error
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: windows
