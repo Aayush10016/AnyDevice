@@ -180,7 +180,9 @@ export function systemChecks(
             ? "Inconclusive"
             : e.mute === true
               ? "Issue detected"
-              : "Passed",
+              : e.mute === null || e.volume === null || !e.format
+                ? "Inconclusive"
+                : "Passed",
         confidence: "Windows-reported",
         measurements: {
           state: e.state,

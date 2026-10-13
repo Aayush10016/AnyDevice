@@ -495,7 +495,7 @@ export default function App() {
           <ShieldCheck size={18} />
           <strong>Local by default</strong>
           <p>
-            Read-only inspection.
+            Automatic checks are read-only.
             <br />
             Your evidence stays here.
           </p>
@@ -535,7 +535,9 @@ export default function App() {
                             ? "Compare controlled observations and keep claims separate from evidence."
                             : route === "Binary workspace"
                               ? "Inspect local bytes and record reproducible hypotheses."
-                              : "A small set of preferences that work."}
+                              : route === "Audio"
+                                ? "Choose an endpoint and approve each functional test."
+                                : "A small set of preferences that work."}
                 </p>
               </div>
               {route !== "Settings" && route !== "Binary workspace" && (

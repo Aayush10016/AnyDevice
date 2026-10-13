@@ -165,7 +165,7 @@ pub async fn start_audio_test(
     let cancel = CancellationToken::new();
     {
         let mut inner = state.0.lock().map_err(|_| "Audio state unavailable")?;
-        if inner.cancel.is_some() {
+        if inner.cancel.is_some() || inner.snapshot.as_ref().is_some_and(|s| !s.cleanup) {
             return Err("Stop the current audio test first".into());
         }
         inner.snapshot = Some(Snapshot {
@@ -182,7 +182,8 @@ pub async fn start_audio_test(
     let owned = state.inner().clone();
     tokio::spawn(async move {
         let _permit = permit;
-        let result = stream(&owned, id, &target_id, &mode, cancel).await;
+        let cleanup = std::sync::atomic::AtomicBool::new(true);
+        let result = stream(&owned, id, &target_id, &mode, cancel, &cleanup).await;
         if let Ok(mut inner) = owned.0.lock() {
             let interrupted = inner.interrupted;
             if let Some(s) = inner.snapshot.as_mut().filter(|s| s.session_id == id) {
@@ -197,7 +198,7 @@ pub async fn start_audio_test(
                     s.status = "failed".into();
                     s.reason = "Collector exited without terminal evidence".into();
                 }
-                s.cleanup = true;
+                s.cleanup = cleanup.load(Ordering::Acquire);
                 inner.cancel = None;
             }
         }
@@ -210,6 +211,7 @@ async fn stream(
     target: &str,
     mode: &str,
     cancel: CancellationToken,
+    cleanup: &std::sync::atomic::AtomicBool,
 ) -> Result<(), String> {
     use tokio::io::AsyncReadExt;
     let mut command =
@@ -230,6 +232,7 @@ async fn stream(
     let mut child = command
         .spawn()
         .map_err(|_| "Audio helper could not start")?;
+    cleanup.store(false, Ordering::Release);
     let mut pipe = child
         .stdout
         .take()
@@ -244,7 +247,7 @@ async fn stream(
                 .is_none()
             {
                 let _ = child.kill().await;
-                let _ = child.wait().await;
+                cleanup.store(child.wait().await.is_ok(), Ordering::Release);
                 return Err(e);
             } else {
                 None
@@ -306,11 +309,25 @@ async fn stream(
             break Err(e);
         }
     };
-    let _ = child.kill().await;
-    let exit = child
-        .wait()
-        .await
-        .map_err(|_| "Audio helper cleanup failed")?;
+    // EOF does not imply the process has exited. Let a completed collector exit
+    // normally rather than racing its successful exit with TerminateProcess.
+    let exit = if result.is_ok() && !cancel.is_cancelled() {
+        match tokio::time::timeout(std::time::Duration::from_secs(2), child.wait()).await {
+            Ok(exit) => exit.map_err(|_| "Audio helper cleanup failed")?,
+            Err(_) => {
+                let _ = child.kill().await;
+                cleanup.store(child.wait().await.is_ok(), Ordering::Release);
+                return Err("Audio helper did not exit after its observations".into());
+            }
+        }
+    } else {
+        let _ = child.kill().await;
+        child
+            .wait()
+            .await
+            .map_err(|_| "Audio helper cleanup failed")?
+    };
+    cleanup.store(true, Ordering::Release);
     if result.is_ok() && !cancel.is_cancelled() && !exit.success() {
         return Err("Audio helper exited with an error".into());
     }
