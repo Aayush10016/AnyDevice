@@ -57,6 +57,23 @@ jobs:
           $mapped = @($metadata.endpoints | Where-Object { $_.instanceId }).Count
           Write-Host "Raw Input: $($metadata.endpoints.Count) mouse/keyboard collections; $mapped mapped instance IDs. This does not test physical events."
           Remove-Item -LiteralPath $path
+      - name: Read-only Core Audio discovery and owner rejection
+        shell: pwsh
+        run: |
+          $path = Join-Path $env:RUNNER_TEMP 'audio-metadata.json'
+          & ./src-tauri/target/release/anydevice.exe --inspect-audio | Set-Content -LiteralPath $path -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { throw 'Audio inventory helper failed' }
+          $audio = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
+          if ($null -eq $audio.endpoints -or $audio.endpoints.Count -gt 256) { throw 'Invalid audio inventory envelope' }
+          Write-Host "Core Audio: $($audio.endpoints.Count) endpoints; $($audio.errors.Count) errors; complete=$($audio.complete). No sound/capture performed."
+          $denied = & ./src-tauri/target/release/anydevice.exe --audio-test 'invalid-target' ambient $PID | Out-String
+          if ($LASTEXITCODE -ne 3 -or $denied -match 'measurement|running') { throw 'Foreign audio collector was accepted' }
+          $repairDenied = & ./src-tauri/target/release/anydevice.exe --approved-audio-mute 'invalid-target' true false $PID | Out-String
+          if ($LASTEXITCODE -ne 3 -or $repairDenied -match 'afterMute') { throw 'Foreign repair helper was accepted' }
+          Remove-Item -LiteralPath $path
+          # GitHub's pwsh wrapper propagates the last native exit code. Both
+          # expected denial codes were checked above; finish this smoke successfully.
+          $global:LASTEXITCODE = 0
       - name: Verify silent installation and installed desktop launch
         shell: pwsh
         run: |

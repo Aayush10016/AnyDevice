@@ -54,6 +54,7 @@ dependencies = [
  "tauri-build",
  "tokio",
  "tokio-util",
+ "windows",
  "windows-sys 0.61.2",
 ]
 

@@ -7,3 +7,5 @@ Segoe UI is provided by Windows and is not bundled as a redistributed font. WebV
 Ajv (MIT) generates standalone schema validators; its small Unicode-length helper is bundled. esbuild (MIT) supplies build-time bundling and generated module helpers. windows-sys (MIT/Apache-2.0) supplies maintained Windows bindings. chrono (MIT/Apache-2.0) supplies observation timestamps. Included direct license notices are in docs/licenses/. This does not replace a complete transitive distribution-license audit.
 
 Serde 1.0.229 is now explicit for typed input packets/IPC; it was already locked transitively. MIT OR Apache-2.0 notices are preserved in docs/licenses/serde-MIT.txt and serde-APACHE.txt. Raw Input/Configuration Manager implementation is original; HIDAPI source was studied as a mapping reference and no upstream code/dependency was copied.
+
+Core Audio/WASAPI uses Microsoft `windows` 0.62.2 bindings (MIT OR Apache-2.0), already present transitively and now directly enabled. The implementation is original; see docs/licenses/windows-MIT.txt and windows-APACHE.txt. No CPAL, HIDAPI, libusb or packet-capture driver was added.

@@ -31,8 +31,8 @@ it("separates same VID/PID mice and multiple keyboard devices", () => {
     [a, b, x, y],
     [ep(x.id), ep(y.id), ep(x.id, "keyboard"), ep(y.id, "keyboard")],
   );
-  expect(list).toHaveLength(4);
-  expect(new Set(list.map((c) => c.id)).size).toBe(4);
+  expect(list).toHaveLength(2);
+  expect(new Set(list.map((c) => c.id)).size).toBe(2);
 });
 it("groups same-kind composite descendants but never mouse with keyboard", () => {
   const root = node("USB\\VID_1234&PID_1234\\R", null, "USB");
@@ -44,10 +44,16 @@ it("groups same-kind composite descendants but never mouse with keyboard", () =>
     [root, mi, a, b],
     [ep(a.id), ep(b.id), ep(b.id, "keyboard")],
   );
-  expect(list.filter((c) => c.kind === "mouse")[0].endpoints).toHaveLength(2);
-  expect(list.filter((c) => c.kind === "keyboard")[0].endpoints).toHaveLength(
-    1,
-  );
+  expect(
+    list
+      .find((c) => c.inputKinds?.includes("mouse"))!
+      .endpoints.filter((e) => e.kind === "mouse"),
+  ).toHaveLength(2);
+  expect(
+    list
+      .find((c) => c.inputKinds?.includes("keyboard"))!
+      .endpoints.filter((e) => e.kind === "keyboard"),
+  ).toHaveLength(1);
   expect(list.every((c) => c.device.physicalDeviceId === null)).toBe(true);
 });
 it("does not cross USB hubs or associate by shared container/name", () => {

@@ -2,6 +2,10 @@
 
 A local-first desktop toolkit for inspecting devices, collecting technical evidence, investigating problems, and progressively reverse-engineering supported interfaces.
 
+## Diagnostic engine and audio milestone
+
+The current `codex/audio-diagnostics` branch adds Core Audio endpoint discovery, explicit bounded WASAPI tone/microphone level tests, read-only whole-inventory diagnostics, conservative findings, sanitized measurement reports, read-only Windows HID capability profiles, and approval-gated reversible endpoint mute changes. See [architecture and limits](docs/AUDIO-DIAGNOSTIC-ARCHITECTURE.md) and [manual acceptance](docs/AUDIO-MANUAL-ACCEPTANCE.md). Physical audio/input/repair tests must be recorded separately from synthetic tests and Windows CI. Open Diagnostics to Run diagnostics; open Audio tests for endpoint-specific consent and tests. Automatic scans do not play sound, record microphones or change settings.
+
 ## Device Workbench milestone
 
 The `codex/device-workbench` branch adds selected-node workbenches, topology/container relationship evidence, read-only Raw Input endpoint mapping, explicit foreground-only mouse/keyboard sessions, the X-key attempt comparison, symptom investigation and aggregate-only local exports. Existing scanning, investigations and binary inspection remain. Native input functionality requires user-operated acceptance before being called hardware-validated. The final [candidate 5 draft](https://github.com/Aayush10016/AnyDevice/releases/tag/untagged-1d0bf49e349a831c4f8b) passed Windows CI with 25 Rust tests, ownership enforcement/mapping smoke and installer checks; see [actual results](docs/WORKBENCH-VALIDATION.md). Candidate 4 was superseded before delivery. See [architecture](docs/WORKBENCH-ARCHITECTURE.md), [milestone plan](docs/WORKBENCH-PLAN.md) and [manual procedures](docs/WORKBENCH-MANUAL-TESTS.md).
@@ -18,7 +22,7 @@ The 0.2.0 development candidate builds on the working 0.1.0 Windows application.
 - Offline .bin/.dat/.raw samples up to 1 MiB: paged hex/ASCII, offset annotations, aligned two-sample byte comparison, SHA-256 and exportable analysis metadata. Hypotheses remain unvalidated; imported bytes are never executed.
 - Light/dark/system appearance, local preferences, exact export previews, explicit native save dialogs and schema-validated exports.
 
-An OK operating-system status does not establish complete physical health. There is no Bluetooth radio/connection inspection, audio stream analysis, SMART/volume health diagnosis, ADB/MTP connection diagnosis, USB traffic capture, format parser generation, device repair, firmware flashing or driver modification. No cloud backend, telemetry, external AI or mandatory accounts.
+An OK operating-system status does not establish complete physical health. The current audio milestone measures selected shared-mode streams and can propose an approved mute setting change; it does not verify a physical repair. Bluetooth radio/connection inspection, SMART/volume health diagnosis, ADB/MTP diagnosis, USB traffic capture, vendor protocol/LED commands, firmware flashing and driver modification remain unsupported. No cloud backend, telemetry, external AI or mandatory accounts.
 
 ## Windows downloads and release status
 

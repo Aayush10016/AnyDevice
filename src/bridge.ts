@@ -1,3 +1,4 @@
+import {normalizeAudio} from "./audio";
 import type { ProviderId, DiscoveryScope } from "./models";
 import { providers } from "./providers";
 import { validateExport } from "./reporting";
@@ -79,4 +80,64 @@ export async function stopInputTest(
 
 export async function discardInputTest(sessionId: number): Promise<void> {
   if (isTauri()) await invoke("discard_input_test", { sessionId });
+}
+
+export async function inspectAudio(): Promise<
+  import("./audio").AudioInventory
+> {
+  if (!isTauri())
+    throw new Error("Audio tests require the Windows desktop app.");
+
+  return normalizeAudio(await invoke("inspect_audio"));
+}
+export async function startAudioTest(
+  targetId: string,
+  mode: import("./audio").AudioSession["mode"],
+): Promise<number> {
+  if (!isTauri()) throw new Error("Audio tests require Windows desktop.");
+  return invoke("start_audio_test", { targetId, mode, approved: true });
+}
+export async function audioTestStatus(
+  sessionId: number,
+): Promise<import("./audio").AudioSession> {
+  return invoke("audio_test_status", { sessionId });
+}
+export async function stopAudioTest(sessionId: number): Promise<void> {
+  if (isTauri()) await invoke("stop_audio_test", { sessionId });
+}
+export async function discardAudioTest(sessionId: number): Promise<void> {
+  if (isTauri()) await invoke("discard_audio_test", { sessionId });
+}
+
+export interface MuteProposal {
+  id: number;
+  targetId: string;
+  name: string;
+  beforeMute: boolean;
+  desiredMute: boolean;
+  exactChange: string;
+  risks: string;
+  reversal: string;
+  verification: string;
+}
+export interface RepairAudit {
+  id: number;
+  targetId: string;
+  approved: boolean;
+  beforeMute: boolean;
+  desiredMute: boolean;
+  afterMute: boolean | null;
+  verified: boolean;
+  rolledBack: boolean;
+  status: string;
+}
+export async function proposeUnmute(targetId: string): Promise<MuteProposal> {
+  return invoke("propose_audio_unmute", { targetId });
+}
+export async function executeAudioRepair(
+  proposalId: number,
+  approved: boolean,
+  rollback = false,
+): Promise<RepairAudit> {
+  return invoke("execute_audio_repair", { proposalId, approved, rollback });
 }

@@ -22,6 +22,7 @@ import {
   saveReport,
   openProjectPage,
   inspectInputDevices,
+  inspectAudio,
 } from "./bridge";
 import { diagnose, limitations, makeReport, normalize } from "./core";
 import {
@@ -29,6 +30,14 @@ import {
   BinaryPanel,
   type BinaryWorkspace,
 } from "./WorkspacePanels";
+import { AudioWorkspace } from "./AudioWorkspace";
+import { DiagnosticDashboard } from "./DiagnosticDashboard";
+import {
+  systemChecks,
+  diagnosticExport,
+  type DiagnosticCheck,
+} from "./diagnosticEngine";
+import type { AudioInventory, AudioSession } from "./audio";
 import { DeviceWorkbench } from "./DeviceWorkbench";
 import { DeviceInventory } from "./DeviceInventory";
 import { buildInventory } from "./inventoryModel";
@@ -42,6 +51,7 @@ import type {
   DiscoveryScope,
 } from "./models";
 type Route =
+  | "Audio"
   | "Overview"
   | "Devices"
   | "Diagnostics"
@@ -112,6 +122,22 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [category, setCategory] = useState("all");
+  const [audioInventory, setAudioInventory] = useState<AudioInventory | null>(
+    null,
+  );
+  const [audioSessions, setAudioSessions] = useState<AudioSession[]>([]);
+  const [audioSelected, setAudioSelected] = useState<string>();
+  const [repairAudits, setRepairAudits] = useState<
+    import("./bridge").RepairAudit[]
+  >([]);
+  const [checks, setChecks] = useState<DiagnosticCheck[]>([]);
+  const [diagnosticBusy, setDiagnosticBusy] = useState(false);
+  const [diagnosticPaused, setDiagnosticPaused] = useState(false);
+  const [diagnosticProgress, setDiagnosticProgress] = useState(
+    "No automatic diagnostic scan yet.",
+  );
+  const pausedRef = useRef(false),
+    cancelledRef = useRef(false);
   const [selected, setSelected] = useState<string>();
   const [candidateId, setCandidateId] = useState<string>();
   const [inputEndpoints, setInputEndpoints] = useState<Endpoint[]>([]);
@@ -195,6 +221,11 @@ export default function App() {
         setSelected(undefined);
         setCandidateId(undefined);
       }
+      try {
+        setAudioInventory(await inspectAudio());
+      } catch {
+        setAudioInventory(null);
+      }
       setFindings(diagnose(next, last));
       setStale(false);
       const info = `${new Date(next.collectedAt).toLocaleTimeString()} · ${next.devices.length} entries collected${next.complete ? "" : " · partial scan"}`;
@@ -215,6 +246,60 @@ export default function App() {
     } finally {
       busyRef.current = false;
       setBusy(false);
+    }
+  }
+  async function runDiagnostics() {
+    if (diagnosticBusy || busyRef.current) return;
+    setDiagnosticBusy(true);
+    cancelledRef.current = false;
+    pausedRef.current = false;
+    setDiagnosticPaused(false);
+    async function checkpoint(label: string) {
+      setDiagnosticProgress(label);
+      while (pausedRef.current && !cancelledRef.current)
+        await new Promise((r) => setTimeout(r, 100));
+      if (cancelledRef.current)
+        throw new Error("Diagnostics cancelled; completed evidence retained.");
+    }
+    try {
+      await checkpoint("1 / 4 — Refreshing Windows devices");
+      const fresh = normalize(await discover(provider, scope));
+      setPrevious(scan);
+      setScan(fresh);
+      setInputEndpoints([]);
+      setAudioInventory(null);
+      setChecks(systemChecks(fresh, buildInventory(fresh.devices, []), null));
+      setFindings(diagnose(fresh, scan));
+      setStale(false);
+      await checkpoint("2 / 4 — Reconciling native input sources");
+      let inputs: Endpoint[] = [];
+      try {
+        inputs = await inspectInputDevices();
+      } catch (e) {
+        if (cancelledRef.current) throw e;
+      }
+      setInputEndpoints(inputs);
+      await checkpoint("3 / 4 — Reading audio endpoint configuration");
+      let audio: AudioInventory | null = null;
+      try {
+        audio = await inspectAudio();
+      } catch (e) {
+        if (cancelledRef.current) throw e;
+      }
+      setAudioInventory(audio);
+      await checkpoint("4 / 4 — Correlating read-only evidence");
+      setChecks(
+        systemChecks(fresh, buildInventory(fresh.devices, inputs), audio),
+      );
+      setDiagnosticProgress(
+        "Read-only diagnostics complete. Input, audibility, microphone quality and LED tests were not performed automatically.",
+      );
+    } catch (e) {
+      setDiagnosticProgress(String(e));
+    } finally {
+      setDiagnosticBusy(false);
+      pausedRef.current = false;
+      setDiagnosticPaused(false);
     }
   }
   const filtered = (scan?.devices ?? []).filter(
@@ -251,6 +336,11 @@ export default function App() {
   const inventory = (
     <DeviceInventory
       candidates={candidates}
+      audio={audioInventory}
+      onAudioSelect={(id) => {
+        setAudioSelected(id);
+        setRoute("Audio");
+      }}
       stale={stale || failure || !scan?.complete}
       onSelect={(c) => {
         setSelected(c.device.id);
@@ -263,6 +353,7 @@ export default function App() {
     { name: "Overview", icon: LayoutDashboard },
     { name: "Devices", icon: Monitor },
     { name: "Diagnostics", icon: Activity },
+    { name: "Audio", icon: Activity },
     { name: "Investigation", icon: Activity },
     { name: "Binary workspace", icon: FileJson },
     { name: "Reports", icon: FileJson },
@@ -404,7 +495,7 @@ export default function App() {
           <ShieldCheck size={18} />
           <strong>Local by default</strong>
           <p>
-            Read-only inspection.
+            Automatic checks are read-only.
             <br />
             Your evidence stays here.
           </p>
@@ -444,11 +535,17 @@ export default function App() {
                             ? "Compare controlled observations and keep claims separate from evidence."
                             : route === "Binary workspace"
                               ? "Inspect local bytes and record reproducible hypotheses."
-                              : "A small set of preferences that work."}
+                              : route === "Audio"
+                                ? "Choose an endpoint and approve each functional test."
+                                : "A small set of preferences that work."}
                 </p>
               </div>
               {route !== "Settings" && route !== "Binary workspace" && (
-                <button className="primary" onClick={runScan} disabled={busy}>
+                <button
+                  className="primary"
+                  onClick={runScan}
+                  disabled={busy || diagnosticBusy}
+                >
                   <RefreshCw size={16} className={busy ? "spin" : ""} />
                   {busy ? "Scanning…" : scan ? "Refresh scan" : "Scan devices"}
                 </button>
@@ -589,7 +686,60 @@ export default function App() {
               </>
             )}
             {route === "Diagnostics" && (
-              <>
+              <DiagnosticDashboard
+                checks={checks}
+                progress={diagnosticProgress}
+                busy={diagnosticBusy}
+                paused={diagnosticPaused}
+                onRun={() => void runDiagnostics()}
+                onPause={() => {
+                  pausedRef.current = !pausedRef.current;
+                  setDiagnosticPaused(pausedRef.current);
+                }}
+                onCancel={() => {
+                  cancelledRef.current = true;
+                  pausedRef.current = false;
+                  void cancelScan();
+                }}
+                onAudio={() => setRoute("Audio")}
+                onExport={async () => {
+                  try {
+                    setMessage(
+                      (await saveReport(
+                        JSON.stringify(
+                          diagnosticExport(
+                            scan ?? null,
+                            checks,
+                            audioInventory,
+                            audioSessions,
+                            preferences.sanitize,
+                            repairAudits,
+                          ),
+                          null,
+                          2,
+                        ),
+                      ))
+                        ? "Diagnostic report saved"
+                        : "Save cancelled",
+                    );
+                  } catch (e) {
+                    setMessage(String(e));
+                  }
+                }}
+              />
+            )}
+            {route === "Audio" && (
+              <AudioWorkspace
+                initialEndpoint={audioSelected}
+                onBack={() => setRoute("Devices")}
+                onInventory={setAudioInventory}
+                onSession={(s) => setAudioSessions((v) => [...v, s].slice(-8))}
+                onRepair={(a) => setRepairAudits((v) => [...v, a].slice(-8))}
+              />
+            )}
+            {route === "Diagnostics" && (
+              <details>
+                <summary>Stats for nerds — legacy Windows findings</summary>
                 {!scan ? (
                   <div className="empty">
                     <Activity size={32} />
@@ -616,7 +766,7 @@ export default function App() {
                     ))}
                   </ul>
                 </section>
-              </>
+              </details>
             )}
             {route === "Reports" && (
               <>
@@ -708,7 +858,7 @@ export default function App() {
                   <label className="field">
                     Discovery provider
                     <select
-                      disabled={busy}
+                      disabled={busy || diagnosticBusy}
                       value={provider}
                       onChange={(e) => {
                         setProvider(e.target.value as ProviderId);
@@ -727,7 +877,7 @@ export default function App() {
                   <label className="field">
                     Inventory scope
                     <select
-                      disabled={busy}
+                      disabled={busy || diagnosticBusy}
                       value={scope}
                       onChange={(e) => {
                         setScope(e.target.value as DiscoveryScope);

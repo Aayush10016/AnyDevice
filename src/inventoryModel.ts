@@ -23,6 +23,8 @@ export interface Candidate {
   nodes: Device[];
   category: DeviceCategory;
   kind?: "mouse" | "keyboard";
+  inputKinds?: ("mouse" | "keyboard")[];
+  identityKind?: "usb-association" | "logical-source";
   name: string;
   placement: Placement;
   evidence: string[];
@@ -55,7 +57,28 @@ export function topology(d: Device, devices: Device[]): Device[] {
 }
 // Group only descendants of the nearest concrete USB instance. Never cross a hub,
 // merge by container alone, or call the receiver association a physical identity.
-function boundary(d: Device, devices: Device[]): Device {
+function boundary(
+  d: Device,
+  devices: Device[],
+  endpoints: Endpoint[] = [],
+): Device {
+  const own = endpoints.find(
+    (e) => e.instanceId?.toUpperCase() === d.id.toUpperCase(),
+  );
+  if (own) {
+    for (const id of own.ancestors) {
+      const found = devices.find(
+        (n) => n.id.toUpperCase() === id.toUpperCase(),
+      );
+      if (
+        found?.compatibleIds?.some((c) => /USB\\Class_09/i.test(c)) ||
+        /^USB\\(ROOT_HUB|HUB)/i.test(id)
+      )
+        break;
+      if (/^USB\\VID_[0-9A-F]{4}&PID_[0-9A-F]{4}\\/i.test(id) && found)
+        return found;
+    }
+  }
   let result = d;
   for (const n of topology(d, devices)) {
     if (
@@ -141,8 +164,8 @@ export function buildInventory(
     if (!kinds.length && /^(Mouse|Keyboard)$/i.test(d.category ?? ""))
       kinds.push(d.category?.toLowerCase() === "mouse" ? "mouse" : "keyboard");
     for (const kind of kinds) {
-      const root = boundary(d, active),
-        id = `${upper(root.id)}:${kind}`;
+      const root = boundary(d, active, endpoints),
+        id = `${upper(root.id)}:input`;
       const category =
         kind === "mouse" ? "Mice and pointing devices" : "Keyboards";
       let candidate = groups.get(id);
@@ -154,6 +177,10 @@ export function buildInventory(
           nodes: [],
           category,
           kind,
+          inputKinds: [],
+          identityKind: /^USB\\VID_/i.test(root.id)
+            ? "usb-association"
+            : "logical-source",
           name: kind === "mouse" ? "USB / HID mouse" : "USB / HID keyboard",
           ...info,
           endpoints: [],
@@ -163,7 +190,37 @@ export function buildInventory(
         );
         groups.set(id, candidate);
       }
-      candidate.nodes.push(d);
+      if (!candidate.inputKinds!.includes(kind))
+        candidate.inputKinds!.push(kind);
+      if (candidate.inputKinds!.length > 1) {
+        candidate.kind = undefined;
+        candidate.category = "Mice and pointing devices";
+        candidate.name = "USB input association (mouse + keyboard)";
+      } else {
+        const reported = [root.name, d.name].find(
+          (n) =>
+            n &&
+            !/^(USB (Input|Composite|Device)|HID[- ]?(compliant|keyboard)|Standard|Unknown)/i.test(
+              n,
+            ),
+        );
+        if (reported) candidate.name = reported;
+      }
+      if (
+        own.some((e) =>
+          e.ancestors.some((id) => /^BUTTONCONVERTER\\/i.test(id)),
+        )
+      ) {
+        candidate.placement = "Supporting infrastructure";
+        candidate.name = "Windows button-converter keyboard source";
+        candidate.evidence.push(
+          "Native button-converter ancestry; not identified as an external keyboard.",
+        );
+      }
+      if (
+        !candidate.nodes.some((n) => n.id.toUpperCase() === d.id.toUpperCase())
+      )
+        candidate.nodes.push(d);
       candidate.endpoints.push(...own.filter((e) => e.kind === kind));
       attached.add(upper(d.id));
       attached.add(upper(root.id));

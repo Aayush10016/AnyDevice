@@ -11,11 +11,13 @@ ajv.addSchema(report);
 ajv.addSchema(read("investigation"), "investigation");
 ajv.addSchema(read("binary-analysis"), "analysis");
 ajv.addSchema(read("device-workbench"), "workbench");
+ajv.addSchema(read("diagnostic-engine"), "engine");
 const source = standalone(ajv, {
   diagnostic: report.$id,
   investigation: "investigation",
   analysis: "analysis",
   workbench: "workbench",
+  engine:"engine",
 });
 // Bundle fixed validator runtime helpers so the app needs neither require() nor eval().
 const code = buildSync({
