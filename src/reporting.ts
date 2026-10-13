@@ -1,5 +1,11 @@
-import { diagnostic, investigation, analysis } from "./generated/validators";
+import {
+  diagnostic,
+  investigation,
+  analysis,
+  workbench,
+} from "./generated/validators";
 const validators = {
+  "device-workbench-1.0": workbench,
   "2.0": diagnostic,
   "investigation-1.0": investigation,
   "binary-analysis-1.0": analysis,

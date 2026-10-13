@@ -108,7 +108,29 @@ export function normalize(input: unknown): Scan {
       r.problemCode >= 0
         ? r.problemCode
         : null;
+    const list = (v: unknown) =>
+      Array.isArray(v)
+        ? v
+            .slice(0, 256)
+            .map(text)
+            .filter((x): x is string => x !== null)
+        : [];
     devices.push({
+      ...(Object.hasOwn(r, "containerId")
+        ? {
+            containerId:
+              typeof r.containerId === "string" &&
+              /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(r.containerId)
+                ? r.containerId
+                : null,
+          }
+        : {}),
+      ...(Object.hasOwn(r, "compatibleIds")
+        ? { compatibleIds: list(r.compatibleIds) }
+        : {}),
+      ...(Object.hasOwn(r, "locationPaths")
+        ? { locationPaths: list(r.locationPaths) }
+        : {}),
       present:
         provider === "windows-pnp-fallback"
           ? true
@@ -321,6 +343,9 @@ export function makeReport(
   const scrub = (d: Device): Device => ({
     ...d,
     id: alias(d.id),
+    ...(d.containerId !== undefined ? { containerId: null } : {}),
+    ...(d.compatibleIds !== undefined ? { compatibleIds: [] } : {}),
+    ...(d.locationPaths !== undefined ? { locationPaths: [] } : {}),
     name: null,
     manufacturer: null,
     category: [

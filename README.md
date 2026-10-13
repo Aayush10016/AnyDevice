@@ -2,6 +2,10 @@
 
 A local-first desktop toolkit for inspecting devices, collecting technical evidence, investigating problems, and progressively reverse-engineering supported interfaces.
 
+## Device Workbench milestone
+
+The `codex/device-workbench` branch adds selected-node workbenches, topology/container relationship evidence, read-only Raw Input endpoint mapping, explicit foreground-only mouse/keyboard sessions, the X-key attempt comparison, symptom investigation and aggregate-only local exports. Existing scanning, investigations and binary inspection remain. Native input functionality requires user-operated acceptance before being called hardware-validated. See [architecture](docs/WORKBENCH-ARCHITECTURE.md), [milestone plan](docs/WORKBENCH-PLAN.md) and [manual procedures](docs/WORKBENCH-MANUAL-TESTS.md).
+
 ## Current implementation
 
 The 0.2.0 development candidate builds on the working 0.1.0 Windows application. It adds native Windows Configuration Manager inventory, optional all-present-PnP collection, controlled snapshot investigations, and bounded offline binary sample inspection. Capability labels and test results are in [CAPABILITIES](docs/CAPABILITIES.md) and [EXPANSION-VALIDATION](docs/EXPANSION-VALIDATION.md).

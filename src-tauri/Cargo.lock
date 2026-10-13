@@ -48,6 +48,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "rfd",
+ "serde",
  "serde_json",
  "tauri",
  "tauri-build",
