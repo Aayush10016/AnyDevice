@@ -66,6 +66,9 @@ it("validates all new evidence exports and rejects incomplete or excessive struc
     ).not.toThrow();
   }
   for (const malformed of [
+    { schemaVersion: "constructor" },
+    { schemaVersion: "toString" },
+    { schemaVersion: ["2.0"] },
     { schemaVersion: "2.0", devices: [], findings: [] },
     { schemaVersion: "investigation-1.0", captures: [] },
     { schemaVersion: "binary-analysis-1.0", source: { length: 2000000 } },

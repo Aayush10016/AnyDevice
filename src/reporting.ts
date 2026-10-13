@@ -12,7 +12,10 @@ export function validateExport(content: string): void {
     value && typeof value === "object"
       ? (value as { schemaVersion?: string }).schemaVersion
       : undefined;
-  const validate = validators[version as keyof typeof validators];
+  const validate =
+    typeof version === "string" && Object.hasOwn(validators, version)
+      ? validators[version as keyof typeof validators]
+      : undefined;
   if (!validate || !validate(value))
     throw new Error("Export does not conform to a supported AnyDevice schema");
 }
