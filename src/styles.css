@@ -870,9 +870,8 @@ main {
   font-size: 9px;
   white-space: nowrap;
 }
-.keyboard-block:nth-child(2) .keyboard-row-2 {
+.keyboard-block:nth-child(2) .keyboard-row-4 {
   padding: 0 45px;
-  margin-top: 55px;
 }
 .mouse-buttons {
   display: flex;
@@ -895,8 +894,8 @@ main {
   display: grid;
   grid-template-columns: repeat(4, 38px);
   grid-template-rows: repeat(5, 49px);
-  gap: 3px;
-  margin: 5px 0;
+  gap: 5px;
+  margin: 59px 0 5px;
 }
 .number-pad .test-key {
   min-width: 0;

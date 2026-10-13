@@ -13,9 +13,6 @@ export const keyboardLayout: LayoutKey[][] = [
   [
     k(27, "Esc"),
     ...Array.from({ length: 12 }, (_, i) => k(112 + i, `F${i + 1}`)),
-    k(44, "PrtSc"),
-    k(145, "Scroll"),
-    k(19, "Pause"),
   ],
   [
     k(192, "`"),
@@ -64,8 +61,10 @@ export const keyboardLayout: LayoutKey[][] = [
   ],
 ];
 export const navigationLayout = [
+  [k(44, "PrtSc"), k(145, "Scroll"), k(19, "Pause")],
   [k(45, "Insert"), k(36, "Home"), k(33, "PgUp")],
   [k(46, "Delete"), k(35, "End"), k(34, "PgDn")],
+  [],
   [k(38, "↑")],
   [k(37, "←"), k(40, "↓"), k(39, "→")],
 ];
