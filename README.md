@@ -4,7 +4,7 @@ A local-first desktop toolkit for inspecting devices, collecting technical evide
 
 ## Device Workbench milestone
 
-The `codex/device-workbench` branch adds selected-node workbenches, topology/container relationship evidence, read-only Raw Input endpoint mapping, explicit foreground-only mouse/keyboard sessions, the X-key attempt comparison, symptom investigation and aggregate-only local exports. Existing scanning, investigations and binary inspection remain. Native input functionality requires user-operated acceptance before being called hardware-validated. See [architecture](docs/WORKBENCH-ARCHITECTURE.md), [milestone plan](docs/WORKBENCH-PLAN.md) and [manual procedures](docs/WORKBENCH-MANUAL-TESTS.md).
+The `codex/device-workbench` branch adds selected-node workbenches, topology/container relationship evidence, read-only Raw Input endpoint mapping, explicit foreground-only mouse/keyboard sessions, the X-key attempt comparison, symptom investigation and aggregate-only local exports. Existing scanning, investigations and binary inspection remain. Native input functionality requires user-operated acceptance before being called hardware-validated. The final [candidate 5 draft](https://github.com/Aayush10016/AnyDevice/releases/tag/untagged-1d0bf49e349a831c4f8b) passed Windows CI with 25 Rust tests, ownership enforcement/mapping smoke and installer checks; see [actual results](docs/WORKBENCH-VALIDATION.md). Candidate 4 was superseded before delivery. See [architecture](docs/WORKBENCH-ARCHITECTURE.md), [milestone plan](docs/WORKBENCH-PLAN.md) and [manual procedures](docs/WORKBENCH-MANUAL-TESTS.md).
 
 ## Current implementation
 
