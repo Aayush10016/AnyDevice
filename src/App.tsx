@@ -18,8 +18,27 @@ import {
 } from "lucide-react";
 import { cancelScan, discover, saveReport, openProjectPage } from "./bridge";
 import { diagnose, limitations, makeReport, normalize } from "./core";
-import type { Device, Finding, Scan } from "./models";
-type Route = "Overview" | "Devices" | "Diagnostics" | "Reports" | "Settings";
+import {
+  InvestigationPanel,
+  BinaryPanel,
+  type BinaryWorkspace,
+} from "./WorkspacePanels";
+import type { Investigation } from "./investigation";
+import type {
+  Device,
+  Finding,
+  Scan,
+  ProviderId,
+  DiscoveryScope,
+} from "./models";
+type Route =
+  | "Overview"
+  | "Devices"
+  | "Diagnostics"
+  | "Reports"
+  | "Settings"
+  | "Investigation"
+  | "Binary workspace";
 type Appearance = "system" | "light" | "dark";
 function loadPreferences(): { appearance: Appearance; sanitize: boolean } {
   try {
@@ -73,6 +92,7 @@ function DeviceDetails({
 }) {
   const [copyStatus, setCopyStatus] = useState("");
   const fields = [
+    ["Identity", "Logical PnP node; physical grouping unavailable"],
     ["Class", d.category],
     ["Transport", d.transport],
     ["Manufacturer", d.manufacturer],
@@ -96,7 +116,11 @@ function DeviceDetails({
           <X size={18} />
         </button>
       </div>
-      <Usb size={28} className="accent" />
+      {d.transport === "USB" ? (
+        <Usb size={28} className="accent" />
+      ) : (
+        <Monitor size={28} className="accent" />
+      )}
       <h2>{d.name ?? "Unnamed device"}</h2>
       <p className="muted">Windows device entry</p>
       <div className="identifier">
@@ -137,6 +161,12 @@ function DeviceDetails({
   );
 }
 export default function App() {
+  const [provider, setProvider] = useState<ProviderId>("windows-cfgmgr32");
+  const [scope, setScope] = useState<DiscoveryScope>("usb-hid");
+  const [investigation, setInvestigation] = useState<Investigation>();
+  const [binaryWorkspace, setBinaryWorkspace] = useState<BinaryWorkspace>({
+    annotations: [],
+  });
   const [route, setRoute] = useState<Route>("Overview");
   const [scan, setScan] = useState<Scan>();
   const [previous, setPrevious] = useState<Scan>();
@@ -206,9 +236,9 @@ export default function App() {
     busyRef.current = true;
     setBusy(true);
     setFailure(false);
-    setMessage("Reading present USB and HID entries from Windows…");
+    setMessage("Reading present device nodes from Windows…");
     try {
-      const next = normalize(await discover());
+      const next = normalize(await discover(provider, scope));
       const last = scan;
       setPrevious(last);
       setScan(next);
@@ -255,8 +285,10 @@ export default function App() {
   const device = scan?.devices.find((d) => d.id === selected);
   const navigation = [
     { name: "Overview", icon: LayoutDashboard },
-    { name: "Devices", icon: Usb },
+    { name: "Devices", icon: Monitor },
     { name: "Diagnostics", icon: Activity },
+    { name: "Investigation", icon: Activity },
+    { name: "Binary workspace", icon: FileJson },
     { name: "Reports", icon: FileJson },
     { name: "Settings", icon: Settings },
   ] as const;
@@ -320,7 +352,11 @@ export default function App() {
                     className="device-button"
                     onClick={() => setSelected(d.id)}
                   >
-                    <Usb size={18} />
+                    {d.transport === "USB" ? (
+                      <Usb size={18} />
+                    ) : (
+                      <Monitor size={18} />
+                    )}
                     <span>
                       <strong>{d.name ?? "Unnamed device"}</strong>
                       <small>{d.id}</small>
@@ -348,7 +384,7 @@ export default function App() {
         </table>
         {!filtered.length && (
           <div className="empty">
-            <Usb size={32} />
+            <Monitor size={32} />
             <h3>
               {scan
                 ? "No matching entries"
@@ -411,7 +447,9 @@ export default function App() {
           <main>
             <div className="page-heading">
               <div>
-                <div className="eyebrow">UNDERSTAND. DIAGNOSE. INVESTIGATE.</div>
+                <div className="eyebrow">
+                  UNDERSTAND. DIAGNOSE. INVESTIGATE.
+                </div>
                 <h1>
                   {route === "Overview"
                     ? "A clearer view of your devices"
@@ -419,7 +457,7 @@ export default function App() {
                 </h1>
                 <p className="muted">
                   {route === "Devices"
-                    ? "Inspect present USB and HID entries reported by Windows."
+                    ? "Inspect present device nodes reported by Windows."
                     : route === "Overview"
                       ? "Start with observations. Follow the evidence."
                       : route === "Diagnostics"
@@ -429,7 +467,7 @@ export default function App() {
                           : "A small set of preferences that work."}
                 </p>
               </div>
-              {route !== "Settings" && (
+              {route !== "Settings" && route !== "Binary workspace" && (
                 <button className="primary" onClick={runScan} disabled={busy}>
                   <RefreshCw size={16} className={busy ? "spin" : ""} />
                   {busy ? "Scanning…" : scan ? "Refresh scan" : "Scan devices"}
@@ -619,8 +657,78 @@ export default function App() {
                 )}
               </>
             )}
+            {route === "Investigation" && (
+              <InvestigationPanel
+                scan={scan}
+                sanitized={preferences.sanitize}
+                session={investigation}
+                onSession={setInvestigation}
+              />
+            )}
+            {route === "Binary workspace" && (
+              <BinaryPanel
+                sanitized={preferences.sanitize}
+                workspace={binaryWorkspace}
+                onWorkspace={setBinaryWorkspace}
+              />
+            )}
             {route === "Settings" && (
               <>
+                <section className="setting">
+                  <h2>Discovery modules</h2>
+                  <label className="field">
+                    Discovery provider
+                    <select
+                      disabled={busy}
+                      value={provider}
+                      onChange={(e) => {
+                        setProvider(e.target.value as ProviderId);
+                        setScope("usb-hid");
+                        setStale(true);
+                      }}
+                    >
+                      <option value="windows-cfgmgr32">
+                        Native Windows Configuration Manager
+                      </option>
+                      <option value="windows-pnp-fallback">
+                        PowerShell PnpDevice comparison fallback
+                      </option>
+                    </select>
+                  </label>
+                  <label className="field">
+                    Inventory scope
+                    <select
+                      disabled={busy}
+                      value={scope}
+                      onChange={(e) => {
+                        setScope(e.target.value as DiscoveryScope);
+                        setStale(true);
+                      }}
+                    >
+                      <option value="usb-hid">Present USB and HID nodes</option>
+                      {provider === "windows-cfgmgr32" && (
+                        <option value="all-pnp">
+                          All present Windows PnP nodes
+                        </option>
+                      )}
+                    </select>
+                  </label>
+                  <p>
+                    Native provider: no PowerShell dependency or administrator
+                    elevation. Broader inventory exposes Windows classes such as
+                    Bluetooth, audio, cameras, network and storage when present.
+                    It does not inspect radio connections, audio streams,
+                    storage health or volume contents. No ADB or recovery module
+                    is enabled.
+                  </p>
+                  <p>
+                    Source and scope of the displayed inventory:{" "}
+                    {scan
+                      ? `${scan.provider} / ${scan.scope} / ${scan.collectedAt}`
+                      : "No scan yet"}
+                    . Changing a setting requires a new scan.
+                  </p>
+                </section>
                 <section className="setting">
                   <h2>Appearance</h2>
                   <p className="muted">
@@ -663,7 +771,7 @@ export default function App() {
                 </section>
                 <section className="setting">
                   <h2>About AnyDevice</h2>
-                  <p>Version 0.1.0 · Windows 10/11 x64</p>
+                  <p>Version 0.2.0 · Windows 10/11 x64</p>
                   <p>
                     MIT License · AnyDevice contributors. React (MIT), Tauri
                     (MIT/Apache-2.0), Lucide (ISC), rfd (MIT). System font:

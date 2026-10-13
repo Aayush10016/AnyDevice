@@ -1,6 +1,6 @@
 {
   "name": "anydevice",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,7 +16,8 @@
     "@tauri-apps/api": "^2.8.0",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "ajv": "^8.20.0"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.8.0",
@@ -26,7 +27,6 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "ajv": "^8.20.0",
     "jsdom": "^26.0.0",
     "prettier": "^3.9.10",
     "typescript": "^5.7.3",

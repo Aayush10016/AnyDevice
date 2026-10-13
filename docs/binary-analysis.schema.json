@@ -1,0 +1,138 @@
+{
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "appVersion",
+    "sanitized",
+    "source",
+    "annotations",
+    "comparison",
+    "limitations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "binary-analysis-1.0"
+    },
+    "appVersion": {
+      "const": "0.2.0"
+    },
+    "sanitized": {
+      "type": "boolean"
+    },
+    "source": {
+      "type": "object",
+      "required": ["name", "length", "sha256"],
+      "properties": {
+        "name": {
+          "type": ["string", "null"]
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1048576
+        },
+        "sha256": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["offset", "length", "label", "status"],
+        "properties": {
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "status": {
+            "const": "unvalidated hypothesis"
+          }
+        },
+        "additionalProperties": false
+      },
+      "maxItems": 256
+    },
+    "comparison": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "source",
+            "differences",
+            "firstOffsets",
+            "commonPrefixLength",
+            "offsetsTruncated",
+            "limitations"
+          ],
+          "properties": {
+            "source": {
+              "type": "object",
+              "required": ["name", "length", "sha256"],
+              "properties": {
+                "name": {
+                  "type": ["string", "null"]
+                },
+                "length": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1048576
+                },
+                "sha256": {
+                  "type": ["string", "null"],
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "additionalProperties": false
+            },
+            "differences": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "firstOffsets": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxItems": 256
+            },
+            "commonPrefixLength": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "offsetsTruncated": {
+              "type": "boolean"
+            },
+            "limitations": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

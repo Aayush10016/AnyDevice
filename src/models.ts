@@ -4,6 +4,9 @@ export interface CollectionError {
   deviceId?: string;
 }
 export interface Device {
+  nodeKind: "logical-pnp-node";
+  physicalDeviceId: null;
+  interfacePaths: string[];
   id: string;
   name: string | null;
   category: string | null;
@@ -15,11 +18,18 @@ export interface Device {
   problemCode: number | null;
   vid: string | null;
   pid: string | null;
-  transport: "USB" | "HID (transport unknown)";
+  transport: "USB" | "HID (transport unknown)" | "Unknown";
   observedAt: string;
   source: string;
 }
-export interface Scan {
+export type ProviderId = "windows-cfgmgr32" | "windows-pnp-fallback";
+export type DiscoveryScope = "usb-hid" | "all-pnp";
+export interface Provenance {
+  provider: ProviderId;
+  providerVersion: string;
+  scope: DiscoveryScope;
+}
+export interface Scan extends Provenance {
   collectedAt: string;
   os: string | null;
   devices: Device[];
@@ -40,14 +50,20 @@ export interface Finding {
   limitations: string;
 }
 export interface Report {
-  schemaVersion: "1.0";
-  appVersion: "0.1.0";
+  schemaVersion: "2.0";
+  appVersion: "0.2.0";
+  provenance: Provenance;
   collectedAt: string;
   os: string | null;
   complete: boolean;
   sanitized: boolean;
   devices: Device[];
-  previous?: { collectedAt: string; devices: Device[] };
+  previous?: {
+    collectedAt: string;
+    devices: Device[];
+    provenance: Provenance;
+    complete: boolean;
+  };
   findings: Finding[];
   errors: CollectionError[];
   limitations: string[];

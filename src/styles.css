@@ -668,3 +668,29 @@ footer {
     font-size: 23px;
   }
 }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 12px;
+  max-width: 700px;
+}
+.field input,
+.field textarea {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 10px;
+  border-radius: 3px;
+  font: inherit;
+}
+.field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+.brand small {
+  font-size: 9px;
+  letter-spacing: 0;
+}

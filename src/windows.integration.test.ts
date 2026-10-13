@@ -13,7 +13,7 @@ it.skipIf(!path)(
     expect(scan.errors.length).toBe(raw.errors.length);
     const report = makeReport(scan, diagnose(scan), true);
     const json = JSON.stringify(report);
-    expect(JSON.parse(json).schemaVersion).toBe("1.0");
+    expect(JSON.parse(json).schemaVersion).toBe("2.0");
     for (const device of scan.devices) {
       expect(device.source).toContain("Windows");
       expect(json).not.toContain(JSON.stringify(device.id).slice(1, -1));

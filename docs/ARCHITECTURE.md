@@ -1,26 +1,44 @@
 # Architecture
 
-Tauri 2 supplies a real Windows shell with native title bar, React/TypeScript/Vite supplies the embedded UI, and Rust exposes four purpose-specific commands: scan, cancel, save report, and open an allowlisted project/documentation/license link in the system browser. Lucide SVG icons and Segoe UI avoid downloaded fonts or decorative network assets. System title bar is deliberately retained for native resize, keyboard and accessibility behavior.
+Tauri 2 embeds React/TypeScript/Vite. Rust exposes only scan, cancel, validated evidence save and fixed project links. No backend, database or cloud dependency.
 
-## Layers and files
-
-| Layer | Module | Responsibility |
+| Layer | Files | Behavior |
 | --- | --- | --- |
-| Discovery | `src-tauri/scripts/discover.ps1` | Read present USB/HID PnP entries and available properties; emit structured JSON/errors |
-| Native boundary | `src-tauri/src/main.rs` | Fixed encoded script, hidden child, one scan at a time, timeout/cancellation, native report save |
-| Normalization | `src/core.ts`, `src/models.ts` | Validate envelope, deduplicate instance IDs case-insensitively, parse exact VID/PID, retain unknowns |
-| Diagnosis/recommendation | `src/core.ts` | Pure deterministic evidence rules and safe next tests |
-| Reporting | `src/core.ts` | Versioned report, prior evidence and allowlist sanitization |
-| UI | `src/App.tsx`, `src/styles.css`, `src/bridge.ts` | Real scan state, inspection, search, findings, preview, settings |
+| Provider definitions | src/providers.ts, src/models.ts | Version, scopes, dependencies, permissions, observations, limitations |
+| Native discovery | src-tauri/src/native.rs | Maintained windows-sys Configuration Manager bindings; present logical PnP nodes and typed properties |
+| Fallback | src-tauri/scripts/discover.ps1 | Unchanged compile-time-embedded read-only USB/HID PnpDevice adapter |
+| Native boundary | src-tauri/src/main.rs | Fixed collector subprocesses, timeout/kill/cancel, streaming output limit, native save dialog |
+| Normalization and rules | src/core.ts | Stable identity, explicit unknowns, allowed provenance, deterministic findings and same-source/scope abstention |
+| Investigation | src/investigation.ts | Bounded volatile snapshots, field comparison, user annotations and session-wide sanitized aliases |
+| Offline bytes | src/binary.ts | Size/extension validation, SHA-256, 256-byte hex pages, offset fields and bounded comparison output |
+| Export validation | src/reporting.ts, docs/*.schema.json | Ajv schema validation before IPC; native envelope and byte-limit validation before a user-selected write |
+| UI | src/App.tsx, src/WorkspacePanels.tsx | Working navigation and previews; no planned feature routes |
 
-PowerShell is an explicitly permitted fallback in the specification. Native SetupAPI integration is deferred. Windows PowerShell 5.1 and the system PnpDevice module are required, not PowerShell 7 or Python. The adapter is compile-time embedded; production does not read an editable script from disk. No UI input or device name is interpolated into command text. `Get-PnpDeviceProperty` receives the instance ID as a typed parameter.
+```mermaid
+flowchart LR
+  UI[Desktop workspace] --> IPC[Restricted Rust commands]
+  IPC --> N[Native collector child]
+  IPC --> F[Fixed PowerShell comparison child]
+  N --> W[Windows Configuration Manager]
+  F --> W2[Windows PnpDevice]
+  N --> D[Normalization and deterministic rules]
+  F --> D
+  D --> I[Snapshot investigations]
+  UI --> B[Local raw byte samples]
+  D --> R[Versioned schemas and sanitizers]
+  I --> R
+  B --> R
+  R --> S[Explicit local Save dialog]
+```
 
-Enumeration selects `USB\*` or `HIDClass`, not every present PnP entry. Some HID devices can use Bluetooth or other buses; their transport remains unknown. One physical composite device may produce multiple entries. VID/PID are extracted only from exact identifier patterns. Parent and location are opaque Windows-reported properties; no topology inference is made.
+Native enumeration uses CM_Get_Device_ID_List_SizeW/ListW with PRESENT, CM_Locate_DevNodeW, CM_Get_DevNode_PropertyW, CM_Get_DevNode_Status and CM_Get_Parent/Get_Device_IDW. Property type/length is checked, optional absent values remain unknown, numeric CONFIGRET establishes permission errors. Friendly name falls back to the OS device description. Normal-user reads do not modify registry/device configuration. Parent/location are observations, not inferred physical grouping.
 
-The scan is a point-in-time observation, not a USB traffic capture. Some hot-plug changes during property collection can generate partial results. A scan older than 60 seconds or retained after failure is marked stale. Scan history is volatile and comparison requires complete inventories; no persistent hardware tracking occurs.
+Microsoft references: [present instance list](https://learn.microsoft.com/en-us/windows/win32/api/cfgmgr32/nf-cfgmgr32-cm_get_device_id_listw), [unified properties](https://learn.microsoft.com/en-us/windows/win32/api/cfgmgr32/nf-cfgmgr32-cm_get_devnode_propertyw), [node status](https://learn.microsoft.com/en-us/windows/win32/api/cfgmgr32/nf-cfgmgr32-cm_get_devnode_status).
 
-Cancellation aborts the Rust future; the child has `kill_on_drop` enabled. Only one scan may run. The native timeout is 45 seconds. PnP enumeration is limited to 4096 entries and the final response to 16 MiB. Report saves are limited to 20 MiB. Output is buffered while the fixed discovery adapter runs; a future native adapter should enforce streaming bounds too.
+Native enumeration retries a resized inventory list three times, bounds properties to 64 KiB, examines at most 16,384 nodes, emits at most 4096 nodes, bounds device evidence to 12 MiB, stops cooperatively at 40 seconds and is forcibly terminated by the parent at 45 seconds. IPC stdout is read with a 16 MiB+1 bounded stream; overflow/cancel/timeout drops the kill-on-drop child. Partial results carry collection errors. Errors and unknown properties are not physical faults.
 
-The Rust boundary checks JSON shape; TypeScript validates the discovery envelope and property types. Diagnostic evidence strings reference device instance IDs in device arrays (`devices/<id>/...`), not RFC 6901 JSON pointers. Historical findings reference `previous/devices/<id>`. Sanitized reports retain report-local aliases in current and prior arrays. `complete` describes inventory enumeration; missing optional properties and property errors are separately recorded and do not establish hardware faults.
+The fallback script remains unchanged for parity. A failed scan retains the prior inventory and marks it stale. A snapshot ages after 60 seconds. Comparisons require complete scans with identical provider and scope. Windows hot-plug collection is not atomic: repeated scans/parity may disagree during actual changes. No logical node is silently combined with a physical device or claimed to expose a device-interface path.
 
-No shell/network/filesystem plugins are exposed. Custom commands operate only on fixed discovery or JSON chosen in a native save dialog. CSP restricts runtime content to local resources. React renders device metadata as text; no HTML injection or evaluated metadata. Frontend fixtures are never imported by production.
+Investigations store at most 8 captures and 8 MiB serialized evidence, solely in memory. Binary imports hold at most two 1 MiB samples and 256 hypotheses; comparison reports the first 256 differing offsets while counting all differences. No parser is generated or executed. Version 2.0 diagnostic, investigation-1.0 and binary-analysis-1.0 exports are schema checked. Original report-v1.schema.json preserves the previous schema definition; there is no imported-report reader/migration claim.
+
+React renders untrusted strings as text. CSP remains local. Custom commands expose no arbitrary executable, command text, URL or destination path. Save writes only validated content through a native user-selected dialog. No shell, network or general filesystem plugin is exposed.

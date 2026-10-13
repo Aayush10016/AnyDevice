@@ -38,6 +38,9 @@ jobs:
           # Hosted runners may have no USB hardware. Do not require a fake minimum count.
       - name: Package Windows installer
         run: npm run package
+      - name: Native discovery and fallback parity
+        shell: pwsh
+        run: ./scripts/verify-native.ps1 -Executable ./src-tauri/target/release/anydevice.exe
       - name: Verify silent installation and installed desktop launch
         shell: pwsh
         run: |
@@ -65,12 +68,12 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path release -Force | Out-Null
           Copy-Item src-tauri/target/release/bundle/nsis/*.exe release/
-          Copy-Item src-tauri/target/release/anydevice.exe release/AnyDevice-0.1.0-windows-x64.exe
+          Copy-Item src-tauri/target/release/anydevice.exe release/AnyDevice-0.2.0-windows-x64.exe
           Copy-Item docs/PORTABLE.md release/PORTABLE-README.md
           Get-ChildItem release/*.exe | ForEach-Object { "$( (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower() )  $($_.Name)" } | Set-Content release/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: AnyDevice-0.1.0-windows-x64-unsigned
+          name: AnyDevice-0.2.0-windows-x64-unsigned
           path: release/*
           if-no-files-found: error
   release:
@@ -82,7 +85,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: AnyDevice-0.1.0-windows-x64-unsigned
+          name: AnyDevice-0.2.0-windows-x64-unsigned
           path: release
       - name: Publish draft release for manual hardware and installer validation
         env:

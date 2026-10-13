@@ -12,3 +12,5 @@ Every finding carries classification, confidence, facts, explanation, evidence, 
 Codes 22 and 28 describe Windows-reported disabled / drivers-not-installed conditions. Other codes get generic problem wording with their numeric evidence. No rule automatically alters drivers. Unknown status is not treated as healthy or defective. A zero code is no proof of full hardware health.
 
 Android transfer, connection-attempt failure, battery and circuit rules abstain because v0.1 does not collect reliable evidence for them. A synthetic Android fixture triggers only its Windows problem code rule. No MTP diagnosis is inferred from a name or VID. No AI or non-deterministic classifier is used.
+
+0.2.0 comparisons abstain when either collection is incomplete or the provider/scope differs. Finding facts include collection source/scope/time. Investigation property changes report exactly which observable fields changed, with no inferred root cause. All entries are logical nodes; OK does not establish physical health. No Bluetooth/ADB/storage-health-specific rule is added without a dedicated data source.
