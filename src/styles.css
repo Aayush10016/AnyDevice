@@ -916,3 +916,6 @@ main {
 .pad-96 {
   grid-column: 1 / span 2;
 }
+
+/* Quarter-unit ANSI grid: row gaps cannot change the horizontal key pitch. */
+.keyboard-block:first-child .keyboard-row { display: grid; grid-template-columns: repeat(60, minmax(0, 1fr)); gap: 2px; }

@@ -58,7 +58,7 @@ beforeEach(() => {
   current = {
     sessionId: 7,
     targetId: device.id,
-    mode: "x-key",
+    mode: "keyboard",
     status: "testing",
     reason: "Synthetic native bridge",
     startedAt: "2026-10-13T00:00:00Z",
@@ -132,16 +132,16 @@ it("opens a selected-node workbench with explicit topology and physical identity
   );
   expect(bridge.startInputTest).not.toHaveBeenCalled();
 });
-it("starts the exact mapped X endpoint, observes counts and confirms stop/reset cleanup", async () => {
+it("starts the exact mapped keyboard endpoint, observes counts and confirms stop/reset cleanup", async () => {
   mount();
   await live();
-  fireEvent.click(screen.getByLabelText(/Dedicated X-key/));
+  expect(screen.queryByLabelText(/Dedicated X-key/)).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText("Physical attempts"), {
     target: { value: "5" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Start Test" }));
   await waitFor(() =>
-    expect(bridge.startInputTest).toHaveBeenCalledWith(device.id, "x-key"),
+    expect(bridge.startInputTest).toHaveBeenCalledWith(device.id, "keyboard"),
   );
   current.stats = {
     ...current.stats,
@@ -151,7 +151,7 @@ it("starts the exact mapped X endpoint, observes counts and confirms stop/reset 
   current.status = "eventsObserved";
   await screen.findByText(/Native event count: 2/);
   fireEvent.click(screen.getByRole("button", { name: "Stop Test" }));
-  await screen.findByText(/defective switch is not established/);
+  await screen.findByText(/2 native events were observed/);
   fireEvent.click(screen.getByRole("button", { name: "Reset Test" }));
   await screen.findByText(/Reset\. Prior completed tests remain/);
 });

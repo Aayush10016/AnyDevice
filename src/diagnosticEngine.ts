@@ -1,9 +1,12 @@
+import { structureCheck } from "./evidence";
 import type { Scan } from "./models";
 import type { Candidate } from "./inventoryModel";
 import type { AudioInventory, AudioSession } from "./audio";
 export type Outcome =
   | "Passed"
   | "Issue detected"
+  | "Warning"
+  | "Skipped"
   | "Inconclusive"
   | "Not supported"
   | "Not tested"
@@ -182,7 +185,7 @@ export function systemChecks(
           e.state !== "active"
             ? "Inconclusive"
             : e.mute === true
-              ? "Issue detected"
+              ? "Warning"
               : e.mute === null || e.volume === null || !e.format
                 ? "Inconclusive"
                 : "Passed",
@@ -195,9 +198,11 @@ export function systemChecks(
           sampleRate: e.format?.sampleRate ?? null,
         },
         conclusion:
-          e.mute === true
-            ? "Windows reports this endpoint muted. That is a configuration observation, not a physical fault."
-            : `Windows reports ${e.state}; ${e.kind} audibility/capture quality has not been tested.`,
+          e.state !== "active"
+            ? `Windows remembers this ${e.kind} endpoint as ${e.state}; it is unavailable for testing, not established as faulty.`
+            : e.mute === true
+              ? "Windows reports this endpoint muted. That is a configuration observation, not a physical fault."
+              : `Windows reports ${e.state}; ${e.kind} audibility/capture quality has not been tested.`,
         nextStep:
           e.state !== "active"
             ? "Connect/enable the intended endpoint manually and refresh."
@@ -322,7 +327,7 @@ export function diagnosticExport(
       targetId: sanitized ? alias(r.targetId) : r.targetId,
     })),
     checks: checks.slice(0, 8192).map((c, i) => ({
-      ...c,
+      ...structureCheck(c),
       id: sanitized ? `check-${i + 1}` : c.id,
       target: sanitized ? alias(c.target) : c.target,
     })),

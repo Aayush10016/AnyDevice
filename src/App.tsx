@@ -718,6 +718,11 @@ export default function App() {
             {route === "Diagnostics" && (
               <DiagnosticDashboard
                 checks={checks}
+                targetName={(id) =>
+                  audioInventory?.endpoints.find((e) => e.id === id)?.name ??
+                  candidates.find((c) => c.id === id)?.name ??
+                  (id === "system" ? "This computer" : "Selected test target")
+                }
                 onTest={(target) => {
                   const endpoint = audioInventory?.endpoints.find(
                     (e) => e.id === target,
@@ -740,6 +745,7 @@ export default function App() {
                       c.id === id
                         ? {
                             ...c,
+                            outcome: "Skipped",
                             conclusion:
                               "You skipped this interactive check for now; no functional evidence was recorded.",
                             nextStep: "Choose and run the test when ready.",
@@ -801,6 +807,16 @@ export default function App() {
                       -8,
                     ),
                   );
+                  const measured = audioSessions.some(
+                    (s) =>
+                      s.sessionId === r.sessionId &&
+                      s.targetId === r.targetId &&
+                      s.mode === r.mode &&
+                      s.cleanup &&
+                      s.status === "completed" &&
+                      s.frames > 0 &&
+                      s.format?.supported,
+                  );
                   setChecks((v) => [
                     ...v.filter((c) => c.id !== `ear:${r.sessionId}`),
                     {
@@ -808,7 +824,7 @@ export default function App() {
                       target: r.targetId,
                       test: "User-reported channel observation",
                       outcome:
-                        r.observation === "unsure"
+                        !measured || r.observation === "unsure"
                           ? "Inconclusive"
                           : r.mode === "tone"
                             ? r.observation === "neither"

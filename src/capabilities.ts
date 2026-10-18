@@ -43,7 +43,7 @@ export function deviceCapabilities(
     result.push({
       id: `audio:${e.id}`,
       label:
-        e.kind === "playback" ? "Test speakers/headphones" : "Test microphone",
+        e.kind === "playback" ? "Run audio tests — speakers/headphones" : "Run audio tests — microphone",
       state:
         e.state === "active" && e.format?.supported
           ? "available"

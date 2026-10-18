@@ -9,6 +9,8 @@ export function investigateAudio(
     !!s &&
     s.cleanup &&
     s.status === "completed" &&
+    s.frames > 0 &&
+    !!s.format?.supported &&
     ["left", "right"].includes(s.mode) &&
     ear !== "unsure" &&
     ear !== s.mode;

@@ -1,3 +1,4 @@
+import { streamProgress, type AudioFailure } from "./audioLifecycle";
 import { useState, useEffect, useRef } from "react";
 import {
   compareRepair,
@@ -53,6 +54,9 @@ export function AudioWorkspace({
     [heard, setHeard] = useState<"yes" | "no" | "unknown">("unknown"),
     [staticReport, setStaticReport] = useState<boolean | null>(null),
     [preview, setPreview] = useState("");
+  const [failure, setFailure] = useState<AudioFailure | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [observationFailed, setObservationFailed] = useState(false);
   const [routing, setRouting] = useState<RoutingReport[]>(routingHistory);
   const [ear, setEar] = useState<EarObservation>("unsure");
   const [trace, setTrace] = useState<number[]>([]);
@@ -120,7 +124,7 @@ export function AudioWorkspace({
     };
   }, []);
   useEffect(() => {
-    if (!running) return;
+    if (!running || observationFailed) return;
     let pending = false,
       cancelled = false;
     const timer = setInterval(async () => {
@@ -130,7 +134,15 @@ export function AudioWorkspace({
         const v = await audioTestStatus(current.current);
         if (!cancelled) receive(v);
       } catch (e) {
-        if (!cancelled) setMessage(String(e));
+        if (!cancelled) {
+          setFailure({
+            stage: "Session observation",
+            detail: String(e).slice(0, 2048),
+          });
+          setObservationFailed(true);
+          if (current.current !== null)
+            void stopAudioTest(current.current).catch(() => {});
+        }
       } finally {
         pending = false;
       }
@@ -150,10 +162,14 @@ export function AudioWorkspace({
       window.removeEventListener("blur", stop);
       document.removeEventListener("visibilitychange", hidden);
     };
-  }, [session?.sessionId, session?.cleanup]);
+  }, [session?.sessionId, session?.cleanup, observationFailed]);
   async function stop(reset = false) {
     if (current.current === null) {
-      if (reset) setSession(null);
+      if (reset) {
+        setSession(null);
+        setFailure(null);
+        setObservationFailed(false);
+      }
       return;
     }
     setBusy(true);
@@ -168,6 +184,8 @@ export function AudioWorkspace({
             await discardAudioTest(id);
             current.current = null;
             setSession(null);
+            setFailure(null);
+            setObservationFailed(false);
             setHeard("unknown");
             setStaticReport(null);
             setEar("unsure");
@@ -188,8 +206,18 @@ export function AudioWorkspace({
     }
   }
   async function start(mode: AudioSession["mode"]) {
-    if (!endpoint || !consent) return;
+    if (
+      !endpoint ||
+      !consent ||
+      endpoint.state !== "active" ||
+      !endpoint.format?.supported ||
+      running ||
+      observationFailed
+    )
+      return;
     setBusy(true);
+    setStarting(true);
+    setFailure(null);
     setMessage("");
     setPreview("");
     setHeard("unknown");
@@ -201,6 +229,7 @@ export function AudioWorkspace({
       if (current.current !== null) {
         await discardAudioTest(current.current);
         current.current = null;
+        setSession(null);
       }
       const id = await startAudioTest(endpoint.id, mode);
       if (!mounted.current) {
@@ -210,9 +239,22 @@ export function AudioWorkspace({
       current.current = id;
       receive(await audioTestStatus(id));
     } catch (e) {
-      if (mounted.current) setMessage(String(e));
+      if (mounted.current) {
+        setFailure({
+          stage:
+            current.current === null ? "Start request" : "Session observation",
+          detail: String(e).slice(0, 2048),
+        });
+        if (current.current !== null) {
+          setObservationFailed(true);
+          void stopAudioTest(current.current).catch(() => {});
+        }
+      }
     } finally {
-      if (mounted.current) setBusy(false);
+      if (mounted.current) {
+        setBusy(false);
+        setStarting(false);
+      }
     }
   }
   const result =
@@ -237,13 +279,15 @@ export function AudioWorkspace({
         Audio endpoint{" "}
         <select
           aria-label="Audio endpoint"
-          disabled={running || busy}
+          disabled={running || busy || observationFailed}
           value={target}
           onChange={(e) => {
             if (current.current !== null)
               void discardAudioTest(current.current).catch(() => {});
             current.current = null;
             setTarget(e.target.value);
+            setFailure(null);
+            setObservationFailed(false);
             setSession(null);
             setConsent(false);
             setHeard("unknown");
@@ -303,6 +347,7 @@ export function AudioWorkspace({
                   key={mode}
                   disabled={
                     !consent ||
+                    observationFailed ||
                     running ||
                     busy ||
                     endpoint.state !== "active" ||
@@ -321,6 +366,7 @@ export function AudioWorkspace({
                 <button
                   disabled={
                     !consent ||
+                    observationFailed ||
                     running ||
                     busy ||
                     endpoint.state !== "active" ||
@@ -333,6 +379,7 @@ export function AudioWorkspace({
                 <button
                   disabled={
                     !consent ||
+                    observationFailed ||
                     running ||
                     busy ||
                     endpoint.state !== "active" ||
@@ -371,13 +418,7 @@ export function AudioWorkspace({
         className="input-test-surface"
         aria-label="Audio test focus"
       >
-        <p role="status">
-          {running
-            ? endpoint?.kind === "recording"
-              ? "Microphone measurement active — keep AnyDevice active"
-              : "Playback test active — keep AnyDevice active"
-            : "No audio stream active"}
-        </p>
+        <p role="status">{streamProgress(session, failure, starting)}</p>
         {endpoint?.kind === "recording" &&
           session?.window.map((level, i) => (
             <div key={i}>
@@ -397,8 +438,42 @@ export function AudioWorkspace({
             </div>
           ))}
       </div>
+      {failure && (
+        <article className="finding" role="alert">
+          <h3>{failure.stage} failed</h3>
+          <p>
+            Confirm the exact active endpoint, keep AnyDevice focused, refresh
+            endpoint state and check Windows microphone privacy permission for
+            capture. Stop or Reset must confirm cleanup before another test.
+          </p>
+          <details>
+            <summary>Advanced evidence — audio error</summary>
+            <pre>{failure.detail}</pre>
+          </details>
+        </article>
+      )}
+      {session &&
+        ["failed", "unsupported", "interrupted"].includes(session.status) && (
+          <article className="finding">
+            <h3>Audio test {session.status}</h3>
+            <p>
+              No successful physical test is established. Refresh the selected
+              endpoint; check supported format, focus and Windows permission
+              before retrying.
+            </p>
+            <details>
+              <summary>Advanced evidence — native failure stage</summary>
+              <p>{session.reason}</p>
+              <p>
+                Frames: {session.frames}; cleanup: {String(session.cleanup)}
+              </p>
+            </details>
+          </article>
+        )}
       {session?.cleanup &&
         session.status === "completed" &&
+        session.frames > 0 &&
+        session.format?.supported &&
         endpoint?.kind === "playback" && (
           <>
             <label>
@@ -523,8 +598,12 @@ export function AudioWorkspace({
           ))}
         </details>
       )}
-      <h3>{result.outcome}</h3>
-      <p>{result.text}</p>
+      <h3>{failure ? "Inconclusive" : result.outcome}</h3>
+      <p>
+        {failure
+          ? "The request or observation path failed; an older result does not establish this test succeeded."
+          : result.text}
+      </p>
       {endpoint?.kind === "recording" && (
         <>
           <h3>Investigate microphone static</h3>
@@ -627,6 +706,7 @@ export function AudioWorkspace({
           previousAudit={repairs.at(-1)}
           targetId={endpoint.id}
           muted={endpoint.mute}
+          endpointState={endpoint.state}
           running={running || busy}
           onVerified={(a) => {
             beforeRepair.current = session;

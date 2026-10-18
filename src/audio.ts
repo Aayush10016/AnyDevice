@@ -128,7 +128,7 @@ export function audioConclusion(
       outcome: "Cancelled or interrupted",
       text: "Focus, navigation or Stop interrupted this interval. Repeat under the same conditions.",
     };
-  if (s.status !== "completed" || !s.frames)
+  if (s.status !== "completed" || !s.frames || !s.format?.supported)
     return {
       outcome: "Inconclusive",
       text: "The audio stream did not complete with frames. Check endpoint availability, Windows permissions and the advanced error.",
@@ -142,6 +142,18 @@ export function audioConclusion(
             ? "Issue detected"
             : "Inconclusive",
       text: `Windows accepted ${s.frames} frames for the selected endpoint. ${heard === "yes" ? "You reported audible sound in the expected channel." : heard === "no" ? "You reported no expected sound: this is an observation mismatch, not proof of a damaged speaker. Check routing, mute, volume and cabling." : "Audibility/channel correctness has not been confirmed by you."}`,
+    };
+  if (
+    !s.aggregate.length ||
+    s.aggregate.length !== s.format.channels ||
+    s.aggregate.some(
+      (c) =>
+        !c.samples || !Number.isFinite(c.rmsDbfs) || !Number.isFinite(c.peak),
+    )
+  )
+    return {
+      outcome: "Inconclusive",
+      text: "Channel measurements are missing or invalid; no microphone measurement passed.",
     };
   if (
     s.aggregate.some((c) => c.invalidSamples > 0) ||
@@ -193,6 +205,22 @@ export function compareQuietSpeech(
     quiet.format.float !== speech.format.float ||
     quiet.format.blockAlign !== speech.format.blockAlign ||
     quiet.format.channelMask !== speech.format.channelMask ||
+    !quiet.frames ||
+    !speech.frames ||
+    quiet.discontinuities > 0 ||
+    speech.discontinuities > 0 ||
+    quiet.timestampErrors > 0 ||
+    speech.timestampErrors > 0 ||
+    !quiet.format.supported ||
+    !speech.format.supported ||
+    quiet.aggregate.length !== quiet.format.channels ||
+    speech.aggregate.length !== speech.format.channels ||
+    quiet.aggregate.some(
+      (c) => !c.samples || c.invalidSamples > 0 || !Number.isFinite(c.rmsDbfs),
+    ) ||
+    speech.aggregate.some(
+      (c) => !c.samples || c.invalidSamples > 0 || !Number.isFinite(c.rmsDbfs),
+    ) ||
     !quiet.aggregate[0]?.samples ||
     !speech.aggregate[0]?.samples
   )

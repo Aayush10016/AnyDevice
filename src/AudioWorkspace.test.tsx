@@ -261,3 +261,126 @@ it("requires separate approval for apply and rollback, and makes no write during
     expect(executeAudioRepair).toHaveBeenCalledWith(4, true, true),
   );
 });
+
+it("shows a rejected start request instead of an empty successful-looking state", async () => {
+  vi.mocked(startAudioTest).mockRejectedValueOnce(
+    new Error("Synthetic permission rejection"),
+  );
+  render(<AudioWorkspace initialEndpoint={endpoint.id} {...callbacks()} />);
+  await waitFor(() =>
+    expect(
+      screen.getByRole("checkbox", { name: "Allow this audio test" }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Allow this audio test" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Play quiet tone" }));
+  await screen.findByRole("heading", { name: "Start request failed" });
+  expect(
+    screen.getByText("Synthetic permission rejection", {
+      exact: false,
+      selector: "pre",
+    }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("heading", { name: "Inconclusive" }),
+  ).toBeInTheDocument();
+  expect(screen.queryByText("No audio stream active")).toBeNull();
+});
+it("stops on failed status observation and requires confirmed cleanup before retry", async () => {
+  vi.mocked(audioTestStatus).mockRejectedValueOnce(
+    new Error("Synthetic observation failure"),
+  );
+  render(<AudioWorkspace initialEndpoint={endpoint.id} {...callbacks()} />);
+  await waitFor(() =>
+    expect(
+      screen.getByRole("checkbox", { name: "Allow this audio test" }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Allow this audio test" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Play quiet tone" }));
+  await screen.findByRole("heading", { name: "Session observation failed" });
+  expect(stopAudioTest).toHaveBeenCalledWith(17);
+  expect(
+    screen.getByRole("heading", { name: "Inconclusive" }),
+  ).toBeInTheDocument();
+  vi.mocked(audioTestStatus).mockResolvedValue({
+    sessionId: 17,
+    targetId: endpoint.id,
+    mode: "tone",
+    status: "interrupted",
+    reason: "Stopped",
+    startedAt: "2026-10-18T00:00:00Z",
+    format,
+    frames: 0,
+    aggregate: [],
+    window: [],
+    discontinuities: 0,
+    timestampErrors: 0,
+    cleanup: true,
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Reset audio test" }));
+  await waitFor(() => expect(discardAudioTest).toHaveBeenCalledWith(17));
+  expect(
+    screen.queryByRole("heading", { name: "Session observation failed" }),
+  ).toBeNull();
+});
+it("disables playback on an explicitly selected inactive endpoint", async () => {
+  vi.mocked(inspectAudio).mockResolvedValue({
+    endpoints: [{ ...endpoint, state: "unplugged" }],
+    errors: [],
+    complete: true,
+    source: "synthetic",
+    observedAt: "2026-10-18T00:00:00Z",
+  });
+  render(<AudioWorkspace initialEndpoint={endpoint.id} {...callbacks()} />);
+  await screen.findByRole("button", { name: "Play quiet tone" });
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Allow this audio test" }),
+  );
+  expect(
+    screen.getByRole("button", { name: "Play quiet tone" }),
+  ).toBeDisabled();
+  expect(startAudioTest).not.toHaveBeenCalled();
+});
+
+it("discards a delayed mute proposal after target or initial state changes", async () => {
+  let resolve!: (p: import("./bridge").MuteProposal) => void;
+  vi.mocked(proposeUnmute).mockImplementationOnce(
+    () =>
+      new Promise((r) => {
+        resolve = r;
+      }),
+  );
+  const props = {
+    targetId: endpoint.id,
+    muted: true,
+    running: false,
+    onVerified: vi.fn(),
+  };
+  const view = render(<RepairPanel {...props} />);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Review unmute proposal" }),
+  );
+  view.rerender(<RepairPanel {...props} muted={false} />);
+  resolve({
+    id: 19,
+    targetId: endpoint.id,
+    name: endpoint.name,
+    beforeMute: true,
+    desiredMute: false,
+    exactChange: "Unmute",
+    risks: "Audio may play",
+    reversal: "Restore",
+    verification: "Readback",
+  });
+  await waitFor(() =>
+    expect(
+      screen.queryByRole("button", { name: "Apply approved unmute" }),
+    ).toBeNull(),
+  );
+  expect(executeAudioRepair).not.toHaveBeenCalled();
+});

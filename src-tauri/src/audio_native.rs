@@ -213,21 +213,25 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
         );
     }
     let capture_mode = ["ambient", "speech"].contains(&mode);
-    let _com = Apartment::new()?;
-    let en = enumerator()?;
-    let d = device(&en, id)?;
-    if unsafe { d.GetState() }.map_err(|e| e.to_string())? != DEVICE_STATE_ACTIVE {
-        return Err("Endpoint is not active".into());
+    let _com = Apartment::new().map_err(|e| format!("COM initialization: {e}"))?;
+    let en = enumerator().map_err(|e| format!("Endpoint enumeration: {e}"))?;
+    let d = device(&en, id).map_err(|e| format!("Select exact endpoint: {e}"))?;
+    if unsafe { d.GetState() }.map_err(|e| format!("Process WASAPI stream: {e}"))?
+        != DEVICE_STATE_ACTIVE
+    {
+        return Err("Endpoint state: selected endpoint is not active".into());
     }
-    let endpoint: IMMEndpoint = d.cast().map_err(|e| e.to_string())?;
-    if unsafe { endpoint.GetDataFlow() }.map_err(|e| e.to_string())?
+    let endpoint: IMMEndpoint = d
+        .cast()
+        .map_err(|e| format!("Process WASAPI stream: {e}"))?;
+    if unsafe { endpoint.GetDataFlow() }.map_err(|e| format!("Process WASAPI stream: {e}"))?
         != if capture_mode { eCapture } else { eRender }
     {
-        return Err("Endpoint flow does not match this test".into());
+        return Err("Endpoint flow: does not match the selected test".into());
     }
-    let client: IAudioClient =
-        unsafe { d.Activate(CLSCTX_ALL, None) }.map_err(|e| e.to_string())?;
-    let (owned_format, format) = mix(&client)?;
+    let client: IAudioClient = unsafe { d.Activate(CLSCTX_ALL, None) }
+        .map_err(|e| format!("Activate WASAPI client: {e}"))?;
+    let (owned_format, format) = mix(&client).map_err(|e| format!("Read shared format: {e}"))?;
     if !format.supported {
         return output(
             json!({"type":"status","status":"unsupported","reason":"Shared-mode sample format is not supported"}),
@@ -250,23 +254,30 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
             None,
         )
     }
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| format!("Initialize shared stream: {e}"))?;
     let stream = Stream(client);
-    let size = unsafe { stream.0.GetBufferSize() }.map_err(|e| e.to_string())?;
+    let size =
+        unsafe { stream.0.GetBufferSize() }.map_err(|e| format!("Read stream buffer size: {e}"))?;
     if size > format.sample_rate * 2 {
         return Err("Audio buffer exceeds bounded size".into());
     }
     let capture = if capture_mode {
-        Some(unsafe { stream.0.GetService::<IAudioCaptureClient>() }.map_err(|e| e.to_string())?)
+        Some(
+            unsafe { stream.0.GetService::<IAudioCaptureClient>() }
+                .map_err(|e| format!("Open capture service: {e}"))?,
+        )
     } else {
         None
     };
     let render = if !capture_mode {
-        Some(unsafe { stream.0.GetService::<IAudioRenderClient>() }.map_err(|e| e.to_string())?)
+        Some(
+            unsafe { stream.0.GetService::<IAudioRenderClient>() }
+                .map_err(|e| format!("Open render service: {e}"))?,
+        )
     } else {
         None
     };
-    unsafe { stream.0.Start() }.map_err(|e| e.to_string())?;
+    unsafe { stream.0.Start() }.map_err(|e| format!("Start WASAPI stream: {e}"))?;
     output(
         json!({"type":"status","status":"running","reason":if capture_mode{"Temporary level measurement active; no audio samples retained"}else{"Quiet 3-second tone active; audibility requires your confirmation"}}),
     )?;
@@ -286,14 +297,17 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
         }
         if let Some(capture) = &capture {
             for _ in 0..256 {
-                if unsafe { capture.GetNextPacketSize() }.map_err(|e| e.to_string())? == 0 {
+                if unsafe { capture.GetNextPacketSize() }
+                    .map_err(|e| format!("Process WASAPI stream: {e}"))?
+                    == 0
+                {
                     break;
                 }
                 let mut data = std::ptr::null_mut();
                 let mut frames = 0;
                 let mut flags = 0;
                 unsafe { capture.GetBuffer(&mut data, &mut frames, &mut flags, None, None) }
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| format!("Process WASAPI stream: {e}"))?;
                 let _lease = CaptureLease { capture, frames };
                 let bytes = frames as usize * format.block_align as usize;
                 if bytes > 8 * 1024 * 1024 {
@@ -329,12 +343,14 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
         }
         if let Some(render) = &render {
             let available = size.saturating_sub(
-                unsafe { stream.0.GetCurrentPadding() }.map_err(|e| e.to_string())?,
+                unsafe { stream.0.GetCurrentPadding() }
+                    .map_err(|e| format!("Process WASAPI stream: {e}"))?,
             );
             let remaining = (format.sample_rate as u64 * 3).saturating_sub(frames_total);
             let frames = available.min(remaining as u32);
             if frames > 0 {
-                let data = unsafe { render.GetBuffer(frames) }.map_err(|e| e.to_string())?;
+                let data = unsafe { render.GetBuffer(frames) }
+                    .map_err(|e| format!("Process WASAPI stream: {e}"))?;
                 if data.is_null() {
                     let _ = unsafe {
                         render.ReleaseBuffer(frames, AUDCLNT_BUFFERFLAGS_SILENT.0 as u32)
@@ -358,8 +374,8 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
                     &mut aggregate,
                 );
                 window = aggregate.clone(); // submitted signal evidence; not a loopback measurement
-                let released =
-                    unsafe { render.ReleaseBuffer(frames, 0) }.map_err(|e| e.to_string());
+                let released = unsafe { render.ReleaseBuffer(frames, 0) }
+                    .map_err(|e| format!("Process WASAPI stream: {e}"));
                 released?;
                 generated?;
                 frames_total += frames as u64;
