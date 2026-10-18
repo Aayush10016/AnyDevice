@@ -27,6 +27,8 @@ pub struct Snapshot {
     pub started_at: String,
     pub format: Option<AudioFormat>,
     pub frames: u64,
+    pub engine_consumed_frames: Option<u64>,
+    pub elapsed_ms: u64,
     pub aggregate: Vec<Levels>,
     pub window: Vec<Levels>,
     pub discontinuities: u32,
@@ -65,6 +67,10 @@ enum Packet {
         window: Vec<Levels>,
         discontinuities: u32,
         timestamp_errors: u32,
+        #[serde(default)]
+        engine_consumed_frames: Option<u64>,
+        #[serde(default)]
+        elapsed_ms: u64,
     },
 }
 fn apply(s: &mut Snapshot, p: Packet) -> Result<(), String> {
@@ -92,12 +98,16 @@ fn apply(s: &mut Snapshot, p: Packet) -> Result<(), String> {
             window,
             discontinuities,
             timestamp_errors,
+            engine_consumed_frames,
+            elapsed_ms,
         } => {
             if !(1..=8).contains(&format.channels)
                 || !(8000..=384000).contains(&format.sample_rate)
                 || frames > format.sample_rate as u64 * 10
                 || aggregate.len() != format.channels as usize
                 || window.len() != aggregate.len()
+                || elapsed_ms > 12000
+                || engine_consumed_frames.is_some_and(|n| n > frames)
                 || frames < s.frames
                 || aggregate.iter().chain(&window).any(|v| {
                     !v.rms.is_finite()
@@ -115,7 +125,9 @@ fn apply(s: &mut Snapshot, p: Packet) -> Result<(), String> {
             s.aggregate = aggregate;
             s.window = window;
             s.discontinuities = discontinuities;
-            s.timestamp_errors = timestamp_errors
+            s.timestamp_errors = timestamp_errors;
+            s.engine_consumed_frames = engine_consumed_frames;
+            s.elapsed_ms = elapsed_ms
         }
     }
     Ok(())
@@ -455,6 +467,8 @@ mod tests {
             window: vec![level],
             discontinuities: 0,
             timestamp_errors: 0,
+            elapsed_ms: 0,
+            engine_consumed_frames: None,
         };
         assert!(apply(&mut s, packet(10, level.clone())).is_ok());
         assert!(apply(&mut s, packet(9, level.clone())).is_err());
@@ -476,7 +490,9 @@ mod tests {
                 aggregate: vec![],
                 window: vec![],
                 discontinuities: 0,
-                timestamp_errors: 0
+                timestamp_errors: 0,
+                elapsed_ms: 0,
+                engine_consumed_frames: None
             }
         )
         .is_err());

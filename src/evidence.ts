@@ -19,6 +19,24 @@ export function structureCheck(c: DiagnosticCheck) {
     ...c,
     definitionId,
     checkVersion: 1,
+    classification:
+      c.outcome === "Issue detected"
+        ? c.confidence === "User-reported"
+          ? "potential_issue"
+          : "confirmed_issue"
+        : c.outcome === "Warning"
+          ? "potential_issue"
+          : c.outcome === "Passed"
+            ? "informational"
+            : c.outcome === "Not tested"
+              ? "not_tested"
+              : c.outcome === "Not supported"
+                ? "unsupported"
+                : "inconclusive",
+    observedAt:
+      typeof c.measurements.observedAt === "string"
+        ? c.measurements.observedAt
+        : null,
     category,
     preconditions:
       category === "audio"

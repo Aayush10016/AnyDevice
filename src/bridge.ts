@@ -1,4 +1,4 @@
-import {normalizeAudio} from "./audio";
+import { normalizeAudio } from "./audio";
 import type { ProviderId, DiscoveryScope } from "./models";
 import { providers } from "./providers";
 import { validateExport } from "./reporting";
@@ -89,6 +89,43 @@ export async function inspectAudio(): Promise<
     throw new Error("Audio tests require the Windows desktop app.");
 
   return normalizeAudio(await invoke("inspect_audio"));
+}
+
+export async function inspectLighting(): Promise<
+  import("./nativeInvestigation").LightingDiscovery
+> {
+  if (!isTauri())
+    throw new Error("Lighting discovery requires the Windows desktop app.");
+  const r =
+    await invoke<import("./nativeInvestigation").LightingDiscovery>(
+      "inspect_lighting",
+    );
+  if (
+    !r ||
+    r.operation !== "lighting-discovery" ||
+    !Array.isArray(r.interfaces) ||
+    r.interfaces.length > 64 ||
+    !Array.isArray(r.nodes) ||
+    r.nodes.length > 128 ||
+    !Array.isArray(r.errors) ||
+    !Array.isArray(r.methods) ||
+    r.physicalIlluminationVerified !== false ||
+    !Array.isArray(r.controlOperations) ||
+    r.controlOperations.length ||
+    !Number.isFinite(Date.parse(r.observedAt))
+  )
+    throw new Error("Invalid lighting discovery evidence");
+  return r;
+}
+export async function probeAudio(id: string, kind: "playback" | "recording") {
+  if (!isTauri())
+    throw new Error("Audio readiness requires the Windows desktop app.");
+  const { validateReadiness } = await import("./nativeInvestigation");
+  return validateReadiness(
+    await invoke("probe_audio", { targetId: id, kind }),
+    id,
+    kind,
+  );
 }
 export async function startAudioTest(
   targetId: string,

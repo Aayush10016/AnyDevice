@@ -4175,7 +4175,7 @@ function validate24(data: any, { instancePath = "", parentData, parentDataProper
 }
 validate24.evaluated = { "props": true, "dynamicProps": false, "dynamicItems": false };
 var engine = validate25;
-var schema40 = { "type": "object", "additionalProperties": false, "properties": { "schemaVersion": { "const": "diagnostic-engine-1.0" }, "appVersion": { "const": "0.2.0" }, "createdAt": { "type": "string", "maxLength": 100 }, "sanitized": { "type": "boolean" }, "coverage": { "type": "string", "maxLength": 2048 }, "scanComplete": { "type": "boolean" }, "discoveryProvenance": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "provider": { "type": "string", "maxLength": 2048 }, "scope": { "type": "string", "maxLength": 2048 }, "collectedAt": { "type": "string", "maxLength": 100 } }, "required": ["provider", "scope", "collectedAt"] }, { "type": "null" }] }, "userAudioReport": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "heardExpected": { "enum": ["yes", "no", "unknown"] }, "staticReported": { "type": ["boolean", "null"] } }, "required": ["sessionId", "heardExpected", "staticReported"] }, { "type": "null" }] }, "checks": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string", "maxLength": 8192 }, "target": { "type": "string", "maxLength": 8192 }, "test": { "type": "string", "maxLength": 2048 }, "outcome": { "enum": ["Passed", "Issue detected", "Inconclusive", "Not supported", "Not tested", "Cancelled or interrupted", "Warning", "Skipped"] }, "confidence": { "enum": ["Windows-reported", "Measured", "User-reported", "Limited"] }, "measurements": { "type": "object", "maxProperties": 32, "additionalProperties": { "anyOf": [{ "type": "string", "maxLength": 2048 }, { "type": "number" }, { "type": "boolean" }, { "type": "null" }] } }, "conclusion": { "type": "string", "maxLength": 2048 }, "nextStep": { "type": "string", "maxLength": 2048 }, "hypotheses": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "cause": { "type": "string", "maxLength": 2048 }, "confidence": { "enum": ["Confirmed configuration", "Possible", "Insufficient evidence"] }, "distinguishingTest": { "type": "string", "maxLength": 2048 }, "supportingEvidence": { "type": "array", "maxItems": 32, "items": { "type": "string", "maxLength": 2048 } }, "contradictingEvidence": { "type": "array", "maxItems": 32, "items": { "type": "string", "maxLength": 2048 } }, "verificationCriterion": { "type": "string", "maxLength": 2048 } }, "required": ["cause", "confidence", "distinguishingTest"] }, "maxItems": 16 }, "definitionId": { "type": "string", "maxLength": 2048 }, "checkVersion": { "const": 1 }, "category": { "enum": ["audio", "input-and-protocol", "inventory"] }, "preconditions": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "evidenceSource": { "type": "string", "maxLength": 2048 }, "confidenceRationale": { "type": "string", "maxLength": 2048 }, "supportingEvidence": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "contradictingEvidence": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "unknowns": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "verificationRequirements": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "repair": { "type": "object", "additionalProperties": false, "properties": { "providerId": { "enum": ["audio-endpoint-mute-v1", null] }, "availability": { "type": "string", "maxLength": 2048 }, "reason": { "type": "string", "maxLength": 2048 } }, "required": ["providerId", "availability", "reason"] } }, "required": ["id", "target", "test", "outcome", "confidence", "measurements", "conclusion", "nextStep", "hypotheses"] }, "maxItems": 8192 }, "audioEndpoints": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string", "maxLength": 2048 }, "name": { "type": ["string", "null"], "maxLength": 2048 }, "instanceId": { "type": ["string", "null"], "maxLength": 2048 }, "containerId": { "type": ["string", "null"], "maxLength": 2048 }, "kind": { "enum": ["playback", "recording"] }, "state": { "enum": ["active", "disabled", "unplugged", "notPresent"] }, "defaultRoles": { "type": "array", "items": { "enum": ["console", "multimedia", "communications"] }, "maxItems": 3 }, "mute": { "type": ["boolean", "null"] }, "volume": { "type": ["number", "null"] }, "format": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sampleRate": { "type": "integer", "minimum": 0 }, "channels": { "type": "integer", "minimum": 0 }, "bits": { "type": "integer", "minimum": 0 }, "float": { "type": "boolean" }, "blockAlign": { "type": "integer", "minimum": 0 }, "channelMask": { "type": "integer", "minimum": 0 }, "supported": { "type": "boolean" } }, "required": ["sampleRate", "channels", "bits", "float", "blockAlign", "channelMask", "supported"] }, { "type": "null" }] } }, "required": ["id", "name", "instanceId", "containerId", "kind", "state", "defaultRoles", "mute", "volume", "format"] }, "maxItems": 256 }, "audioSessions": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "sessionId": { "type": "integer", "minimum": 0 }, "targetId": { "type": "string", "maxLength": 2048 }, "mode": { "enum": ["left", "right", "tone", "ambient", "speech"] }, "status": { "type": "string", "maxLength": 100 }, "reason": { "type": "string", "maxLength": 2048 }, "startedAt": { "type": "string", "maxLength": 100 }, "format": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sampleRate": { "type": "integer", "minimum": 0 }, "channels": { "type": "integer", "minimum": 0 }, "bits": { "type": "integer", "minimum": 0 }, "float": { "type": "boolean" }, "blockAlign": { "type": "integer", "minimum": 0 }, "channelMask": { "type": "integer", "minimum": 0 }, "supported": { "type": "boolean" } }, "required": ["sampleRate", "channels", "bits", "float", "blockAlign", "channelMask", "supported"] }, { "type": "null" }] }, "frames": { "type": "integer", "minimum": 0 }, "aggregate": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "samples": { "type": "integer", "minimum": 0 }, "rms": { "type": "number" }, "rmsDbfs": { "type": "number" }, "peak": { "type": "number" }, "clippingProportion": { "type": "number" }, "zeroProportion": { "type": "number" }, "invalidSamples": { "type": "integer", "minimum": 0 } }, "required": ["samples", "rms", "rmsDbfs", "peak", "clippingProportion", "zeroProportion", "invalidSamples"] }, "maxItems": 8 }, "window": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "samples": { "type": "integer", "minimum": 0 }, "rms": { "type": "number" }, "rmsDbfs": { "type": "number" }, "peak": { "type": "number" }, "clippingProportion": { "type": "number" }, "zeroProportion": { "type": "number" }, "invalidSamples": { "type": "integer", "minimum": 0 } }, "required": ["samples", "rms", "rmsDbfs", "peak", "clippingProportion", "zeroProportion", "invalidSamples"] }, "maxItems": 8 }, "discontinuities": { "type": "integer", "minimum": 0 }, "timestampErrors": { "type": "integer", "minimum": 0 }, "cleanup": { "type": "boolean" } }, "required": ["sessionId", "targetId", "mode", "status", "reason", "startedAt", "format", "frames", "aggregate", "window", "discontinuities", "timestampErrors", "cleanup"] }, "maxItems": 8 }, "repairs": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "integer", "minimum": 0 }, "targetId": { "type": "string", "maxLength": 2048 }, "approved": { "type": "boolean" }, "beforeMute": { "type": "boolean" }, "desiredMute": { "type": "boolean" }, "afterMute": { "type": ["boolean", "null"] }, "verified": { "type": "boolean" }, "rolledBack": { "type": "boolean" }, "status": { "type": "string", "maxLength": 2048 } }, "required": ["id", "targetId", "approved", "beforeMute", "desiredMute", "afterMute", "verified", "rolledBack", "status"] }, "maxItems": 8 }, "limitations": { "type": "array", "items": { "type": "string", "maxLength": 2048 }, "maxItems": 32 }, "routingReports": { "type": "array", "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "properties": { "sessionId": { "type": "integer", "minimum": 1 }, "targetId": { "type": "string", "maxLength": 2048 }, "mode": { "enum": ["left", "right", "tone"] }, "observation": { "enum": ["left", "right", "both", "neither", "unsure"] } }, "required": ["sessionId", "targetId", "mode", "observation"] } }, "functionalVerification": { "anyOf": [{ "type": "null" }, { "type": "object", "additionalProperties": false, "properties": { "repairId": { "type": "integer", "minimum": 1 }, "beforeSessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "afterSessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "comparable": { "type": "boolean" }, "reason": { "type": "string", "maxLength": 2048 }, "changesDb": { "type": "array", "maxItems": 8, "items": { "type": "number" } }, "userOutcome": { "enum": ["unverified", "improved", "unchanged", "worse"] } }, "required": ["repairId", "beforeSessionId", "afterSessionId", "comparable", "reason", "changesDb", "userOutcome"] }] } }, "required": ["schemaVersion", "appVersion", "createdAt", "sanitized", "coverage", "scanComplete", "discoveryProvenance", "userAudioReport", "checks", "audioEndpoints", "audioSessions", "repairs", "limitations"], "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://anydevice.local/diagnostic-engine.schema.json" };
+var schema40 = { "type": "object", "additionalProperties": false, "properties": { "schemaVersion": { "const": "diagnostic-engine-1.0" }, "appVersion": { "const": "0.2.0" }, "createdAt": { "type": "string", "maxLength": 100 }, "sanitized": { "type": "boolean" }, "coverage": { "type": "string", "maxLength": 2048 }, "scanComplete": { "type": "boolean" }, "discoveryProvenance": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "provider": { "type": "string", "maxLength": 2048 }, "scope": { "type": "string", "maxLength": 2048 }, "collectedAt": { "type": "string", "maxLength": 100 } }, "required": ["provider", "scope", "collectedAt"] }, { "type": "null" }] }, "userAudioReport": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "heardExpected": { "enum": ["yes", "no", "unknown"] }, "staticReported": { "type": ["boolean", "null"] } }, "required": ["sessionId", "heardExpected", "staticReported"] }, { "type": "null" }] }, "checks": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string", "maxLength": 8192 }, "target": { "type": "string", "maxLength": 8192 }, "test": { "type": "string", "maxLength": 2048 }, "outcome": { "enum": ["Passed", "Issue detected", "Inconclusive", "Not supported", "Not tested", "Cancelled or interrupted", "Warning", "Skipped"] }, "confidence": { "enum": ["Windows-reported", "Measured", "User-reported", "Limited"] }, "measurements": { "type": "object", "maxProperties": 32, "additionalProperties": { "anyOf": [{ "type": "string", "maxLength": 2048 }, { "type": "number" }, { "type": "boolean" }, { "type": "null" }] } }, "conclusion": { "type": "string", "maxLength": 2048 }, "nextStep": { "type": "string", "maxLength": 2048 }, "hypotheses": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "cause": { "type": "string", "maxLength": 2048 }, "confidence": { "enum": ["Confirmed configuration", "Possible", "Insufficient evidence"] }, "distinguishingTest": { "type": "string", "maxLength": 2048 }, "supportingEvidence": { "type": "array", "maxItems": 32, "items": { "type": "string", "maxLength": 2048 } }, "contradictingEvidence": { "type": "array", "maxItems": 32, "items": { "type": "string", "maxLength": 2048 } }, "verificationCriterion": { "type": "string", "maxLength": 2048 } }, "required": ["cause", "confidence", "distinguishingTest"] }, "maxItems": 16 }, "definitionId": { "type": "string", "maxLength": 2048 }, "checkVersion": { "const": 1 }, "category": { "enum": ["audio", "input-and-protocol", "inventory"] }, "preconditions": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "evidenceSource": { "type": "string", "maxLength": 2048 }, "confidenceRationale": { "type": "string", "maxLength": 2048 }, "supportingEvidence": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "contradictingEvidence": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "unknowns": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "verificationRequirements": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "repair": { "type": "object", "additionalProperties": false, "properties": { "providerId": { "enum": ["audio-endpoint-mute-v1", null] }, "availability": { "type": "string", "maxLength": 2048 }, "reason": { "type": "string", "maxLength": 2048 } }, "required": ["providerId", "availability", "reason"] }, "classification": { "enum": ["confirmed_issue", "potential_issue", "informational", "inconclusive", "unsupported", "not_tested"] }, "observedAt": { "type": ["string", "null"], "maxLength": 100 } }, "required": ["id", "target", "test", "outcome", "confidence", "measurements", "conclusion", "nextStep", "hypotheses"] }, "maxItems": 8192 }, "audioEndpoints": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string", "maxLength": 2048 }, "name": { "type": ["string", "null"], "maxLength": 2048 }, "instanceId": { "type": ["string", "null"], "maxLength": 2048 }, "containerId": { "type": ["string", "null"], "maxLength": 2048 }, "kind": { "enum": ["playback", "recording"] }, "state": { "enum": ["active", "disabled", "unplugged", "notPresent"] }, "defaultRoles": { "type": "array", "items": { "enum": ["console", "multimedia", "communications"] }, "maxItems": 3 }, "mute": { "type": ["boolean", "null"] }, "volume": { "type": ["number", "null"] }, "format": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sampleRate": { "type": "integer", "minimum": 0 }, "channels": { "type": "integer", "minimum": 0 }, "bits": { "type": "integer", "minimum": 0 }, "float": { "type": "boolean" }, "blockAlign": { "type": "integer", "minimum": 0 }, "channelMask": { "type": "integer", "minimum": 0 }, "supported": { "type": "boolean" } }, "required": ["sampleRate", "channels", "bits", "float", "blockAlign", "channelMask", "supported"] }, { "type": "null" }] } }, "required": ["id", "name", "instanceId", "containerId", "kind", "state", "defaultRoles", "mute", "volume", "format"] }, "maxItems": 256 }, "audioSessions": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "sessionId": { "type": "integer", "minimum": 0 }, "targetId": { "type": "string", "maxLength": 2048 }, "mode": { "enum": ["left", "right", "tone", "ambient", "speech"] }, "status": { "type": "string", "maxLength": 100 }, "reason": { "type": "string", "maxLength": 2048 }, "startedAt": { "type": "string", "maxLength": 100 }, "format": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sampleRate": { "type": "integer", "minimum": 0 }, "channels": { "type": "integer", "minimum": 0 }, "bits": { "type": "integer", "minimum": 0 }, "float": { "type": "boolean" }, "blockAlign": { "type": "integer", "minimum": 0 }, "channelMask": { "type": "integer", "minimum": 0 }, "supported": { "type": "boolean" } }, "required": ["sampleRate", "channels", "bits", "float", "blockAlign", "channelMask", "supported"] }, { "type": "null" }] }, "frames": { "type": "integer", "minimum": 0 }, "aggregate": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "samples": { "type": "integer", "minimum": 0 }, "rms": { "type": "number" }, "rmsDbfs": { "type": "number" }, "peak": { "type": "number" }, "clippingProportion": { "type": "number" }, "zeroProportion": { "type": "number" }, "invalidSamples": { "type": "integer", "minimum": 0 } }, "required": ["samples", "rms", "rmsDbfs", "peak", "clippingProportion", "zeroProportion", "invalidSamples"] }, "maxItems": 8 }, "window": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "samples": { "type": "integer", "minimum": 0 }, "rms": { "type": "number" }, "rmsDbfs": { "type": "number" }, "peak": { "type": "number" }, "clippingProportion": { "type": "number" }, "zeroProportion": { "type": "number" }, "invalidSamples": { "type": "integer", "minimum": 0 } }, "required": ["samples", "rms", "rmsDbfs", "peak", "clippingProportion", "zeroProportion", "invalidSamples"] }, "maxItems": 8 }, "discontinuities": { "type": "integer", "minimum": 0 }, "timestampErrors": { "type": "integer", "minimum": 0 }, "cleanup": { "type": "boolean" }, "engineConsumedFrames": { "type": ["integer", "null"], "minimum": 0 }, "elapsedMs": { "type": "integer", "minimum": 0, "maximum": 12e3 } }, "required": ["sessionId", "targetId", "mode", "status", "reason", "startedAt", "format", "frames", "aggregate", "window", "discontinuities", "timestampErrors", "cleanup"] }, "maxItems": 8 }, "repairs": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "integer", "minimum": 0 }, "targetId": { "type": "string", "maxLength": 2048 }, "approved": { "type": "boolean" }, "beforeMute": { "type": "boolean" }, "desiredMute": { "type": "boolean" }, "afterMute": { "type": ["boolean", "null"] }, "verified": { "type": "boolean" }, "rolledBack": { "type": "boolean" }, "status": { "type": "string", "maxLength": 2048 } }, "required": ["id", "targetId", "approved", "beforeMute", "desiredMute", "afterMute", "verified", "rolledBack", "status"] }, "maxItems": 8 }, "limitations": { "type": "array", "items": { "type": "string", "maxLength": 2048 }, "maxItems": 32 }, "routingReports": { "type": "array", "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "properties": { "sessionId": { "type": "integer", "minimum": 1 }, "targetId": { "type": "string", "maxLength": 2048 }, "mode": { "enum": ["left", "right", "tone"] }, "observation": { "enum": ["left", "right", "both", "neither", "unsure"] } }, "required": ["sessionId", "targetId", "mode", "observation"] } }, "functionalVerification": { "anyOf": [{ "type": "null" }, { "type": "object", "additionalProperties": false, "properties": { "repairId": { "type": "integer", "minimum": 1 }, "beforeSessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "afterSessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "comparable": { "type": "boolean" }, "reason": { "type": "string", "maxLength": 2048 }, "changesDb": { "type": "array", "maxItems": 8, "items": { "type": "number" } }, "userOutcome": { "enum": ["unverified", "improved", "unchanged", "worse"] } }, "required": ["repairId", "beforeSessionId", "afterSessionId", "comparable", "reason", "changesDb", "userOutcome"] }] } }, "required": ["schemaVersion", "appVersion", "createdAt", "sanitized", "coverage", "scanComplete", "discoveryProvenance", "userAudioReport", "checks", "audioEndpoints", "audioSessions", "repairs", "limitations"], "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://anydevice.local/diagnostic-engine.schema.json" };
 function validate25(data: any, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}): boolean {
   ;
   let vErrors = null;
@@ -5472,6 +5472,40 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                   } else {
                                                                                     var valid7 = true;
                                                                                   }
+                                                                                  if (valid7) {
+                                                                                    if (data15.classification !== void 0) {
+                                                                                      let data54 = data15.classification;
+                                                                                      const _errs127 = errors;
+                                                                                      if (!(data54 === "confirmed_issue" || data54 === "potential_issue" || data54 === "informational" || data54 === "inconclusive" || data54 === "unsupported" || data54 === "not_tested")) {
+                                                                                        validate25.errors = [{ instancePath: instancePath + "/checks/" + i0 + "/classification", schemaPath: "#/properties/checks/items/properties/classification/enum", keyword: "enum", params: { allowedValues: schema40.properties.checks.items.properties.classification.enum }, message: "must be equal to one of the allowed values" }];
+                                                                                        return false;
+                                                                                      }
+                                                                                      var valid7 = _errs127 === errors;
+                                                                                    } else {
+                                                                                      var valid7 = true;
+                                                                                    }
+                                                                                    if (valid7) {
+                                                                                      if (data15.observedAt !== void 0) {
+                                                                                        let data55 = data15.observedAt;
+                                                                                        const _errs128 = errors;
+                                                                                        if (typeof data55 !== "string" && data55 !== null) {
+                                                                                          validate25.errors = [{ instancePath: instancePath + "/checks/" + i0 + "/observedAt", schemaPath: "#/properties/checks/items/properties/observedAt/type", keyword: "type", params: { type: schema40.properties.checks.items.properties.observedAt.type }, message: "must be string,null" }];
+                                                                                          return false;
+                                                                                        }
+                                                                                        if (errors === _errs128) {
+                                                                                          if (typeof data55 === "string") {
+                                                                                            if (func3(data55) > 100) {
+                                                                                              validate25.errors = [{ instancePath: instancePath + "/checks/" + i0 + "/observedAt", schemaPath: "#/properties/checks/items/properties/observedAt/maxLength", keyword: "maxLength", params: { limit: 100 }, message: "must NOT have more than 100 characters" }];
+                                                                                              return false;
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                        var valid7 = _errs128 === errors;
+                                                                                      } else {
+                                                                                        var valid7 = true;
+                                                                                      }
+                                                                                    }
+                                                                                  }
                                                                                 }
                                                                               }
                                                                             }
@@ -5515,41 +5549,41 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                           }
                           if (valid0) {
                             if (data.audioEndpoints !== void 0) {
-                              let data54 = data.audioEndpoints;
-                              const _errs127 = errors;
-                              if (errors === _errs127) {
-                                if (Array.isArray(data54)) {
-                                  if (data54.length > 256) {
+                              let data56 = data.audioEndpoints;
+                              const _errs130 = errors;
+                              if (errors === _errs130) {
+                                if (Array.isArray(data56)) {
+                                  if (data56.length > 256) {
                                     validate25.errors = [{ instancePath: instancePath + "/audioEndpoints", schemaPath: "#/properties/audioEndpoints/maxItems", keyword: "maxItems", params: { limit: 256 }, message: "must NOT have more than 256 items" }];
                                     return false;
                                   } else {
                                     var valid20 = true;
-                                    const len9 = data54.length;
+                                    const len9 = data56.length;
                                     for (let i9 = 0; i9 < len9; i9++) {
-                                      let data55 = data54[i9];
-                                      const _errs129 = errors;
-                                      if (errors === _errs129) {
-                                        if (data55 && typeof data55 == "object" && !Array.isArray(data55)) {
+                                      let data57 = data56[i9];
+                                      const _errs132 = errors;
+                                      if (errors === _errs132) {
+                                        if (data57 && typeof data57 == "object" && !Array.isArray(data57)) {
                                           let missing6;
-                                          if (data55.id === void 0 && (missing6 = "id") || data55.name === void 0 && (missing6 = "name") || data55.instanceId === void 0 && (missing6 = "instanceId") || data55.containerId === void 0 && (missing6 = "containerId") || data55.kind === void 0 && (missing6 = "kind") || data55.state === void 0 && (missing6 = "state") || data55.defaultRoles === void 0 && (missing6 = "defaultRoles") || data55.mute === void 0 && (missing6 = "mute") || data55.volume === void 0 && (missing6 = "volume") || data55.format === void 0 && (missing6 = "format")) {
+                                          if (data57.id === void 0 && (missing6 = "id") || data57.name === void 0 && (missing6 = "name") || data57.instanceId === void 0 && (missing6 = "instanceId") || data57.containerId === void 0 && (missing6 = "containerId") || data57.kind === void 0 && (missing6 = "kind") || data57.state === void 0 && (missing6 = "state") || data57.defaultRoles === void 0 && (missing6 = "defaultRoles") || data57.mute === void 0 && (missing6 = "mute") || data57.volume === void 0 && (missing6 = "volume") || data57.format === void 0 && (missing6 = "format")) {
                                             validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9, schemaPath: "#/properties/audioEndpoints/items/required", keyword: "required", params: { missingProperty: missing6 }, message: "must have required property '" + missing6 + "'" }];
                                             return false;
                                           } else {
-                                            const _errs131 = errors;
-                                            for (const key7 in data55) {
+                                            const _errs134 = errors;
+                                            for (const key7 in data57) {
                                               if (!func1.call(schema40.properties.audioEndpoints.items.properties, key7)) {
                                                 validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9, schemaPath: "#/properties/audioEndpoints/items/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key7 }, message: "must NOT have additional properties" }];
                                                 return false;
                                                 break;
                                               }
                                             }
-                                            if (_errs131 === errors) {
-                                              if (data55.id !== void 0) {
-                                                let data56 = data55.id;
-                                                const _errs132 = errors;
-                                                if (errors === _errs132) {
-                                                  if (typeof data56 === "string") {
-                                                    if (func3(data56) > 2048) {
+                                            if (_errs134 === errors) {
+                                              if (data57.id !== void 0) {
+                                                let data58 = data57.id;
+                                                const _errs135 = errors;
+                                                if (errors === _errs135) {
+                                                  if (typeof data58 === "string") {
+                                                    if (func3(data58) > 2048) {
                                                       validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/id", schemaPath: "#/properties/audioEndpoints/items/properties/id/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                       return false;
                                                     }
@@ -5558,114 +5592,114 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                     return false;
                                                   }
                                                 }
-                                                var valid21 = _errs132 === errors;
+                                                var valid21 = _errs135 === errors;
                                               } else {
                                                 var valid21 = true;
                                               }
                                               if (valid21) {
-                                                if (data55.name !== void 0) {
-                                                  let data57 = data55.name;
-                                                  const _errs134 = errors;
-                                                  if (typeof data57 !== "string" && data57 !== null) {
+                                                if (data57.name !== void 0) {
+                                                  let data59 = data57.name;
+                                                  const _errs137 = errors;
+                                                  if (typeof data59 !== "string" && data59 !== null) {
                                                     validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/name", schemaPath: "#/properties/audioEndpoints/items/properties/name/type", keyword: "type", params: { type: schema40.properties.audioEndpoints.items.properties.name.type }, message: "must be string,null" }];
                                                     return false;
                                                   }
-                                                  if (errors === _errs134) {
-                                                    if (typeof data57 === "string") {
-                                                      if (func3(data57) > 2048) {
+                                                  if (errors === _errs137) {
+                                                    if (typeof data59 === "string") {
+                                                      if (func3(data59) > 2048) {
                                                         validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/name", schemaPath: "#/properties/audioEndpoints/items/properties/name/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                         return false;
                                                       }
                                                     }
                                                   }
-                                                  var valid21 = _errs134 === errors;
+                                                  var valid21 = _errs137 === errors;
                                                 } else {
                                                   var valid21 = true;
                                                 }
                                                 if (valid21) {
-                                                  if (data55.instanceId !== void 0) {
-                                                    let data58 = data55.instanceId;
-                                                    const _errs136 = errors;
-                                                    if (typeof data58 !== "string" && data58 !== null) {
+                                                  if (data57.instanceId !== void 0) {
+                                                    let data60 = data57.instanceId;
+                                                    const _errs139 = errors;
+                                                    if (typeof data60 !== "string" && data60 !== null) {
                                                       validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/instanceId", schemaPath: "#/properties/audioEndpoints/items/properties/instanceId/type", keyword: "type", params: { type: schema40.properties.audioEndpoints.items.properties.instanceId.type }, message: "must be string,null" }];
                                                       return false;
                                                     }
-                                                    if (errors === _errs136) {
-                                                      if (typeof data58 === "string") {
-                                                        if (func3(data58) > 2048) {
+                                                    if (errors === _errs139) {
+                                                      if (typeof data60 === "string") {
+                                                        if (func3(data60) > 2048) {
                                                           validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/instanceId", schemaPath: "#/properties/audioEndpoints/items/properties/instanceId/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                           return false;
                                                         }
                                                       }
                                                     }
-                                                    var valid21 = _errs136 === errors;
+                                                    var valid21 = _errs139 === errors;
                                                   } else {
                                                     var valid21 = true;
                                                   }
                                                   if (valid21) {
-                                                    if (data55.containerId !== void 0) {
-                                                      let data59 = data55.containerId;
-                                                      const _errs138 = errors;
-                                                      if (typeof data59 !== "string" && data59 !== null) {
+                                                    if (data57.containerId !== void 0) {
+                                                      let data61 = data57.containerId;
+                                                      const _errs141 = errors;
+                                                      if (typeof data61 !== "string" && data61 !== null) {
                                                         validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/containerId", schemaPath: "#/properties/audioEndpoints/items/properties/containerId/type", keyword: "type", params: { type: schema40.properties.audioEndpoints.items.properties.containerId.type }, message: "must be string,null" }];
                                                         return false;
                                                       }
-                                                      if (errors === _errs138) {
-                                                        if (typeof data59 === "string") {
-                                                          if (func3(data59) > 2048) {
+                                                      if (errors === _errs141) {
+                                                        if (typeof data61 === "string") {
+                                                          if (func3(data61) > 2048) {
                                                             validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/containerId", schemaPath: "#/properties/audioEndpoints/items/properties/containerId/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                             return false;
                                                           }
                                                         }
                                                       }
-                                                      var valid21 = _errs138 === errors;
+                                                      var valid21 = _errs141 === errors;
                                                     } else {
                                                       var valid21 = true;
                                                     }
                                                     if (valid21) {
-                                                      if (data55.kind !== void 0) {
-                                                        let data60 = data55.kind;
-                                                        const _errs140 = errors;
-                                                        if (!(data60 === "playback" || data60 === "recording")) {
+                                                      if (data57.kind !== void 0) {
+                                                        let data62 = data57.kind;
+                                                        const _errs143 = errors;
+                                                        if (!(data62 === "playback" || data62 === "recording")) {
                                                           validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/kind", schemaPath: "#/properties/audioEndpoints/items/properties/kind/enum", keyword: "enum", params: { allowedValues: schema40.properties.audioEndpoints.items.properties.kind.enum }, message: "must be equal to one of the allowed values" }];
                                                           return false;
                                                         }
-                                                        var valid21 = _errs140 === errors;
+                                                        var valid21 = _errs143 === errors;
                                                       } else {
                                                         var valid21 = true;
                                                       }
                                                       if (valid21) {
-                                                        if (data55.state !== void 0) {
-                                                          let data61 = data55.state;
-                                                          const _errs141 = errors;
-                                                          if (!(data61 === "active" || data61 === "disabled" || data61 === "unplugged" || data61 === "notPresent")) {
+                                                        if (data57.state !== void 0) {
+                                                          let data63 = data57.state;
+                                                          const _errs144 = errors;
+                                                          if (!(data63 === "active" || data63 === "disabled" || data63 === "unplugged" || data63 === "notPresent")) {
                                                             validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/state", schemaPath: "#/properties/audioEndpoints/items/properties/state/enum", keyword: "enum", params: { allowedValues: schema40.properties.audioEndpoints.items.properties.state.enum }, message: "must be equal to one of the allowed values" }];
                                                             return false;
                                                           }
-                                                          var valid21 = _errs141 === errors;
+                                                          var valid21 = _errs144 === errors;
                                                         } else {
                                                           var valid21 = true;
                                                         }
                                                         if (valid21) {
-                                                          if (data55.defaultRoles !== void 0) {
-                                                            let data62 = data55.defaultRoles;
-                                                            const _errs142 = errors;
-                                                            if (errors === _errs142) {
-                                                              if (Array.isArray(data62)) {
-                                                                if (data62.length > 3) {
+                                                          if (data57.defaultRoles !== void 0) {
+                                                            let data64 = data57.defaultRoles;
+                                                            const _errs145 = errors;
+                                                            if (errors === _errs145) {
+                                                              if (Array.isArray(data64)) {
+                                                                if (data64.length > 3) {
                                                                   validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/defaultRoles", schemaPath: "#/properties/audioEndpoints/items/properties/defaultRoles/maxItems", keyword: "maxItems", params: { limit: 3 }, message: "must NOT have more than 3 items" }];
                                                                   return false;
                                                                 } else {
                                                                   var valid22 = true;
-                                                                  const len10 = data62.length;
+                                                                  const len10 = data64.length;
                                                                   for (let i10 = 0; i10 < len10; i10++) {
-                                                                    let data63 = data62[i10];
-                                                                    const _errs144 = errors;
-                                                                    if (!(data63 === "console" || data63 === "multimedia" || data63 === "communications")) {
+                                                                    let data65 = data64[i10];
+                                                                    const _errs147 = errors;
+                                                                    if (!(data65 === "console" || data65 === "multimedia" || data65 === "communications")) {
                                                                       validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/defaultRoles/" + i10, schemaPath: "#/properties/audioEndpoints/items/properties/defaultRoles/items/enum", keyword: "enum", params: { allowedValues: schema40.properties.audioEndpoints.items.properties.defaultRoles.items.enum }, message: "must be equal to one of the allowed values" }];
                                                                       return false;
                                                                     }
-                                                                    var valid22 = _errs144 === errors;
+                                                                    var valid22 = _errs147 === errors;
                                                                     if (!valid22) {
                                                                       break;
                                                                     }
@@ -5676,45 +5710,45 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                 return false;
                                                               }
                                                             }
-                                                            var valid21 = _errs142 === errors;
+                                                            var valid21 = _errs145 === errors;
                                                           } else {
                                                             var valid21 = true;
                                                           }
                                                           if (valid21) {
-                                                            if (data55.mute !== void 0) {
-                                                              let data64 = data55.mute;
-                                                              const _errs145 = errors;
-                                                              if (typeof data64 !== "boolean" && data64 !== null) {
+                                                            if (data57.mute !== void 0) {
+                                                              let data66 = data57.mute;
+                                                              const _errs148 = errors;
+                                                              if (typeof data66 !== "boolean" && data66 !== null) {
                                                                 validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/mute", schemaPath: "#/properties/audioEndpoints/items/properties/mute/type", keyword: "type", params: { type: schema40.properties.audioEndpoints.items.properties.mute.type }, message: "must be boolean,null" }];
                                                                 return false;
                                                               }
-                                                              var valid21 = _errs145 === errors;
+                                                              var valid21 = _errs148 === errors;
                                                             } else {
                                                               var valid21 = true;
                                                             }
                                                             if (valid21) {
-                                                              if (data55.volume !== void 0) {
-                                                                let data65 = data55.volume;
-                                                                const _errs147 = errors;
-                                                                if (!(typeof data65 == "number" && isFinite(data65)) && data65 !== null) {
+                                                              if (data57.volume !== void 0) {
+                                                                let data67 = data57.volume;
+                                                                const _errs150 = errors;
+                                                                if (!(typeof data67 == "number" && isFinite(data67)) && data67 !== null) {
                                                                   validate25.errors = [{ instancePath: instancePath + "/audioEndpoints/" + i9 + "/volume", schemaPath: "#/properties/audioEndpoints/items/properties/volume/type", keyword: "type", params: { type: schema40.properties.audioEndpoints.items.properties.volume.type }, message: "must be number,null" }];
                                                                   return false;
                                                                 }
-                                                                var valid21 = _errs147 === errors;
+                                                                var valid21 = _errs150 === errors;
                                                               } else {
                                                                 var valid21 = true;
                                                               }
                                                               if (valid21) {
-                                                                if (data55.format !== void 0) {
-                                                                  let data66 = data55.format;
-                                                                  const _errs149 = errors;
-                                                                  const _errs150 = errors;
+                                                                if (data57.format !== void 0) {
+                                                                  let data68 = data57.format;
+                                                                  const _errs152 = errors;
+                                                                  const _errs153 = errors;
                                                                   let valid23 = false;
-                                                                  const _errs151 = errors;
-                                                                  if (errors === _errs151) {
-                                                                    if (data66 && typeof data66 == "object" && !Array.isArray(data66)) {
+                                                                  const _errs154 = errors;
+                                                                  if (errors === _errs154) {
+                                                                    if (data68 && typeof data68 == "object" && !Array.isArray(data68)) {
                                                                       let missing7;
-                                                                      if (data66.sampleRate === void 0 && (missing7 = "sampleRate") || data66.channels === void 0 && (missing7 = "channels") || data66.bits === void 0 && (missing7 = "bits") || data66.float === void 0 && (missing7 = "float") || data66.blockAlign === void 0 && (missing7 = "blockAlign") || data66.channelMask === void 0 && (missing7 = "channelMask") || data66.supported === void 0 && (missing7 = "supported")) {
+                                                                      if (data68.sampleRate === void 0 && (missing7 = "sampleRate") || data68.channels === void 0 && (missing7 = "channels") || data68.bits === void 0 && (missing7 = "bits") || data68.float === void 0 && (missing7 = "float") || data68.blockAlign === void 0 && (missing7 = "blockAlign") || data68.channelMask === void 0 && (missing7 = "channelMask") || data68.supported === void 0 && (missing7 = "supported")) {
                                                                         const err28 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/required", keyword: "required", params: { missingProperty: missing7 }, message: "must have required property '" + missing7 + "'" };
                                                                         if (vErrors === null) {
                                                                           vErrors = [err28];
@@ -5723,8 +5757,8 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                         }
                                                                         errors++;
                                                                       } else {
-                                                                        const _errs153 = errors;
-                                                                        for (const key8 in data66) {
+                                                                        const _errs156 = errors;
+                                                                        for (const key8 in data68) {
                                                                           if (!(key8 === "sampleRate" || key8 === "channels" || key8 === "bits" || key8 === "float" || key8 === "blockAlign" || key8 === "channelMask" || key8 === "supported")) {
                                                                             const err29 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key8 }, message: "must NOT have additional properties" };
                                                                             if (vErrors === null) {
@@ -5736,11 +5770,11 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                             break;
                                                                           }
                                                                         }
-                                                                        if (_errs153 === errors) {
-                                                                          if (data66.sampleRate !== void 0) {
-                                                                            let data67 = data66.sampleRate;
-                                                                            const _errs154 = errors;
-                                                                            if (!(typeof data67 == "number" && (!(data67 % 1) && !isNaN(data67)) && isFinite(data67))) {
+                                                                        if (_errs156 === errors) {
+                                                                          if (data68.sampleRate !== void 0) {
+                                                                            let data69 = data68.sampleRate;
+                                                                            const _errs157 = errors;
+                                                                            if (!(typeof data69 == "number" && (!(data69 % 1) && !isNaN(data69)) && isFinite(data69))) {
                                                                               const err30 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/sampleRate", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/sampleRate/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                               if (vErrors === null) {
                                                                                 vErrors = [err30];
@@ -5749,9 +5783,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                               }
                                                                               errors++;
                                                                             }
-                                                                            if (errors === _errs154) {
-                                                                              if (typeof data67 == "number" && isFinite(data67)) {
-                                                                                if (data67 < 0 || isNaN(data67)) {
+                                                                            if (errors === _errs157) {
+                                                                              if (typeof data69 == "number" && isFinite(data69)) {
+                                                                                if (data69 < 0 || isNaN(data69)) {
                                                                                   const err31 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/sampleRate", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/sampleRate/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                                   if (vErrors === null) {
                                                                                     vErrors = [err31];
@@ -5762,15 +5796,15 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                 }
                                                                               }
                                                                             }
-                                                                            var valid24 = _errs154 === errors;
+                                                                            var valid24 = _errs157 === errors;
                                                                           } else {
                                                                             var valid24 = true;
                                                                           }
                                                                           if (valid24) {
-                                                                            if (data66.channels !== void 0) {
-                                                                              let data68 = data66.channels;
-                                                                              const _errs156 = errors;
-                                                                              if (!(typeof data68 == "number" && (!(data68 % 1) && !isNaN(data68)) && isFinite(data68))) {
+                                                                            if (data68.channels !== void 0) {
+                                                                              let data70 = data68.channels;
+                                                                              const _errs159 = errors;
+                                                                              if (!(typeof data70 == "number" && (!(data70 % 1) && !isNaN(data70)) && isFinite(data70))) {
                                                                                 const err32 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/channels", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/channels/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                                 if (vErrors === null) {
                                                                                   vErrors = [err32];
@@ -5779,9 +5813,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                 }
                                                                                 errors++;
                                                                               }
-                                                                              if (errors === _errs156) {
-                                                                                if (typeof data68 == "number" && isFinite(data68)) {
-                                                                                  if (data68 < 0 || isNaN(data68)) {
+                                                                              if (errors === _errs159) {
+                                                                                if (typeof data70 == "number" && isFinite(data70)) {
+                                                                                  if (data70 < 0 || isNaN(data70)) {
                                                                                     const err33 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/channels", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/channels/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                                     if (vErrors === null) {
                                                                                       vErrors = [err33];
@@ -5792,15 +5826,15 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                   }
                                                                                 }
                                                                               }
-                                                                              var valid24 = _errs156 === errors;
+                                                                              var valid24 = _errs159 === errors;
                                                                             } else {
                                                                               var valid24 = true;
                                                                             }
                                                                             if (valid24) {
-                                                                              if (data66.bits !== void 0) {
-                                                                                let data69 = data66.bits;
-                                                                                const _errs158 = errors;
-                                                                                if (!(typeof data69 == "number" && (!(data69 % 1) && !isNaN(data69)) && isFinite(data69))) {
+                                                                              if (data68.bits !== void 0) {
+                                                                                let data71 = data68.bits;
+                                                                                const _errs161 = errors;
+                                                                                if (!(typeof data71 == "number" && (!(data71 % 1) && !isNaN(data71)) && isFinite(data71))) {
                                                                                   const err34 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/bits", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/bits/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                                   if (vErrors === null) {
                                                                                     vErrors = [err34];
@@ -5809,9 +5843,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                   }
                                                                                   errors++;
                                                                                 }
-                                                                                if (errors === _errs158) {
-                                                                                  if (typeof data69 == "number" && isFinite(data69)) {
-                                                                                    if (data69 < 0 || isNaN(data69)) {
+                                                                                if (errors === _errs161) {
+                                                                                  if (typeof data71 == "number" && isFinite(data71)) {
+                                                                                    if (data71 < 0 || isNaN(data71)) {
                                                                                       const err35 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/bits", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/bits/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                                       if (vErrors === null) {
                                                                                         vErrors = [err35];
@@ -5822,14 +5856,14 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                     }
                                                                                   }
                                                                                 }
-                                                                                var valid24 = _errs158 === errors;
+                                                                                var valid24 = _errs161 === errors;
                                                                               } else {
                                                                                 var valid24 = true;
                                                                               }
                                                                               if (valid24) {
-                                                                                if (data66.float !== void 0) {
-                                                                                  const _errs160 = errors;
-                                                                                  if (typeof data66.float !== "boolean") {
+                                                                                if (data68.float !== void 0) {
+                                                                                  const _errs163 = errors;
+                                                                                  if (typeof data68.float !== "boolean") {
                                                                                     const err36 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/float", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/float/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
                                                                                     if (vErrors === null) {
                                                                                       vErrors = [err36];
@@ -5838,15 +5872,15 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                     }
                                                                                     errors++;
                                                                                   }
-                                                                                  var valid24 = _errs160 === errors;
+                                                                                  var valid24 = _errs163 === errors;
                                                                                 } else {
                                                                                   var valid24 = true;
                                                                                 }
                                                                                 if (valid24) {
-                                                                                  if (data66.blockAlign !== void 0) {
-                                                                                    let data71 = data66.blockAlign;
-                                                                                    const _errs162 = errors;
-                                                                                    if (!(typeof data71 == "number" && (!(data71 % 1) && !isNaN(data71)) && isFinite(data71))) {
+                                                                                  if (data68.blockAlign !== void 0) {
+                                                                                    let data73 = data68.blockAlign;
+                                                                                    const _errs165 = errors;
+                                                                                    if (!(typeof data73 == "number" && (!(data73 % 1) && !isNaN(data73)) && isFinite(data73))) {
                                                                                       const err37 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/blockAlign", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/blockAlign/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                                       if (vErrors === null) {
                                                                                         vErrors = [err37];
@@ -5855,9 +5889,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                       }
                                                                                       errors++;
                                                                                     }
-                                                                                    if (errors === _errs162) {
-                                                                                      if (typeof data71 == "number" && isFinite(data71)) {
-                                                                                        if (data71 < 0 || isNaN(data71)) {
+                                                                                    if (errors === _errs165) {
+                                                                                      if (typeof data73 == "number" && isFinite(data73)) {
+                                                                                        if (data73 < 0 || isNaN(data73)) {
                                                                                           const err38 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/blockAlign", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/blockAlign/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                                           if (vErrors === null) {
                                                                                             vErrors = [err38];
@@ -5868,15 +5902,15 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                         }
                                                                                       }
                                                                                     }
-                                                                                    var valid24 = _errs162 === errors;
+                                                                                    var valid24 = _errs165 === errors;
                                                                                   } else {
                                                                                     var valid24 = true;
                                                                                   }
                                                                                   if (valid24) {
-                                                                                    if (data66.channelMask !== void 0) {
-                                                                                      let data72 = data66.channelMask;
-                                                                                      const _errs164 = errors;
-                                                                                      if (!(typeof data72 == "number" && (!(data72 % 1) && !isNaN(data72)) && isFinite(data72))) {
+                                                                                    if (data68.channelMask !== void 0) {
+                                                                                      let data74 = data68.channelMask;
+                                                                                      const _errs167 = errors;
+                                                                                      if (!(typeof data74 == "number" && (!(data74 % 1) && !isNaN(data74)) && isFinite(data74))) {
                                                                                         const err39 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/channelMask", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/channelMask/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                                         if (vErrors === null) {
                                                                                           vErrors = [err39];
@@ -5885,9 +5919,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                         }
                                                                                         errors++;
                                                                                       }
-                                                                                      if (errors === _errs164) {
-                                                                                        if (typeof data72 == "number" && isFinite(data72)) {
-                                                                                          if (data72 < 0 || isNaN(data72)) {
+                                                                                      if (errors === _errs167) {
+                                                                                        if (typeof data74 == "number" && isFinite(data74)) {
+                                                                                          if (data74 < 0 || isNaN(data74)) {
                                                                                             const err40 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/channelMask", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/channelMask/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                                             if (vErrors === null) {
                                                                                               vErrors = [err40];
@@ -5898,14 +5932,14 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                           }
                                                                                         }
                                                                                       }
-                                                                                      var valid24 = _errs164 === errors;
+                                                                                      var valid24 = _errs167 === errors;
                                                                                     } else {
                                                                                       var valid24 = true;
                                                                                     }
                                                                                     if (valid24) {
-                                                                                      if (data66.supported !== void 0) {
-                                                                                        const _errs166 = errors;
-                                                                                        if (typeof data66.supported !== "boolean") {
+                                                                                      if (data68.supported !== void 0) {
+                                                                                        const _errs169 = errors;
+                                                                                        if (typeof data68.supported !== "boolean") {
                                                                                           const err41 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format/supported", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/0/properties/supported/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
                                                                                           if (vErrors === null) {
                                                                                             vErrors = [err41];
@@ -5914,7 +5948,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                           }
                                                                                           errors++;
                                                                                         }
-                                                                                        var valid24 = _errs166 === errors;
+                                                                                        var valid24 = _errs169 === errors;
                                                                                       } else {
                                                                                         var valid24 = true;
                                                                                       }
@@ -5936,10 +5970,10 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                       errors++;
                                                                     }
                                                                   }
-                                                                  var _valid4 = _errs151 === errors;
+                                                                  var _valid4 = _errs154 === errors;
                                                                   valid23 = valid23 || _valid4;
-                                                                  const _errs168 = errors;
-                                                                  if (data66 !== null) {
+                                                                  const _errs171 = errors;
+                                                                  if (data68 !== null) {
                                                                     const err43 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf/1/type", keyword: "type", params: { type: "null" }, message: "must be null" };
                                                                     if (vErrors === null) {
                                                                       vErrors = [err43];
@@ -5948,7 +5982,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                     }
                                                                     errors++;
                                                                   }
-                                                                  var _valid4 = _errs168 === errors;
+                                                                  var _valid4 = _errs171 === errors;
                                                                   valid23 = valid23 || _valid4;
                                                                   if (!valid23) {
                                                                     const err44 = { instancePath: instancePath + "/audioEndpoints/" + i9 + "/format", schemaPath: "#/properties/audioEndpoints/items/properties/format/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
@@ -5961,16 +5995,16 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                     validate25.errors = vErrors;
                                                                     return false;
                                                                   } else {
-                                                                    errors = _errs150;
+                                                                    errors = _errs153;
                                                                     if (vErrors !== null) {
-                                                                      if (_errs150) {
-                                                                        vErrors.length = _errs150;
+                                                                      if (_errs153) {
+                                                                        vErrors.length = _errs153;
                                                                       } else {
                                                                         vErrors = null;
                                                                       }
                                                                     }
                                                                   }
-                                                                  var valid21 = _errs149 === errors;
+                                                                  var valid21 = _errs152 === errors;
                                                                 } else {
                                                                   var valid21 = true;
                                                                 }
@@ -5990,7 +6024,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                           return false;
                                         }
                                       }
-                                      var valid20 = _errs129 === errors;
+                                      var valid20 = _errs132 === errors;
                                       if (!valid20) {
                                         break;
                                       }
@@ -6001,67 +6035,67 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                   return false;
                                 }
                               }
-                              var valid0 = _errs127 === errors;
+                              var valid0 = _errs130 === errors;
                             } else {
                               var valid0 = true;
                             }
                             if (valid0) {
                               if (data.audioSessions !== void 0) {
-                                let data74 = data.audioSessions;
-                                const _errs170 = errors;
-                                if (errors === _errs170) {
-                                  if (Array.isArray(data74)) {
-                                    if (data74.length > 8) {
+                                let data76 = data.audioSessions;
+                                const _errs173 = errors;
+                                if (errors === _errs173) {
+                                  if (Array.isArray(data76)) {
+                                    if (data76.length > 8) {
                                       validate25.errors = [{ instancePath: instancePath + "/audioSessions", schemaPath: "#/properties/audioSessions/maxItems", keyword: "maxItems", params: { limit: 8 }, message: "must NOT have more than 8 items" }];
                                       return false;
                                     } else {
                                       var valid25 = true;
-                                      const len11 = data74.length;
+                                      const len11 = data76.length;
                                       for (let i11 = 0; i11 < len11; i11++) {
-                                        let data75 = data74[i11];
-                                        const _errs172 = errors;
-                                        if (errors === _errs172) {
-                                          if (data75 && typeof data75 == "object" && !Array.isArray(data75)) {
+                                        let data77 = data76[i11];
+                                        const _errs175 = errors;
+                                        if (errors === _errs175) {
+                                          if (data77 && typeof data77 == "object" && !Array.isArray(data77)) {
                                             let missing8;
-                                            if (data75.sessionId === void 0 && (missing8 = "sessionId") || data75.targetId === void 0 && (missing8 = "targetId") || data75.mode === void 0 && (missing8 = "mode") || data75.status === void 0 && (missing8 = "status") || data75.reason === void 0 && (missing8 = "reason") || data75.startedAt === void 0 && (missing8 = "startedAt") || data75.format === void 0 && (missing8 = "format") || data75.frames === void 0 && (missing8 = "frames") || data75.aggregate === void 0 && (missing8 = "aggregate") || data75.window === void 0 && (missing8 = "window") || data75.discontinuities === void 0 && (missing8 = "discontinuities") || data75.timestampErrors === void 0 && (missing8 = "timestampErrors") || data75.cleanup === void 0 && (missing8 = "cleanup")) {
+                                            if (data77.sessionId === void 0 && (missing8 = "sessionId") || data77.targetId === void 0 && (missing8 = "targetId") || data77.mode === void 0 && (missing8 = "mode") || data77.status === void 0 && (missing8 = "status") || data77.reason === void 0 && (missing8 = "reason") || data77.startedAt === void 0 && (missing8 = "startedAt") || data77.format === void 0 && (missing8 = "format") || data77.frames === void 0 && (missing8 = "frames") || data77.aggregate === void 0 && (missing8 = "aggregate") || data77.window === void 0 && (missing8 = "window") || data77.discontinuities === void 0 && (missing8 = "discontinuities") || data77.timestampErrors === void 0 && (missing8 = "timestampErrors") || data77.cleanup === void 0 && (missing8 = "cleanup")) {
                                               validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11, schemaPath: "#/properties/audioSessions/items/required", keyword: "required", params: { missingProperty: missing8 }, message: "must have required property '" + missing8 + "'" }];
                                               return false;
                                             } else {
-                                              const _errs174 = errors;
-                                              for (const key9 in data75) {
+                                              const _errs177 = errors;
+                                              for (const key9 in data77) {
                                                 if (!func1.call(schema40.properties.audioSessions.items.properties, key9)) {
                                                   validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11, schemaPath: "#/properties/audioSessions/items/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key9 }, message: "must NOT have additional properties" }];
                                                   return false;
                                                   break;
                                                 }
                                               }
-                                              if (_errs174 === errors) {
-                                                if (data75.sessionId !== void 0) {
-                                                  let data76 = data75.sessionId;
-                                                  const _errs175 = errors;
-                                                  if (!(typeof data76 == "number" && (!(data76 % 1) && !isNaN(data76)) && isFinite(data76))) {
+                                              if (_errs177 === errors) {
+                                                if (data77.sessionId !== void 0) {
+                                                  let data78 = data77.sessionId;
+                                                  const _errs178 = errors;
+                                                  if (!(typeof data78 == "number" && (!(data78 % 1) && !isNaN(data78)) && isFinite(data78))) {
                                                     validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/sessionId", schemaPath: "#/properties/audioSessions/items/properties/sessionId/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                     return false;
                                                   }
-                                                  if (errors === _errs175) {
-                                                    if (typeof data76 == "number" && isFinite(data76)) {
-                                                      if (data76 < 0 || isNaN(data76)) {
+                                                  if (errors === _errs178) {
+                                                    if (typeof data78 == "number" && isFinite(data78)) {
+                                                      if (data78 < 0 || isNaN(data78)) {
                                                         validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/sessionId", schemaPath: "#/properties/audioSessions/items/properties/sessionId/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
                                                         return false;
                                                       }
                                                     }
                                                   }
-                                                  var valid26 = _errs175 === errors;
+                                                  var valid26 = _errs178 === errors;
                                                 } else {
                                                   var valid26 = true;
                                                 }
                                                 if (valid26) {
-                                                  if (data75.targetId !== void 0) {
-                                                    let data77 = data75.targetId;
-                                                    const _errs177 = errors;
-                                                    if (errors === _errs177) {
-                                                      if (typeof data77 === "string") {
-                                                        if (func3(data77) > 2048) {
+                                                  if (data77.targetId !== void 0) {
+                                                    let data79 = data77.targetId;
+                                                    const _errs180 = errors;
+                                                    if (errors === _errs180) {
+                                                      if (typeof data79 === "string") {
+                                                        if (func3(data79) > 2048) {
                                                           validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/targetId", schemaPath: "#/properties/audioSessions/items/properties/targetId/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                           return false;
                                                         }
@@ -6070,29 +6104,29 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                         return false;
                                                       }
                                                     }
-                                                    var valid26 = _errs177 === errors;
+                                                    var valid26 = _errs180 === errors;
                                                   } else {
                                                     var valid26 = true;
                                                   }
                                                   if (valid26) {
-                                                    if (data75.mode !== void 0) {
-                                                      let data78 = data75.mode;
-                                                      const _errs179 = errors;
-                                                      if (!(data78 === "left" || data78 === "right" || data78 === "tone" || data78 === "ambient" || data78 === "speech")) {
+                                                    if (data77.mode !== void 0) {
+                                                      let data80 = data77.mode;
+                                                      const _errs182 = errors;
+                                                      if (!(data80 === "left" || data80 === "right" || data80 === "tone" || data80 === "ambient" || data80 === "speech")) {
                                                         validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/mode", schemaPath: "#/properties/audioSessions/items/properties/mode/enum", keyword: "enum", params: { allowedValues: schema40.properties.audioSessions.items.properties.mode.enum }, message: "must be equal to one of the allowed values" }];
                                                         return false;
                                                       }
-                                                      var valid26 = _errs179 === errors;
+                                                      var valid26 = _errs182 === errors;
                                                     } else {
                                                       var valid26 = true;
                                                     }
                                                     if (valid26) {
-                                                      if (data75.status !== void 0) {
-                                                        let data79 = data75.status;
-                                                        const _errs180 = errors;
-                                                        if (errors === _errs180) {
-                                                          if (typeof data79 === "string") {
-                                                            if (func3(data79) > 100) {
+                                                      if (data77.status !== void 0) {
+                                                        let data81 = data77.status;
+                                                        const _errs183 = errors;
+                                                        if (errors === _errs183) {
+                                                          if (typeof data81 === "string") {
+                                                            if (func3(data81) > 100) {
                                                               validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/status", schemaPath: "#/properties/audioSessions/items/properties/status/maxLength", keyword: "maxLength", params: { limit: 100 }, message: "must NOT have more than 100 characters" }];
                                                               return false;
                                                             }
@@ -6101,17 +6135,17 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                             return false;
                                                           }
                                                         }
-                                                        var valid26 = _errs180 === errors;
+                                                        var valid26 = _errs183 === errors;
                                                       } else {
                                                         var valid26 = true;
                                                       }
                                                       if (valid26) {
-                                                        if (data75.reason !== void 0) {
-                                                          let data80 = data75.reason;
-                                                          const _errs182 = errors;
-                                                          if (errors === _errs182) {
-                                                            if (typeof data80 === "string") {
-                                                              if (func3(data80) > 2048) {
+                                                        if (data77.reason !== void 0) {
+                                                          let data82 = data77.reason;
+                                                          const _errs185 = errors;
+                                                          if (errors === _errs185) {
+                                                            if (typeof data82 === "string") {
+                                                              if (func3(data82) > 2048) {
                                                                 validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/reason", schemaPath: "#/properties/audioSessions/items/properties/reason/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                                 return false;
                                                               }
@@ -6120,17 +6154,17 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                               return false;
                                                             }
                                                           }
-                                                          var valid26 = _errs182 === errors;
+                                                          var valid26 = _errs185 === errors;
                                                         } else {
                                                           var valid26 = true;
                                                         }
                                                         if (valid26) {
-                                                          if (data75.startedAt !== void 0) {
-                                                            let data81 = data75.startedAt;
-                                                            const _errs184 = errors;
-                                                            if (errors === _errs184) {
-                                                              if (typeof data81 === "string") {
-                                                                if (func3(data81) > 100) {
+                                                          if (data77.startedAt !== void 0) {
+                                                            let data83 = data77.startedAt;
+                                                            const _errs187 = errors;
+                                                            if (errors === _errs187) {
+                                                              if (typeof data83 === "string") {
+                                                                if (func3(data83) > 100) {
                                                                   validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/startedAt", schemaPath: "#/properties/audioSessions/items/properties/startedAt/maxLength", keyword: "maxLength", params: { limit: 100 }, message: "must NOT have more than 100 characters" }];
                                                                   return false;
                                                                 }
@@ -6139,21 +6173,21 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                 return false;
                                                               }
                                                             }
-                                                            var valid26 = _errs184 === errors;
+                                                            var valid26 = _errs187 === errors;
                                                           } else {
                                                             var valid26 = true;
                                                           }
                                                           if (valid26) {
-                                                            if (data75.format !== void 0) {
-                                                              let data82 = data75.format;
-                                                              const _errs186 = errors;
-                                                              const _errs187 = errors;
+                                                            if (data77.format !== void 0) {
+                                                              let data84 = data77.format;
+                                                              const _errs189 = errors;
+                                                              const _errs190 = errors;
                                                               let valid27 = false;
-                                                              const _errs188 = errors;
-                                                              if (errors === _errs188) {
-                                                                if (data82 && typeof data82 == "object" && !Array.isArray(data82)) {
+                                                              const _errs191 = errors;
+                                                              if (errors === _errs191) {
+                                                                if (data84 && typeof data84 == "object" && !Array.isArray(data84)) {
                                                                   let missing9;
-                                                                  if (data82.sampleRate === void 0 && (missing9 = "sampleRate") || data82.channels === void 0 && (missing9 = "channels") || data82.bits === void 0 && (missing9 = "bits") || data82.float === void 0 && (missing9 = "float") || data82.blockAlign === void 0 && (missing9 = "blockAlign") || data82.channelMask === void 0 && (missing9 = "channelMask") || data82.supported === void 0 && (missing9 = "supported")) {
+                                                                  if (data84.sampleRate === void 0 && (missing9 = "sampleRate") || data84.channels === void 0 && (missing9 = "channels") || data84.bits === void 0 && (missing9 = "bits") || data84.float === void 0 && (missing9 = "float") || data84.blockAlign === void 0 && (missing9 = "blockAlign") || data84.channelMask === void 0 && (missing9 = "channelMask") || data84.supported === void 0 && (missing9 = "supported")) {
                                                                     const err45 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/required", keyword: "required", params: { missingProperty: missing9 }, message: "must have required property '" + missing9 + "'" };
                                                                     if (vErrors === null) {
                                                                       vErrors = [err45];
@@ -6162,8 +6196,8 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                     }
                                                                     errors++;
                                                                   } else {
-                                                                    const _errs190 = errors;
-                                                                    for (const key10 in data82) {
+                                                                    const _errs193 = errors;
+                                                                    for (const key10 in data84) {
                                                                       if (!(key10 === "sampleRate" || key10 === "channels" || key10 === "bits" || key10 === "float" || key10 === "blockAlign" || key10 === "channelMask" || key10 === "supported")) {
                                                                         const err46 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key10 }, message: "must NOT have additional properties" };
                                                                         if (vErrors === null) {
@@ -6175,11 +6209,11 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                         break;
                                                                       }
                                                                     }
-                                                                    if (_errs190 === errors) {
-                                                                      if (data82.sampleRate !== void 0) {
-                                                                        let data83 = data82.sampleRate;
-                                                                        const _errs191 = errors;
-                                                                        if (!(typeof data83 == "number" && (!(data83 % 1) && !isNaN(data83)) && isFinite(data83))) {
+                                                                    if (_errs193 === errors) {
+                                                                      if (data84.sampleRate !== void 0) {
+                                                                        let data85 = data84.sampleRate;
+                                                                        const _errs194 = errors;
+                                                                        if (!(typeof data85 == "number" && (!(data85 % 1) && !isNaN(data85)) && isFinite(data85))) {
                                                                           const err47 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/sampleRate", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/sampleRate/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                           if (vErrors === null) {
                                                                             vErrors = [err47];
@@ -6188,9 +6222,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                           }
                                                                           errors++;
                                                                         }
-                                                                        if (errors === _errs191) {
-                                                                          if (typeof data83 == "number" && isFinite(data83)) {
-                                                                            if (data83 < 0 || isNaN(data83)) {
+                                                                        if (errors === _errs194) {
+                                                                          if (typeof data85 == "number" && isFinite(data85)) {
+                                                                            if (data85 < 0 || isNaN(data85)) {
                                                                               const err48 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/sampleRate", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/sampleRate/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                               if (vErrors === null) {
                                                                                 vErrors = [err48];
@@ -6201,15 +6235,15 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                             }
                                                                           }
                                                                         }
-                                                                        var valid28 = _errs191 === errors;
+                                                                        var valid28 = _errs194 === errors;
                                                                       } else {
                                                                         var valid28 = true;
                                                                       }
                                                                       if (valid28) {
-                                                                        if (data82.channels !== void 0) {
-                                                                          let data84 = data82.channels;
-                                                                          const _errs193 = errors;
-                                                                          if (!(typeof data84 == "number" && (!(data84 % 1) && !isNaN(data84)) && isFinite(data84))) {
+                                                                        if (data84.channels !== void 0) {
+                                                                          let data86 = data84.channels;
+                                                                          const _errs196 = errors;
+                                                                          if (!(typeof data86 == "number" && (!(data86 % 1) && !isNaN(data86)) && isFinite(data86))) {
                                                                             const err49 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/channels", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/channels/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                             if (vErrors === null) {
                                                                               vErrors = [err49];
@@ -6218,9 +6252,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                             }
                                                                             errors++;
                                                                           }
-                                                                          if (errors === _errs193) {
-                                                                            if (typeof data84 == "number" && isFinite(data84)) {
-                                                                              if (data84 < 0 || isNaN(data84)) {
+                                                                          if (errors === _errs196) {
+                                                                            if (typeof data86 == "number" && isFinite(data86)) {
+                                                                              if (data86 < 0 || isNaN(data86)) {
                                                                                 const err50 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/channels", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/channels/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                                 if (vErrors === null) {
                                                                                   vErrors = [err50];
@@ -6231,15 +6265,15 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                               }
                                                                             }
                                                                           }
-                                                                          var valid28 = _errs193 === errors;
+                                                                          var valid28 = _errs196 === errors;
                                                                         } else {
                                                                           var valid28 = true;
                                                                         }
                                                                         if (valid28) {
-                                                                          if (data82.bits !== void 0) {
-                                                                            let data85 = data82.bits;
-                                                                            const _errs195 = errors;
-                                                                            if (!(typeof data85 == "number" && (!(data85 % 1) && !isNaN(data85)) && isFinite(data85))) {
+                                                                          if (data84.bits !== void 0) {
+                                                                            let data87 = data84.bits;
+                                                                            const _errs198 = errors;
+                                                                            if (!(typeof data87 == "number" && (!(data87 % 1) && !isNaN(data87)) && isFinite(data87))) {
                                                                               const err51 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/bits", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/bits/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                               if (vErrors === null) {
                                                                                 vErrors = [err51];
@@ -6248,9 +6282,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                               }
                                                                               errors++;
                                                                             }
-                                                                            if (errors === _errs195) {
-                                                                              if (typeof data85 == "number" && isFinite(data85)) {
-                                                                                if (data85 < 0 || isNaN(data85)) {
+                                                                            if (errors === _errs198) {
+                                                                              if (typeof data87 == "number" && isFinite(data87)) {
+                                                                                if (data87 < 0 || isNaN(data87)) {
                                                                                   const err52 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/bits", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/bits/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                                   if (vErrors === null) {
                                                                                     vErrors = [err52];
@@ -6261,14 +6295,14 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                 }
                                                                               }
                                                                             }
-                                                                            var valid28 = _errs195 === errors;
+                                                                            var valid28 = _errs198 === errors;
                                                                           } else {
                                                                             var valid28 = true;
                                                                           }
                                                                           if (valid28) {
-                                                                            if (data82.float !== void 0) {
-                                                                              const _errs197 = errors;
-                                                                              if (typeof data82.float !== "boolean") {
+                                                                            if (data84.float !== void 0) {
+                                                                              const _errs200 = errors;
+                                                                              if (typeof data84.float !== "boolean") {
                                                                                 const err53 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/float", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/float/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
                                                                                 if (vErrors === null) {
                                                                                   vErrors = [err53];
@@ -6277,15 +6311,15 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                 }
                                                                                 errors++;
                                                                               }
-                                                                              var valid28 = _errs197 === errors;
+                                                                              var valid28 = _errs200 === errors;
                                                                             } else {
                                                                               var valid28 = true;
                                                                             }
                                                                             if (valid28) {
-                                                                              if (data82.blockAlign !== void 0) {
-                                                                                let data87 = data82.blockAlign;
-                                                                                const _errs199 = errors;
-                                                                                if (!(typeof data87 == "number" && (!(data87 % 1) && !isNaN(data87)) && isFinite(data87))) {
+                                                                              if (data84.blockAlign !== void 0) {
+                                                                                let data89 = data84.blockAlign;
+                                                                                const _errs202 = errors;
+                                                                                if (!(typeof data89 == "number" && (!(data89 % 1) && !isNaN(data89)) && isFinite(data89))) {
                                                                                   const err54 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/blockAlign", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/blockAlign/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                                   if (vErrors === null) {
                                                                                     vErrors = [err54];
@@ -6294,9 +6328,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                   }
                                                                                   errors++;
                                                                                 }
-                                                                                if (errors === _errs199) {
-                                                                                  if (typeof data87 == "number" && isFinite(data87)) {
-                                                                                    if (data87 < 0 || isNaN(data87)) {
+                                                                                if (errors === _errs202) {
+                                                                                  if (typeof data89 == "number" && isFinite(data89)) {
+                                                                                    if (data89 < 0 || isNaN(data89)) {
                                                                                       const err55 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/blockAlign", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/blockAlign/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                                       if (vErrors === null) {
                                                                                         vErrors = [err55];
@@ -6307,15 +6341,15 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                     }
                                                                                   }
                                                                                 }
-                                                                                var valid28 = _errs199 === errors;
+                                                                                var valid28 = _errs202 === errors;
                                                                               } else {
                                                                                 var valid28 = true;
                                                                               }
                                                                               if (valid28) {
-                                                                                if (data82.channelMask !== void 0) {
-                                                                                  let data88 = data82.channelMask;
-                                                                                  const _errs201 = errors;
-                                                                                  if (!(typeof data88 == "number" && (!(data88 % 1) && !isNaN(data88)) && isFinite(data88))) {
+                                                                                if (data84.channelMask !== void 0) {
+                                                                                  let data90 = data84.channelMask;
+                                                                                  const _errs204 = errors;
+                                                                                  if (!(typeof data90 == "number" && (!(data90 % 1) && !isNaN(data90)) && isFinite(data90))) {
                                                                                     const err56 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/channelMask", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/channelMask/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                                                     if (vErrors === null) {
                                                                                       vErrors = [err56];
@@ -6324,9 +6358,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                     }
                                                                                     errors++;
                                                                                   }
-                                                                                  if (errors === _errs201) {
-                                                                                    if (typeof data88 == "number" && isFinite(data88)) {
-                                                                                      if (data88 < 0 || isNaN(data88)) {
+                                                                                  if (errors === _errs204) {
+                                                                                    if (typeof data90 == "number" && isFinite(data90)) {
+                                                                                      if (data90 < 0 || isNaN(data90)) {
                                                                                         const err57 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/channelMask", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/channelMask/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" };
                                                                                         if (vErrors === null) {
                                                                                           vErrors = [err57];
@@ -6337,14 +6371,14 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                       }
                                                                                     }
                                                                                   }
-                                                                                  var valid28 = _errs201 === errors;
+                                                                                  var valid28 = _errs204 === errors;
                                                                                 } else {
                                                                                   var valid28 = true;
                                                                                 }
                                                                                 if (valid28) {
-                                                                                  if (data82.supported !== void 0) {
-                                                                                    const _errs203 = errors;
-                                                                                    if (typeof data82.supported !== "boolean") {
+                                                                                  if (data84.supported !== void 0) {
+                                                                                    const _errs206 = errors;
+                                                                                    if (typeof data84.supported !== "boolean") {
                                                                                       const err58 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format/supported", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/0/properties/supported/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
                                                                                       if (vErrors === null) {
                                                                                         vErrors = [err58];
@@ -6353,7 +6387,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                       }
                                                                                       errors++;
                                                                                     }
-                                                                                    var valid28 = _errs203 === errors;
+                                                                                    var valid28 = _errs206 === errors;
                                                                                   } else {
                                                                                     var valid28 = true;
                                                                                   }
@@ -6375,10 +6409,10 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                   errors++;
                                                                 }
                                                               }
-                                                              var _valid5 = _errs188 === errors;
+                                                              var _valid5 = _errs191 === errors;
                                                               valid27 = valid27 || _valid5;
-                                                              const _errs205 = errors;
-                                                              if (data82 !== null) {
+                                                              const _errs208 = errors;
+                                                              if (data84 !== null) {
                                                                 const err60 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf/1/type", keyword: "type", params: { type: "null" }, message: "must be null" };
                                                                 if (vErrors === null) {
                                                                   vErrors = [err60];
@@ -6387,7 +6421,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                 }
                                                                 errors++;
                                                               }
-                                                              var _valid5 = _errs205 === errors;
+                                                              var _valid5 = _errs208 === errors;
                                                               valid27 = valid27 || _valid5;
                                                               if (!valid27) {
                                                                 const err61 = { instancePath: instancePath + "/audioSessions/" + i11 + "/format", schemaPath: "#/properties/audioSessions/items/properties/format/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
@@ -6400,166 +6434,166 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                 validate25.errors = vErrors;
                                                                 return false;
                                                               } else {
-                                                                errors = _errs187;
+                                                                errors = _errs190;
                                                                 if (vErrors !== null) {
-                                                                  if (_errs187) {
-                                                                    vErrors.length = _errs187;
+                                                                  if (_errs190) {
+                                                                    vErrors.length = _errs190;
                                                                   } else {
                                                                     vErrors = null;
                                                                   }
                                                                 }
                                                               }
-                                                              var valid26 = _errs186 === errors;
+                                                              var valid26 = _errs189 === errors;
                                                             } else {
                                                               var valid26 = true;
                                                             }
                                                             if (valid26) {
-                                                              if (data75.frames !== void 0) {
-                                                                let data90 = data75.frames;
-                                                                const _errs207 = errors;
-                                                                if (!(typeof data90 == "number" && (!(data90 % 1) && !isNaN(data90)) && isFinite(data90))) {
+                                                              if (data77.frames !== void 0) {
+                                                                let data92 = data77.frames;
+                                                                const _errs210 = errors;
+                                                                if (!(typeof data92 == "number" && (!(data92 % 1) && !isNaN(data92)) && isFinite(data92))) {
                                                                   validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/frames", schemaPath: "#/properties/audioSessions/items/properties/frames/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                                   return false;
                                                                 }
-                                                                if (errors === _errs207) {
-                                                                  if (typeof data90 == "number" && isFinite(data90)) {
-                                                                    if (data90 < 0 || isNaN(data90)) {
+                                                                if (errors === _errs210) {
+                                                                  if (typeof data92 == "number" && isFinite(data92)) {
+                                                                    if (data92 < 0 || isNaN(data92)) {
                                                                       validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/frames", schemaPath: "#/properties/audioSessions/items/properties/frames/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
                                                                       return false;
                                                                     }
                                                                   }
                                                                 }
-                                                                var valid26 = _errs207 === errors;
+                                                                var valid26 = _errs210 === errors;
                                                               } else {
                                                                 var valid26 = true;
                                                               }
                                                               if (valid26) {
-                                                                if (data75.aggregate !== void 0) {
-                                                                  let data91 = data75.aggregate;
-                                                                  const _errs209 = errors;
-                                                                  if (errors === _errs209) {
-                                                                    if (Array.isArray(data91)) {
-                                                                      if (data91.length > 8) {
+                                                                if (data77.aggregate !== void 0) {
+                                                                  let data93 = data77.aggregate;
+                                                                  const _errs212 = errors;
+                                                                  if (errors === _errs212) {
+                                                                    if (Array.isArray(data93)) {
+                                                                      if (data93.length > 8) {
                                                                         validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate", schemaPath: "#/properties/audioSessions/items/properties/aggregate/maxItems", keyword: "maxItems", params: { limit: 8 }, message: "must NOT have more than 8 items" }];
                                                                         return false;
                                                                       } else {
                                                                         var valid29 = true;
-                                                                        const len12 = data91.length;
+                                                                        const len12 = data93.length;
                                                                         for (let i12 = 0; i12 < len12; i12++) {
-                                                                          let data92 = data91[i12];
-                                                                          const _errs211 = errors;
-                                                                          if (errors === _errs211) {
-                                                                            if (data92 && typeof data92 == "object" && !Array.isArray(data92)) {
+                                                                          let data94 = data93[i12];
+                                                                          const _errs214 = errors;
+                                                                          if (errors === _errs214) {
+                                                                            if (data94 && typeof data94 == "object" && !Array.isArray(data94)) {
                                                                               let missing10;
-                                                                              if (data92.samples === void 0 && (missing10 = "samples") || data92.rms === void 0 && (missing10 = "rms") || data92.rmsDbfs === void 0 && (missing10 = "rmsDbfs") || data92.peak === void 0 && (missing10 = "peak") || data92.clippingProportion === void 0 && (missing10 = "clippingProportion") || data92.zeroProportion === void 0 && (missing10 = "zeroProportion") || data92.invalidSamples === void 0 && (missing10 = "invalidSamples")) {
+                                                                              if (data94.samples === void 0 && (missing10 = "samples") || data94.rms === void 0 && (missing10 = "rms") || data94.rmsDbfs === void 0 && (missing10 = "rmsDbfs") || data94.peak === void 0 && (missing10 = "peak") || data94.clippingProportion === void 0 && (missing10 = "clippingProportion") || data94.zeroProportion === void 0 && (missing10 = "zeroProportion") || data94.invalidSamples === void 0 && (missing10 = "invalidSamples")) {
                                                                                 validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12, schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/required", keyword: "required", params: { missingProperty: missing10 }, message: "must have required property '" + missing10 + "'" }];
                                                                                 return false;
                                                                               } else {
-                                                                                const _errs213 = errors;
-                                                                                for (const key11 in data92) {
+                                                                                const _errs216 = errors;
+                                                                                for (const key11 in data94) {
                                                                                   if (!(key11 === "samples" || key11 === "rms" || key11 === "rmsDbfs" || key11 === "peak" || key11 === "clippingProportion" || key11 === "zeroProportion" || key11 === "invalidSamples")) {
                                                                                     validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12, schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key11 }, message: "must NOT have additional properties" }];
                                                                                     return false;
                                                                                     break;
                                                                                   }
                                                                                 }
-                                                                                if (_errs213 === errors) {
-                                                                                  if (data92.samples !== void 0) {
-                                                                                    let data93 = data92.samples;
-                                                                                    const _errs214 = errors;
-                                                                                    if (!(typeof data93 == "number" && (!(data93 % 1) && !isNaN(data93)) && isFinite(data93))) {
+                                                                                if (_errs216 === errors) {
+                                                                                  if (data94.samples !== void 0) {
+                                                                                    let data95 = data94.samples;
+                                                                                    const _errs217 = errors;
+                                                                                    if (!(typeof data95 == "number" && (!(data95 % 1) && !isNaN(data95)) && isFinite(data95))) {
                                                                                       validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12 + "/samples", schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/properties/samples/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                                                       return false;
                                                                                     }
-                                                                                    if (errors === _errs214) {
-                                                                                      if (typeof data93 == "number" && isFinite(data93)) {
-                                                                                        if (data93 < 0 || isNaN(data93)) {
+                                                                                    if (errors === _errs217) {
+                                                                                      if (typeof data95 == "number" && isFinite(data95)) {
+                                                                                        if (data95 < 0 || isNaN(data95)) {
                                                                                           validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12 + "/samples", schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/properties/samples/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
                                                                                           return false;
                                                                                         }
                                                                                       }
                                                                                     }
-                                                                                    var valid30 = _errs214 === errors;
+                                                                                    var valid30 = _errs217 === errors;
                                                                                   } else {
                                                                                     var valid30 = true;
                                                                                   }
                                                                                   if (valid30) {
-                                                                                    if (data92.rms !== void 0) {
-                                                                                      let data94 = data92.rms;
-                                                                                      const _errs216 = errors;
-                                                                                      if (!(typeof data94 == "number" && isFinite(data94))) {
+                                                                                    if (data94.rms !== void 0) {
+                                                                                      let data96 = data94.rms;
+                                                                                      const _errs219 = errors;
+                                                                                      if (!(typeof data96 == "number" && isFinite(data96))) {
                                                                                         validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12 + "/rms", schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/properties/rms/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                         return false;
                                                                                       }
-                                                                                      var valid30 = _errs216 === errors;
+                                                                                      var valid30 = _errs219 === errors;
                                                                                     } else {
                                                                                       var valid30 = true;
                                                                                     }
                                                                                     if (valid30) {
-                                                                                      if (data92.rmsDbfs !== void 0) {
-                                                                                        let data95 = data92.rmsDbfs;
-                                                                                        const _errs218 = errors;
-                                                                                        if (!(typeof data95 == "number" && isFinite(data95))) {
+                                                                                      if (data94.rmsDbfs !== void 0) {
+                                                                                        let data97 = data94.rmsDbfs;
+                                                                                        const _errs221 = errors;
+                                                                                        if (!(typeof data97 == "number" && isFinite(data97))) {
                                                                                           validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12 + "/rmsDbfs", schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/properties/rmsDbfs/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                           return false;
                                                                                         }
-                                                                                        var valid30 = _errs218 === errors;
+                                                                                        var valid30 = _errs221 === errors;
                                                                                       } else {
                                                                                         var valid30 = true;
                                                                                       }
                                                                                       if (valid30) {
-                                                                                        if (data92.peak !== void 0) {
-                                                                                          let data96 = data92.peak;
-                                                                                          const _errs220 = errors;
-                                                                                          if (!(typeof data96 == "number" && isFinite(data96))) {
+                                                                                        if (data94.peak !== void 0) {
+                                                                                          let data98 = data94.peak;
+                                                                                          const _errs223 = errors;
+                                                                                          if (!(typeof data98 == "number" && isFinite(data98))) {
                                                                                             validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12 + "/peak", schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/properties/peak/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                             return false;
                                                                                           }
-                                                                                          var valid30 = _errs220 === errors;
+                                                                                          var valid30 = _errs223 === errors;
                                                                                         } else {
                                                                                           var valid30 = true;
                                                                                         }
                                                                                         if (valid30) {
-                                                                                          if (data92.clippingProportion !== void 0) {
-                                                                                            let data97 = data92.clippingProportion;
-                                                                                            const _errs222 = errors;
-                                                                                            if (!(typeof data97 == "number" && isFinite(data97))) {
+                                                                                          if (data94.clippingProportion !== void 0) {
+                                                                                            let data99 = data94.clippingProportion;
+                                                                                            const _errs225 = errors;
+                                                                                            if (!(typeof data99 == "number" && isFinite(data99))) {
                                                                                               validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12 + "/clippingProportion", schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/properties/clippingProportion/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                               return false;
                                                                                             }
-                                                                                            var valid30 = _errs222 === errors;
+                                                                                            var valid30 = _errs225 === errors;
                                                                                           } else {
                                                                                             var valid30 = true;
                                                                                           }
                                                                                           if (valid30) {
-                                                                                            if (data92.zeroProportion !== void 0) {
-                                                                                              let data98 = data92.zeroProportion;
-                                                                                              const _errs224 = errors;
-                                                                                              if (!(typeof data98 == "number" && isFinite(data98))) {
+                                                                                            if (data94.zeroProportion !== void 0) {
+                                                                                              let data100 = data94.zeroProportion;
+                                                                                              const _errs227 = errors;
+                                                                                              if (!(typeof data100 == "number" && isFinite(data100))) {
                                                                                                 validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12 + "/zeroProportion", schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/properties/zeroProportion/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                                 return false;
                                                                                               }
-                                                                                              var valid30 = _errs224 === errors;
+                                                                                              var valid30 = _errs227 === errors;
                                                                                             } else {
                                                                                               var valid30 = true;
                                                                                             }
                                                                                             if (valid30) {
-                                                                                              if (data92.invalidSamples !== void 0) {
-                                                                                                let data99 = data92.invalidSamples;
-                                                                                                const _errs226 = errors;
-                                                                                                if (!(typeof data99 == "number" && (!(data99 % 1) && !isNaN(data99)) && isFinite(data99))) {
+                                                                                              if (data94.invalidSamples !== void 0) {
+                                                                                                let data101 = data94.invalidSamples;
+                                                                                                const _errs229 = errors;
+                                                                                                if (!(typeof data101 == "number" && (!(data101 % 1) && !isNaN(data101)) && isFinite(data101))) {
                                                                                                   validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12 + "/invalidSamples", schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/properties/invalidSamples/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                                                                   return false;
                                                                                                 }
-                                                                                                if (errors === _errs226) {
-                                                                                                  if (typeof data99 == "number" && isFinite(data99)) {
-                                                                                                    if (data99 < 0 || isNaN(data99)) {
+                                                                                                if (errors === _errs229) {
+                                                                                                  if (typeof data101 == "number" && isFinite(data101)) {
+                                                                                                    if (data101 < 0 || isNaN(data101)) {
                                                                                                       validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/aggregate/" + i12 + "/invalidSamples", schemaPath: "#/properties/audioSessions/items/properties/aggregate/items/properties/invalidSamples/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
                                                                                                       return false;
                                                                                                     }
                                                                                                   }
                                                                                                 }
-                                                                                                var valid30 = _errs226 === errors;
+                                                                                                var valid30 = _errs229 === errors;
                                                                                               } else {
                                                                                                 var valid30 = true;
                                                                                               }
@@ -6576,7 +6610,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                               return false;
                                                                             }
                                                                           }
-                                                                          var valid29 = _errs211 === errors;
+                                                                          var valid29 = _errs214 === errors;
                                                                           if (!valid29) {
                                                                             break;
                                                                           }
@@ -6587,137 +6621,137 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                       return false;
                                                                     }
                                                                   }
-                                                                  var valid26 = _errs209 === errors;
+                                                                  var valid26 = _errs212 === errors;
                                                                 } else {
                                                                   var valid26 = true;
                                                                 }
                                                                 if (valid26) {
-                                                                  if (data75.window !== void 0) {
-                                                                    let data100 = data75.window;
-                                                                    const _errs228 = errors;
-                                                                    if (errors === _errs228) {
-                                                                      if (Array.isArray(data100)) {
-                                                                        if (data100.length > 8) {
+                                                                  if (data77.window !== void 0) {
+                                                                    let data102 = data77.window;
+                                                                    const _errs231 = errors;
+                                                                    if (errors === _errs231) {
+                                                                      if (Array.isArray(data102)) {
+                                                                        if (data102.length > 8) {
                                                                           validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window", schemaPath: "#/properties/audioSessions/items/properties/window/maxItems", keyword: "maxItems", params: { limit: 8 }, message: "must NOT have more than 8 items" }];
                                                                           return false;
                                                                         } else {
                                                                           var valid31 = true;
-                                                                          const len13 = data100.length;
+                                                                          const len13 = data102.length;
                                                                           for (let i13 = 0; i13 < len13; i13++) {
-                                                                            let data101 = data100[i13];
-                                                                            const _errs230 = errors;
-                                                                            if (errors === _errs230) {
-                                                                              if (data101 && typeof data101 == "object" && !Array.isArray(data101)) {
+                                                                            let data103 = data102[i13];
+                                                                            const _errs233 = errors;
+                                                                            if (errors === _errs233) {
+                                                                              if (data103 && typeof data103 == "object" && !Array.isArray(data103)) {
                                                                                 let missing11;
-                                                                                if (data101.samples === void 0 && (missing11 = "samples") || data101.rms === void 0 && (missing11 = "rms") || data101.rmsDbfs === void 0 && (missing11 = "rmsDbfs") || data101.peak === void 0 && (missing11 = "peak") || data101.clippingProportion === void 0 && (missing11 = "clippingProportion") || data101.zeroProportion === void 0 && (missing11 = "zeroProportion") || data101.invalidSamples === void 0 && (missing11 = "invalidSamples")) {
+                                                                                if (data103.samples === void 0 && (missing11 = "samples") || data103.rms === void 0 && (missing11 = "rms") || data103.rmsDbfs === void 0 && (missing11 = "rmsDbfs") || data103.peak === void 0 && (missing11 = "peak") || data103.clippingProportion === void 0 && (missing11 = "clippingProportion") || data103.zeroProportion === void 0 && (missing11 = "zeroProportion") || data103.invalidSamples === void 0 && (missing11 = "invalidSamples")) {
                                                                                   validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13, schemaPath: "#/properties/audioSessions/items/properties/window/items/required", keyword: "required", params: { missingProperty: missing11 }, message: "must have required property '" + missing11 + "'" }];
                                                                                   return false;
                                                                                 } else {
-                                                                                  const _errs232 = errors;
-                                                                                  for (const key12 in data101) {
+                                                                                  const _errs235 = errors;
+                                                                                  for (const key12 in data103) {
                                                                                     if (!(key12 === "samples" || key12 === "rms" || key12 === "rmsDbfs" || key12 === "peak" || key12 === "clippingProportion" || key12 === "zeroProportion" || key12 === "invalidSamples")) {
                                                                                       validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13, schemaPath: "#/properties/audioSessions/items/properties/window/items/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key12 }, message: "must NOT have additional properties" }];
                                                                                       return false;
                                                                                       break;
                                                                                     }
                                                                                   }
-                                                                                  if (_errs232 === errors) {
-                                                                                    if (data101.samples !== void 0) {
-                                                                                      let data102 = data101.samples;
-                                                                                      const _errs233 = errors;
-                                                                                      if (!(typeof data102 == "number" && (!(data102 % 1) && !isNaN(data102)) && isFinite(data102))) {
+                                                                                  if (_errs235 === errors) {
+                                                                                    if (data103.samples !== void 0) {
+                                                                                      let data104 = data103.samples;
+                                                                                      const _errs236 = errors;
+                                                                                      if (!(typeof data104 == "number" && (!(data104 % 1) && !isNaN(data104)) && isFinite(data104))) {
                                                                                         validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13 + "/samples", schemaPath: "#/properties/audioSessions/items/properties/window/items/properties/samples/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                                                         return false;
                                                                                       }
-                                                                                      if (errors === _errs233) {
-                                                                                        if (typeof data102 == "number" && isFinite(data102)) {
-                                                                                          if (data102 < 0 || isNaN(data102)) {
+                                                                                      if (errors === _errs236) {
+                                                                                        if (typeof data104 == "number" && isFinite(data104)) {
+                                                                                          if (data104 < 0 || isNaN(data104)) {
                                                                                             validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13 + "/samples", schemaPath: "#/properties/audioSessions/items/properties/window/items/properties/samples/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
                                                                                             return false;
                                                                                           }
                                                                                         }
                                                                                       }
-                                                                                      var valid32 = _errs233 === errors;
+                                                                                      var valid32 = _errs236 === errors;
                                                                                     } else {
                                                                                       var valid32 = true;
                                                                                     }
                                                                                     if (valid32) {
-                                                                                      if (data101.rms !== void 0) {
-                                                                                        let data103 = data101.rms;
-                                                                                        const _errs235 = errors;
-                                                                                        if (!(typeof data103 == "number" && isFinite(data103))) {
+                                                                                      if (data103.rms !== void 0) {
+                                                                                        let data105 = data103.rms;
+                                                                                        const _errs238 = errors;
+                                                                                        if (!(typeof data105 == "number" && isFinite(data105))) {
                                                                                           validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13 + "/rms", schemaPath: "#/properties/audioSessions/items/properties/window/items/properties/rms/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                           return false;
                                                                                         }
-                                                                                        var valid32 = _errs235 === errors;
+                                                                                        var valid32 = _errs238 === errors;
                                                                                       } else {
                                                                                         var valid32 = true;
                                                                                       }
                                                                                       if (valid32) {
-                                                                                        if (data101.rmsDbfs !== void 0) {
-                                                                                          let data104 = data101.rmsDbfs;
-                                                                                          const _errs237 = errors;
-                                                                                          if (!(typeof data104 == "number" && isFinite(data104))) {
+                                                                                        if (data103.rmsDbfs !== void 0) {
+                                                                                          let data106 = data103.rmsDbfs;
+                                                                                          const _errs240 = errors;
+                                                                                          if (!(typeof data106 == "number" && isFinite(data106))) {
                                                                                             validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13 + "/rmsDbfs", schemaPath: "#/properties/audioSessions/items/properties/window/items/properties/rmsDbfs/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                             return false;
                                                                                           }
-                                                                                          var valid32 = _errs237 === errors;
+                                                                                          var valid32 = _errs240 === errors;
                                                                                         } else {
                                                                                           var valid32 = true;
                                                                                         }
                                                                                         if (valid32) {
-                                                                                          if (data101.peak !== void 0) {
-                                                                                            let data105 = data101.peak;
-                                                                                            const _errs239 = errors;
-                                                                                            if (!(typeof data105 == "number" && isFinite(data105))) {
+                                                                                          if (data103.peak !== void 0) {
+                                                                                            let data107 = data103.peak;
+                                                                                            const _errs242 = errors;
+                                                                                            if (!(typeof data107 == "number" && isFinite(data107))) {
                                                                                               validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13 + "/peak", schemaPath: "#/properties/audioSessions/items/properties/window/items/properties/peak/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                               return false;
                                                                                             }
-                                                                                            var valid32 = _errs239 === errors;
+                                                                                            var valid32 = _errs242 === errors;
                                                                                           } else {
                                                                                             var valid32 = true;
                                                                                           }
                                                                                           if (valid32) {
-                                                                                            if (data101.clippingProportion !== void 0) {
-                                                                                              let data106 = data101.clippingProportion;
-                                                                                              const _errs241 = errors;
-                                                                                              if (!(typeof data106 == "number" && isFinite(data106))) {
+                                                                                            if (data103.clippingProportion !== void 0) {
+                                                                                              let data108 = data103.clippingProportion;
+                                                                                              const _errs244 = errors;
+                                                                                              if (!(typeof data108 == "number" && isFinite(data108))) {
                                                                                                 validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13 + "/clippingProportion", schemaPath: "#/properties/audioSessions/items/properties/window/items/properties/clippingProportion/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                                 return false;
                                                                                               }
-                                                                                              var valid32 = _errs241 === errors;
+                                                                                              var valid32 = _errs244 === errors;
                                                                                             } else {
                                                                                               var valid32 = true;
                                                                                             }
                                                                                             if (valid32) {
-                                                                                              if (data101.zeroProportion !== void 0) {
-                                                                                                let data107 = data101.zeroProportion;
-                                                                                                const _errs243 = errors;
-                                                                                                if (!(typeof data107 == "number" && isFinite(data107))) {
+                                                                                              if (data103.zeroProportion !== void 0) {
+                                                                                                let data109 = data103.zeroProportion;
+                                                                                                const _errs246 = errors;
+                                                                                                if (!(typeof data109 == "number" && isFinite(data109))) {
                                                                                                   validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13 + "/zeroProportion", schemaPath: "#/properties/audioSessions/items/properties/window/items/properties/zeroProportion/type", keyword: "type", params: { type: "number" }, message: "must be number" }];
                                                                                                   return false;
                                                                                                 }
-                                                                                                var valid32 = _errs243 === errors;
+                                                                                                var valid32 = _errs246 === errors;
                                                                                               } else {
                                                                                                 var valid32 = true;
                                                                                               }
                                                                                               if (valid32) {
-                                                                                                if (data101.invalidSamples !== void 0) {
-                                                                                                  let data108 = data101.invalidSamples;
-                                                                                                  const _errs245 = errors;
-                                                                                                  if (!(typeof data108 == "number" && (!(data108 % 1) && !isNaN(data108)) && isFinite(data108))) {
+                                                                                                if (data103.invalidSamples !== void 0) {
+                                                                                                  let data110 = data103.invalidSamples;
+                                                                                                  const _errs248 = errors;
+                                                                                                  if (!(typeof data110 == "number" && (!(data110 % 1) && !isNaN(data110)) && isFinite(data110))) {
                                                                                                     validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13 + "/invalidSamples", schemaPath: "#/properties/audioSessions/items/properties/window/items/properties/invalidSamples/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                                                                     return false;
                                                                                                   }
-                                                                                                  if (errors === _errs245) {
-                                                                                                    if (typeof data108 == "number" && isFinite(data108)) {
-                                                                                                      if (data108 < 0 || isNaN(data108)) {
+                                                                                                  if (errors === _errs248) {
+                                                                                                    if (typeof data110 == "number" && isFinite(data110)) {
+                                                                                                      if (data110 < 0 || isNaN(data110)) {
                                                                                                         validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/window/" + i13 + "/invalidSamples", schemaPath: "#/properties/audioSessions/items/properties/window/items/properties/invalidSamples/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
                                                                                                         return false;
                                                                                                       }
                                                                                                     }
                                                                                                   }
-                                                                                                  var valid32 = _errs245 === errors;
+                                                                                                  var valid32 = _errs248 === errors;
                                                                                                 } else {
                                                                                                   var valid32 = true;
                                                                                                 }
@@ -6734,7 +6768,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                                 return false;
                                                                               }
                                                                             }
-                                                                            var valid31 = _errs230 === errors;
+                                                                            var valid31 = _errs233 === errors;
                                                                             if (!valid31) {
                                                                               break;
                                                                             }
@@ -6745,60 +6779,107 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                         return false;
                                                                       }
                                                                     }
-                                                                    var valid26 = _errs228 === errors;
+                                                                    var valid26 = _errs231 === errors;
                                                                   } else {
                                                                     var valid26 = true;
                                                                   }
                                                                   if (valid26) {
-                                                                    if (data75.discontinuities !== void 0) {
-                                                                      let data109 = data75.discontinuities;
-                                                                      const _errs247 = errors;
-                                                                      if (!(typeof data109 == "number" && (!(data109 % 1) && !isNaN(data109)) && isFinite(data109))) {
+                                                                    if (data77.discontinuities !== void 0) {
+                                                                      let data111 = data77.discontinuities;
+                                                                      const _errs250 = errors;
+                                                                      if (!(typeof data111 == "number" && (!(data111 % 1) && !isNaN(data111)) && isFinite(data111))) {
                                                                         validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/discontinuities", schemaPath: "#/properties/audioSessions/items/properties/discontinuities/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                                         return false;
                                                                       }
-                                                                      if (errors === _errs247) {
-                                                                        if (typeof data109 == "number" && isFinite(data109)) {
-                                                                          if (data109 < 0 || isNaN(data109)) {
+                                                                      if (errors === _errs250) {
+                                                                        if (typeof data111 == "number" && isFinite(data111)) {
+                                                                          if (data111 < 0 || isNaN(data111)) {
                                                                             validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/discontinuities", schemaPath: "#/properties/audioSessions/items/properties/discontinuities/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
                                                                             return false;
                                                                           }
                                                                         }
                                                                       }
-                                                                      var valid26 = _errs247 === errors;
+                                                                      var valid26 = _errs250 === errors;
                                                                     } else {
                                                                       var valid26 = true;
                                                                     }
                                                                     if (valid26) {
-                                                                      if (data75.timestampErrors !== void 0) {
-                                                                        let data110 = data75.timestampErrors;
-                                                                        const _errs249 = errors;
-                                                                        if (!(typeof data110 == "number" && (!(data110 % 1) && !isNaN(data110)) && isFinite(data110))) {
+                                                                      if (data77.timestampErrors !== void 0) {
+                                                                        let data112 = data77.timestampErrors;
+                                                                        const _errs252 = errors;
+                                                                        if (!(typeof data112 == "number" && (!(data112 % 1) && !isNaN(data112)) && isFinite(data112))) {
                                                                           validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/timestampErrors", schemaPath: "#/properties/audioSessions/items/properties/timestampErrors/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                                           return false;
                                                                         }
-                                                                        if (errors === _errs249) {
-                                                                          if (typeof data110 == "number" && isFinite(data110)) {
-                                                                            if (data110 < 0 || isNaN(data110)) {
+                                                                        if (errors === _errs252) {
+                                                                          if (typeof data112 == "number" && isFinite(data112)) {
+                                                                            if (data112 < 0 || isNaN(data112)) {
                                                                               validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/timestampErrors", schemaPath: "#/properties/audioSessions/items/properties/timestampErrors/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
                                                                               return false;
                                                                             }
                                                                           }
                                                                         }
-                                                                        var valid26 = _errs249 === errors;
+                                                                        var valid26 = _errs252 === errors;
                                                                       } else {
                                                                         var valid26 = true;
                                                                       }
                                                                       if (valid26) {
-                                                                        if (data75.cleanup !== void 0) {
-                                                                          const _errs251 = errors;
-                                                                          if (typeof data75.cleanup !== "boolean") {
+                                                                        if (data77.cleanup !== void 0) {
+                                                                          const _errs254 = errors;
+                                                                          if (typeof data77.cleanup !== "boolean") {
                                                                             validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/cleanup", schemaPath: "#/properties/audioSessions/items/properties/cleanup/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" }];
                                                                             return false;
                                                                           }
-                                                                          var valid26 = _errs251 === errors;
+                                                                          var valid26 = _errs254 === errors;
                                                                         } else {
                                                                           var valid26 = true;
+                                                                        }
+                                                                        if (valid26) {
+                                                                          if (data77.engineConsumedFrames !== void 0) {
+                                                                            let data114 = data77.engineConsumedFrames;
+                                                                            const _errs256 = errors;
+                                                                            if (!(typeof data114 == "number" && (!(data114 % 1) && !isNaN(data114)) && isFinite(data114)) && data114 !== null) {
+                                                                              validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/engineConsumedFrames", schemaPath: "#/properties/audioSessions/items/properties/engineConsumedFrames/type", keyword: "type", params: { type: schema40.properties.audioSessions.items.properties.engineConsumedFrames.type }, message: "must be integer,null" }];
+                                                                              return false;
+                                                                            }
+                                                                            if (errors === _errs256) {
+                                                                              if (typeof data114 == "number" && isFinite(data114)) {
+                                                                                if (data114 < 0 || isNaN(data114)) {
+                                                                                  validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/engineConsumedFrames", schemaPath: "#/properties/audioSessions/items/properties/engineConsumedFrames/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
+                                                                                  return false;
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                            var valid26 = _errs256 === errors;
+                                                                          } else {
+                                                                            var valid26 = true;
+                                                                          }
+                                                                          if (valid26) {
+                                                                            if (data77.elapsedMs !== void 0) {
+                                                                              let data115 = data77.elapsedMs;
+                                                                              const _errs258 = errors;
+                                                                              if (!(typeof data115 == "number" && (!(data115 % 1) && !isNaN(data115)) && isFinite(data115))) {
+                                                                                validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/elapsedMs", schemaPath: "#/properties/audioSessions/items/properties/elapsedMs/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
+                                                                                return false;
+                                                                              }
+                                                                              if (errors === _errs258) {
+                                                                                if (typeof data115 == "number" && isFinite(data115)) {
+                                                                                  if (data115 > 12e3 || isNaN(data115)) {
+                                                                                    validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/elapsedMs", schemaPath: "#/properties/audioSessions/items/properties/elapsedMs/maximum", keyword: "maximum", params: { comparison: "<=", limit: 12e3 }, message: "must be <= 12000" }];
+                                                                                    return false;
+                                                                                  } else {
+                                                                                    if (data115 < 0 || isNaN(data115)) {
+                                                                                      validate25.errors = [{ instancePath: instancePath + "/audioSessions/" + i11 + "/elapsedMs", schemaPath: "#/properties/audioSessions/items/properties/elapsedMs/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
+                                                                                      return false;
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                              var valid26 = _errs258 === errors;
+                                                                            } else {
+                                                                              var valid26 = true;
+                                                                            }
+                                                                          }
                                                                         }
                                                                       }
                                                                     }
@@ -6819,7 +6900,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                             return false;
                                           }
                                         }
-                                        var valid25 = _errs172 === errors;
+                                        var valid25 = _errs175 === errors;
                                         if (!valid25) {
                                           break;
                                         }
@@ -6830,67 +6911,67 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                     return false;
                                   }
                                 }
-                                var valid0 = _errs170 === errors;
+                                var valid0 = _errs173 === errors;
                               } else {
                                 var valid0 = true;
                               }
                               if (valid0) {
                                 if (data.repairs !== void 0) {
-                                  let data112 = data.repairs;
-                                  const _errs253 = errors;
-                                  if (errors === _errs253) {
-                                    if (Array.isArray(data112)) {
-                                      if (data112.length > 8) {
+                                  let data116 = data.repairs;
+                                  const _errs260 = errors;
+                                  if (errors === _errs260) {
+                                    if (Array.isArray(data116)) {
+                                      if (data116.length > 8) {
                                         validate25.errors = [{ instancePath: instancePath + "/repairs", schemaPath: "#/properties/repairs/maxItems", keyword: "maxItems", params: { limit: 8 }, message: "must NOT have more than 8 items" }];
                                         return false;
                                       } else {
                                         var valid33 = true;
-                                        const len14 = data112.length;
+                                        const len14 = data116.length;
                                         for (let i14 = 0; i14 < len14; i14++) {
-                                          let data113 = data112[i14];
-                                          const _errs255 = errors;
-                                          if (errors === _errs255) {
-                                            if (data113 && typeof data113 == "object" && !Array.isArray(data113)) {
+                                          let data117 = data116[i14];
+                                          const _errs262 = errors;
+                                          if (errors === _errs262) {
+                                            if (data117 && typeof data117 == "object" && !Array.isArray(data117)) {
                                               let missing12;
-                                              if (data113.id === void 0 && (missing12 = "id") || data113.targetId === void 0 && (missing12 = "targetId") || data113.approved === void 0 && (missing12 = "approved") || data113.beforeMute === void 0 && (missing12 = "beforeMute") || data113.desiredMute === void 0 && (missing12 = "desiredMute") || data113.afterMute === void 0 && (missing12 = "afterMute") || data113.verified === void 0 && (missing12 = "verified") || data113.rolledBack === void 0 && (missing12 = "rolledBack") || data113.status === void 0 && (missing12 = "status")) {
+                                              if (data117.id === void 0 && (missing12 = "id") || data117.targetId === void 0 && (missing12 = "targetId") || data117.approved === void 0 && (missing12 = "approved") || data117.beforeMute === void 0 && (missing12 = "beforeMute") || data117.desiredMute === void 0 && (missing12 = "desiredMute") || data117.afterMute === void 0 && (missing12 = "afterMute") || data117.verified === void 0 && (missing12 = "verified") || data117.rolledBack === void 0 && (missing12 = "rolledBack") || data117.status === void 0 && (missing12 = "status")) {
                                                 validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14, schemaPath: "#/properties/repairs/items/required", keyword: "required", params: { missingProperty: missing12 }, message: "must have required property '" + missing12 + "'" }];
                                                 return false;
                                               } else {
-                                                const _errs257 = errors;
-                                                for (const key13 in data113) {
+                                                const _errs264 = errors;
+                                                for (const key13 in data117) {
                                                   if (!func1.call(schema40.properties.repairs.items.properties, key13)) {
                                                     validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14, schemaPath: "#/properties/repairs/items/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key13 }, message: "must NOT have additional properties" }];
                                                     return false;
                                                     break;
                                                   }
                                                 }
-                                                if (_errs257 === errors) {
-                                                  if (data113.id !== void 0) {
-                                                    let data114 = data113.id;
-                                                    const _errs258 = errors;
-                                                    if (!(typeof data114 == "number" && (!(data114 % 1) && !isNaN(data114)) && isFinite(data114))) {
+                                                if (_errs264 === errors) {
+                                                  if (data117.id !== void 0) {
+                                                    let data118 = data117.id;
+                                                    const _errs265 = errors;
+                                                    if (!(typeof data118 == "number" && (!(data118 % 1) && !isNaN(data118)) && isFinite(data118))) {
                                                       validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/id", schemaPath: "#/properties/repairs/items/properties/id/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                       return false;
                                                     }
-                                                    if (errors === _errs258) {
-                                                      if (typeof data114 == "number" && isFinite(data114)) {
-                                                        if (data114 < 0 || isNaN(data114)) {
+                                                    if (errors === _errs265) {
+                                                      if (typeof data118 == "number" && isFinite(data118)) {
+                                                        if (data118 < 0 || isNaN(data118)) {
                                                           validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/id", schemaPath: "#/properties/repairs/items/properties/id/minimum", keyword: "minimum", params: { comparison: ">=", limit: 0 }, message: "must be >= 0" }];
                                                           return false;
                                                         }
                                                       }
                                                     }
-                                                    var valid34 = _errs258 === errors;
+                                                    var valid34 = _errs265 === errors;
                                                   } else {
                                                     var valid34 = true;
                                                   }
                                                   if (valid34) {
-                                                    if (data113.targetId !== void 0) {
-                                                      let data115 = data113.targetId;
-                                                      const _errs260 = errors;
-                                                      if (errors === _errs260) {
-                                                        if (typeof data115 === "string") {
-                                                          if (func3(data115) > 2048) {
+                                                    if (data117.targetId !== void 0) {
+                                                      let data119 = data117.targetId;
+                                                      const _errs267 = errors;
+                                                      if (errors === _errs267) {
+                                                        if (typeof data119 === "string") {
+                                                          if (func3(data119) > 2048) {
                                                             validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/targetId", schemaPath: "#/properties/repairs/items/properties/targetId/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                             return false;
                                                           }
@@ -6899,84 +6980,84 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                           return false;
                                                         }
                                                       }
-                                                      var valid34 = _errs260 === errors;
+                                                      var valid34 = _errs267 === errors;
                                                     } else {
                                                       var valid34 = true;
                                                     }
                                                     if (valid34) {
-                                                      if (data113.approved !== void 0) {
-                                                        const _errs262 = errors;
-                                                        if (typeof data113.approved !== "boolean") {
+                                                      if (data117.approved !== void 0) {
+                                                        const _errs269 = errors;
+                                                        if (typeof data117.approved !== "boolean") {
                                                           validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/approved", schemaPath: "#/properties/repairs/items/properties/approved/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" }];
                                                           return false;
                                                         }
-                                                        var valid34 = _errs262 === errors;
+                                                        var valid34 = _errs269 === errors;
                                                       } else {
                                                         var valid34 = true;
                                                       }
                                                       if (valid34) {
-                                                        if (data113.beforeMute !== void 0) {
-                                                          const _errs264 = errors;
-                                                          if (typeof data113.beforeMute !== "boolean") {
+                                                        if (data117.beforeMute !== void 0) {
+                                                          const _errs271 = errors;
+                                                          if (typeof data117.beforeMute !== "boolean") {
                                                             validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/beforeMute", schemaPath: "#/properties/repairs/items/properties/beforeMute/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" }];
                                                             return false;
                                                           }
-                                                          var valid34 = _errs264 === errors;
+                                                          var valid34 = _errs271 === errors;
                                                         } else {
                                                           var valid34 = true;
                                                         }
                                                         if (valid34) {
-                                                          if (data113.desiredMute !== void 0) {
-                                                            const _errs266 = errors;
-                                                            if (typeof data113.desiredMute !== "boolean") {
+                                                          if (data117.desiredMute !== void 0) {
+                                                            const _errs273 = errors;
+                                                            if (typeof data117.desiredMute !== "boolean") {
                                                               validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/desiredMute", schemaPath: "#/properties/repairs/items/properties/desiredMute/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" }];
                                                               return false;
                                                             }
-                                                            var valid34 = _errs266 === errors;
+                                                            var valid34 = _errs273 === errors;
                                                           } else {
                                                             var valid34 = true;
                                                           }
                                                           if (valid34) {
-                                                            if (data113.afterMute !== void 0) {
-                                                              let data119 = data113.afterMute;
-                                                              const _errs268 = errors;
-                                                              if (typeof data119 !== "boolean" && data119 !== null) {
+                                                            if (data117.afterMute !== void 0) {
+                                                              let data123 = data117.afterMute;
+                                                              const _errs275 = errors;
+                                                              if (typeof data123 !== "boolean" && data123 !== null) {
                                                                 validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/afterMute", schemaPath: "#/properties/repairs/items/properties/afterMute/type", keyword: "type", params: { type: schema40.properties.repairs.items.properties.afterMute.type }, message: "must be boolean,null" }];
                                                                 return false;
                                                               }
-                                                              var valid34 = _errs268 === errors;
+                                                              var valid34 = _errs275 === errors;
                                                             } else {
                                                               var valid34 = true;
                                                             }
                                                             if (valid34) {
-                                                              if (data113.verified !== void 0) {
-                                                                const _errs270 = errors;
-                                                                if (typeof data113.verified !== "boolean") {
+                                                              if (data117.verified !== void 0) {
+                                                                const _errs277 = errors;
+                                                                if (typeof data117.verified !== "boolean") {
                                                                   validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/verified", schemaPath: "#/properties/repairs/items/properties/verified/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" }];
                                                                   return false;
                                                                 }
-                                                                var valid34 = _errs270 === errors;
+                                                                var valid34 = _errs277 === errors;
                                                               } else {
                                                                 var valid34 = true;
                                                               }
                                                               if (valid34) {
-                                                                if (data113.rolledBack !== void 0) {
-                                                                  const _errs272 = errors;
-                                                                  if (typeof data113.rolledBack !== "boolean") {
+                                                                if (data117.rolledBack !== void 0) {
+                                                                  const _errs279 = errors;
+                                                                  if (typeof data117.rolledBack !== "boolean") {
                                                                     validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/rolledBack", schemaPath: "#/properties/repairs/items/properties/rolledBack/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" }];
                                                                     return false;
                                                                   }
-                                                                  var valid34 = _errs272 === errors;
+                                                                  var valid34 = _errs279 === errors;
                                                                 } else {
                                                                   var valid34 = true;
                                                                 }
                                                                 if (valid34) {
-                                                                  if (data113.status !== void 0) {
-                                                                    let data122 = data113.status;
-                                                                    const _errs274 = errors;
-                                                                    if (errors === _errs274) {
-                                                                      if (typeof data122 === "string") {
-                                                                        if (func3(data122) > 2048) {
+                                                                  if (data117.status !== void 0) {
+                                                                    let data126 = data117.status;
+                                                                    const _errs281 = errors;
+                                                                    if (errors === _errs281) {
+                                                                      if (typeof data126 === "string") {
+                                                                        if (func3(data126) > 2048) {
                                                                           validate25.errors = [{ instancePath: instancePath + "/repairs/" + i14 + "/status", schemaPath: "#/properties/repairs/items/properties/status/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                                           return false;
                                                                         }
@@ -6985,7 +7066,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                         return false;
                                                                       }
                                                                     }
-                                                                    var valid34 = _errs274 === errors;
+                                                                    var valid34 = _errs281 === errors;
                                                                   } else {
                                                                     var valid34 = true;
                                                                   }
@@ -7004,7 +7085,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                               return false;
                                             }
                                           }
-                                          var valid33 = _errs255 === errors;
+                                          var valid33 = _errs262 === errors;
                                           if (!valid33) {
                                             break;
                                           }
@@ -7015,28 +7096,28 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                       return false;
                                     }
                                   }
-                                  var valid0 = _errs253 === errors;
+                                  var valid0 = _errs260 === errors;
                                 } else {
                                   var valid0 = true;
                                 }
                                 if (valid0) {
                                   if (data.limitations !== void 0) {
-                                    let data123 = data.limitations;
-                                    const _errs276 = errors;
-                                    if (errors === _errs276) {
-                                      if (Array.isArray(data123)) {
-                                        if (data123.length > 32) {
+                                    let data127 = data.limitations;
+                                    const _errs283 = errors;
+                                    if (errors === _errs283) {
+                                      if (Array.isArray(data127)) {
+                                        if (data127.length > 32) {
                                           validate25.errors = [{ instancePath: instancePath + "/limitations", schemaPath: "#/properties/limitations/maxItems", keyword: "maxItems", params: { limit: 32 }, message: "must NOT have more than 32 items" }];
                                           return false;
                                         } else {
                                           var valid35 = true;
-                                          const len15 = data123.length;
+                                          const len15 = data127.length;
                                           for (let i15 = 0; i15 < len15; i15++) {
-                                            let data124 = data123[i15];
-                                            const _errs278 = errors;
-                                            if (errors === _errs278) {
-                                              if (typeof data124 === "string") {
-                                                if (func3(data124) > 2048) {
+                                            let data128 = data127[i15];
+                                            const _errs285 = errors;
+                                            if (errors === _errs285) {
+                                              if (typeof data128 === "string") {
+                                                if (func3(data128) > 2048) {
                                                   validate25.errors = [{ instancePath: instancePath + "/limitations/" + i15, schemaPath: "#/properties/limitations/items/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                   return false;
                                                 }
@@ -7045,7 +7126,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                 return false;
                                               }
                                             }
-                                            var valid35 = _errs278 === errors;
+                                            var valid35 = _errs285 === errors;
                                             if (!valid35) {
                                               break;
                                             }
@@ -7056,67 +7137,67 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                         return false;
                                       }
                                     }
-                                    var valid0 = _errs276 === errors;
+                                    var valid0 = _errs283 === errors;
                                   } else {
                                     var valid0 = true;
                                   }
                                   if (valid0) {
                                     if (data.routingReports !== void 0) {
-                                      let data125 = data.routingReports;
-                                      const _errs280 = errors;
-                                      if (errors === _errs280) {
-                                        if (Array.isArray(data125)) {
-                                          if (data125.length > 8) {
+                                      let data129 = data.routingReports;
+                                      const _errs287 = errors;
+                                      if (errors === _errs287) {
+                                        if (Array.isArray(data129)) {
+                                          if (data129.length > 8) {
                                             validate25.errors = [{ instancePath: instancePath + "/routingReports", schemaPath: "#/properties/routingReports/maxItems", keyword: "maxItems", params: { limit: 8 }, message: "must NOT have more than 8 items" }];
                                             return false;
                                           } else {
                                             var valid36 = true;
-                                            const len16 = data125.length;
+                                            const len16 = data129.length;
                                             for (let i16 = 0; i16 < len16; i16++) {
-                                              let data126 = data125[i16];
-                                              const _errs282 = errors;
-                                              if (errors === _errs282) {
-                                                if (data126 && typeof data126 == "object" && !Array.isArray(data126)) {
+                                              let data130 = data129[i16];
+                                              const _errs289 = errors;
+                                              if (errors === _errs289) {
+                                                if (data130 && typeof data130 == "object" && !Array.isArray(data130)) {
                                                   let missing13;
-                                                  if (data126.sessionId === void 0 && (missing13 = "sessionId") || data126.targetId === void 0 && (missing13 = "targetId") || data126.mode === void 0 && (missing13 = "mode") || data126.observation === void 0 && (missing13 = "observation")) {
+                                                  if (data130.sessionId === void 0 && (missing13 = "sessionId") || data130.targetId === void 0 && (missing13 = "targetId") || data130.mode === void 0 && (missing13 = "mode") || data130.observation === void 0 && (missing13 = "observation")) {
                                                     validate25.errors = [{ instancePath: instancePath + "/routingReports/" + i16, schemaPath: "#/properties/routingReports/items/required", keyword: "required", params: { missingProperty: missing13 }, message: "must have required property '" + missing13 + "'" }];
                                                     return false;
                                                   } else {
-                                                    const _errs284 = errors;
-                                                    for (const key14 in data126) {
+                                                    const _errs291 = errors;
+                                                    for (const key14 in data130) {
                                                       if (!(key14 === "sessionId" || key14 === "targetId" || key14 === "mode" || key14 === "observation")) {
                                                         validate25.errors = [{ instancePath: instancePath + "/routingReports/" + i16, schemaPath: "#/properties/routingReports/items/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key14 }, message: "must NOT have additional properties" }];
                                                         return false;
                                                         break;
                                                       }
                                                     }
-                                                    if (_errs284 === errors) {
-                                                      if (data126.sessionId !== void 0) {
-                                                        let data127 = data126.sessionId;
-                                                        const _errs285 = errors;
-                                                        if (!(typeof data127 == "number" && (!(data127 % 1) && !isNaN(data127)) && isFinite(data127))) {
+                                                    if (_errs291 === errors) {
+                                                      if (data130.sessionId !== void 0) {
+                                                        let data131 = data130.sessionId;
+                                                        const _errs292 = errors;
+                                                        if (!(typeof data131 == "number" && (!(data131 % 1) && !isNaN(data131)) && isFinite(data131))) {
                                                           validate25.errors = [{ instancePath: instancePath + "/routingReports/" + i16 + "/sessionId", schemaPath: "#/properties/routingReports/items/properties/sessionId/type", keyword: "type", params: { type: "integer" }, message: "must be integer" }];
                                                           return false;
                                                         }
-                                                        if (errors === _errs285) {
-                                                          if (typeof data127 == "number" && isFinite(data127)) {
-                                                            if (data127 < 1 || isNaN(data127)) {
+                                                        if (errors === _errs292) {
+                                                          if (typeof data131 == "number" && isFinite(data131)) {
+                                                            if (data131 < 1 || isNaN(data131)) {
                                                               validate25.errors = [{ instancePath: instancePath + "/routingReports/" + i16 + "/sessionId", schemaPath: "#/properties/routingReports/items/properties/sessionId/minimum", keyword: "minimum", params: { comparison: ">=", limit: 1 }, message: "must be >= 1" }];
                                                               return false;
                                                             }
                                                           }
                                                         }
-                                                        var valid37 = _errs285 === errors;
+                                                        var valid37 = _errs292 === errors;
                                                       } else {
                                                         var valid37 = true;
                                                       }
                                                       if (valid37) {
-                                                        if (data126.targetId !== void 0) {
-                                                          let data128 = data126.targetId;
-                                                          const _errs287 = errors;
-                                                          if (errors === _errs287) {
-                                                            if (typeof data128 === "string") {
-                                                              if (func3(data128) > 2048) {
+                                                        if (data130.targetId !== void 0) {
+                                                          let data132 = data130.targetId;
+                                                          const _errs294 = errors;
+                                                          if (errors === _errs294) {
+                                                            if (typeof data132 === "string") {
+                                                              if (func3(data132) > 2048) {
                                                                 validate25.errors = [{ instancePath: instancePath + "/routingReports/" + i16 + "/targetId", schemaPath: "#/properties/routingReports/items/properties/targetId/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" }];
                                                                 return false;
                                                               }
@@ -7125,31 +7206,31 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                               return false;
                                                             }
                                                           }
-                                                          var valid37 = _errs287 === errors;
+                                                          var valid37 = _errs294 === errors;
                                                         } else {
                                                           var valid37 = true;
                                                         }
                                                         if (valid37) {
-                                                          if (data126.mode !== void 0) {
-                                                            let data129 = data126.mode;
-                                                            const _errs289 = errors;
-                                                            if (!(data129 === "left" || data129 === "right" || data129 === "tone")) {
+                                                          if (data130.mode !== void 0) {
+                                                            let data133 = data130.mode;
+                                                            const _errs296 = errors;
+                                                            if (!(data133 === "left" || data133 === "right" || data133 === "tone")) {
                                                               validate25.errors = [{ instancePath: instancePath + "/routingReports/" + i16 + "/mode", schemaPath: "#/properties/routingReports/items/properties/mode/enum", keyword: "enum", params: { allowedValues: schema40.properties.routingReports.items.properties.mode.enum }, message: "must be equal to one of the allowed values" }];
                                                               return false;
                                                             }
-                                                            var valid37 = _errs289 === errors;
+                                                            var valid37 = _errs296 === errors;
                                                           } else {
                                                             var valid37 = true;
                                                           }
                                                           if (valid37) {
-                                                            if (data126.observation !== void 0) {
-                                                              let data130 = data126.observation;
-                                                              const _errs290 = errors;
-                                                              if (!(data130 === "left" || data130 === "right" || data130 === "both" || data130 === "neither" || data130 === "unsure")) {
+                                                            if (data130.observation !== void 0) {
+                                                              let data134 = data130.observation;
+                                                              const _errs297 = errors;
+                                                              if (!(data134 === "left" || data134 === "right" || data134 === "both" || data134 === "neither" || data134 === "unsure")) {
                                                                 validate25.errors = [{ instancePath: instancePath + "/routingReports/" + i16 + "/observation", schemaPath: "#/properties/routingReports/items/properties/observation/enum", keyword: "enum", params: { allowedValues: schema40.properties.routingReports.items.properties.observation.enum }, message: "must be equal to one of the allowed values" }];
                                                                 return false;
                                                               }
-                                                              var valid37 = _errs290 === errors;
+                                                              var valid37 = _errs297 === errors;
                                                             } else {
                                                               var valid37 = true;
                                                             }
@@ -7163,7 +7244,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                   return false;
                                                 }
                                               }
-                                              var valid36 = _errs282 === errors;
+                                              var valid36 = _errs289 === errors;
                                               if (!valid36) {
                                                 break;
                                               }
@@ -7174,18 +7255,18 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                           return false;
                                         }
                                       }
-                                      var valid0 = _errs280 === errors;
+                                      var valid0 = _errs287 === errors;
                                     } else {
                                       var valid0 = true;
                                     }
                                     if (valid0) {
                                       if (data.functionalVerification !== void 0) {
-                                        let data131 = data.functionalVerification;
-                                        const _errs291 = errors;
-                                        const _errs292 = errors;
+                                        let data135 = data.functionalVerification;
+                                        const _errs298 = errors;
+                                        const _errs299 = errors;
                                         let valid38 = false;
-                                        const _errs293 = errors;
-                                        if (data131 !== null) {
+                                        const _errs300 = errors;
+                                        if (data135 !== null) {
                                           const err62 = { instancePath: instancePath + "/functionalVerification", schemaPath: "#/properties/functionalVerification/anyOf/0/type", keyword: "type", params: { type: "null" }, message: "must be null" };
                                           if (vErrors === null) {
                                             vErrors = [err62];
@@ -7194,13 +7275,13 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                           }
                                           errors++;
                                         }
-                                        var _valid6 = _errs293 === errors;
+                                        var _valid6 = _errs300 === errors;
                                         valid38 = valid38 || _valid6;
-                                        const _errs295 = errors;
-                                        if (errors === _errs295) {
-                                          if (data131 && typeof data131 == "object" && !Array.isArray(data131)) {
+                                        const _errs302 = errors;
+                                        if (errors === _errs302) {
+                                          if (data135 && typeof data135 == "object" && !Array.isArray(data135)) {
                                             let missing14;
-                                            if (data131.repairId === void 0 && (missing14 = "repairId") || data131.beforeSessionId === void 0 && (missing14 = "beforeSessionId") || data131.afterSessionId === void 0 && (missing14 = "afterSessionId") || data131.comparable === void 0 && (missing14 = "comparable") || data131.reason === void 0 && (missing14 = "reason") || data131.changesDb === void 0 && (missing14 = "changesDb") || data131.userOutcome === void 0 && (missing14 = "userOutcome")) {
+                                            if (data135.repairId === void 0 && (missing14 = "repairId") || data135.beforeSessionId === void 0 && (missing14 = "beforeSessionId") || data135.afterSessionId === void 0 && (missing14 = "afterSessionId") || data135.comparable === void 0 && (missing14 = "comparable") || data135.reason === void 0 && (missing14 = "reason") || data135.changesDb === void 0 && (missing14 = "changesDb") || data135.userOutcome === void 0 && (missing14 = "userOutcome")) {
                                               const err63 = { instancePath: instancePath + "/functionalVerification", schemaPath: "#/properties/functionalVerification/anyOf/1/required", keyword: "required", params: { missingProperty: missing14 }, message: "must have required property '" + missing14 + "'" };
                                               if (vErrors === null) {
                                                 vErrors = [err63];
@@ -7209,8 +7290,8 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                               }
                                               errors++;
                                             } else {
-                                              const _errs297 = errors;
-                                              for (const key15 in data131) {
+                                              const _errs304 = errors;
+                                              for (const key15 in data135) {
                                                 if (!(key15 === "repairId" || key15 === "beforeSessionId" || key15 === "afterSessionId" || key15 === "comparable" || key15 === "reason" || key15 === "changesDb" || key15 === "userOutcome")) {
                                                   const err64 = { instancePath: instancePath + "/functionalVerification", schemaPath: "#/properties/functionalVerification/anyOf/1/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key15 }, message: "must NOT have additional properties" };
                                                   if (vErrors === null) {
@@ -7222,11 +7303,11 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                   break;
                                                 }
                                               }
-                                              if (_errs297 === errors) {
-                                                if (data131.repairId !== void 0) {
-                                                  let data132 = data131.repairId;
-                                                  const _errs298 = errors;
-                                                  if (!(typeof data132 == "number" && (!(data132 % 1) && !isNaN(data132)) && isFinite(data132))) {
+                                              if (_errs304 === errors) {
+                                                if (data135.repairId !== void 0) {
+                                                  let data136 = data135.repairId;
+                                                  const _errs305 = errors;
+                                                  if (!(typeof data136 == "number" && (!(data136 % 1) && !isNaN(data136)) && isFinite(data136))) {
                                                     const err65 = { instancePath: instancePath + "/functionalVerification/repairId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/repairId/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                     if (vErrors === null) {
                                                       vErrors = [err65];
@@ -7235,9 +7316,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                     }
                                                     errors++;
                                                   }
-                                                  if (errors === _errs298) {
-                                                    if (typeof data132 == "number" && isFinite(data132)) {
-                                                      if (data132 < 1 || isNaN(data132)) {
+                                                  if (errors === _errs305) {
+                                                    if (typeof data136 == "number" && isFinite(data136)) {
+                                                      if (data136 < 1 || isNaN(data136)) {
                                                         const err66 = { instancePath: instancePath + "/functionalVerification/repairId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/repairId/minimum", keyword: "minimum", params: { comparison: ">=", limit: 1 }, message: "must be >= 1" };
                                                         if (vErrors === null) {
                                                           vErrors = [err66];
@@ -7248,18 +7329,18 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                       }
                                                     }
                                                   }
-                                                  var valid39 = _errs298 === errors;
+                                                  var valid39 = _errs305 === errors;
                                                 } else {
                                                   var valid39 = true;
                                                 }
                                                 if (valid39) {
-                                                  if (data131.beforeSessionId !== void 0) {
-                                                    let data133 = data131.beforeSessionId;
-                                                    const _errs300 = errors;
-                                                    const _errs301 = errors;
+                                                  if (data135.beforeSessionId !== void 0) {
+                                                    let data137 = data135.beforeSessionId;
+                                                    const _errs307 = errors;
+                                                    const _errs308 = errors;
                                                     let valid40 = false;
-                                                    const _errs302 = errors;
-                                                    if (!(typeof data133 == "number" && (!(data133 % 1) && !isNaN(data133)) && isFinite(data133))) {
+                                                    const _errs309 = errors;
+                                                    if (!(typeof data137 == "number" && (!(data137 % 1) && !isNaN(data137)) && isFinite(data137))) {
                                                       const err67 = { instancePath: instancePath + "/functionalVerification/beforeSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/beforeSessionId/anyOf/0/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                       if (vErrors === null) {
                                                         vErrors = [err67];
@@ -7268,9 +7349,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                       }
                                                       errors++;
                                                     }
-                                                    if (errors === _errs302) {
-                                                      if (typeof data133 == "number" && isFinite(data133)) {
-                                                        if (data133 < 1 || isNaN(data133)) {
+                                                    if (errors === _errs309) {
+                                                      if (typeof data137 == "number" && isFinite(data137)) {
+                                                        if (data137 < 1 || isNaN(data137)) {
                                                           const err68 = { instancePath: instancePath + "/functionalVerification/beforeSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/beforeSessionId/anyOf/0/minimum", keyword: "minimum", params: { comparison: ">=", limit: 1 }, message: "must be >= 1" };
                                                           if (vErrors === null) {
                                                             vErrors = [err68];
@@ -7281,10 +7362,10 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                         }
                                                       }
                                                     }
-                                                    var _valid7 = _errs302 === errors;
+                                                    var _valid7 = _errs309 === errors;
                                                     valid40 = valid40 || _valid7;
-                                                    const _errs304 = errors;
-                                                    if (data133 !== null) {
+                                                    const _errs311 = errors;
+                                                    if (data137 !== null) {
                                                       const err69 = { instancePath: instancePath + "/functionalVerification/beforeSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/beforeSessionId/anyOf/1/type", keyword: "type", params: { type: "null" }, message: "must be null" };
                                                       if (vErrors === null) {
                                                         vErrors = [err69];
@@ -7293,7 +7374,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                       }
                                                       errors++;
                                                     }
-                                                    var _valid7 = _errs304 === errors;
+                                                    var _valid7 = _errs311 === errors;
                                                     valid40 = valid40 || _valid7;
                                                     if (!valid40) {
                                                       const err70 = { instancePath: instancePath + "/functionalVerification/beforeSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/beforeSessionId/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
@@ -7304,27 +7385,27 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                       }
                                                       errors++;
                                                     } else {
-                                                      errors = _errs301;
+                                                      errors = _errs308;
                                                       if (vErrors !== null) {
-                                                        if (_errs301) {
-                                                          vErrors.length = _errs301;
+                                                        if (_errs308) {
+                                                          vErrors.length = _errs308;
                                                         } else {
                                                           vErrors = null;
                                                         }
                                                       }
                                                     }
-                                                    var valid39 = _errs300 === errors;
+                                                    var valid39 = _errs307 === errors;
                                                   } else {
                                                     var valid39 = true;
                                                   }
                                                   if (valid39) {
-                                                    if (data131.afterSessionId !== void 0) {
-                                                      let data134 = data131.afterSessionId;
-                                                      const _errs306 = errors;
-                                                      const _errs307 = errors;
+                                                    if (data135.afterSessionId !== void 0) {
+                                                      let data138 = data135.afterSessionId;
+                                                      const _errs313 = errors;
+                                                      const _errs314 = errors;
                                                       let valid41 = false;
-                                                      const _errs308 = errors;
-                                                      if (!(typeof data134 == "number" && (!(data134 % 1) && !isNaN(data134)) && isFinite(data134))) {
+                                                      const _errs315 = errors;
+                                                      if (!(typeof data138 == "number" && (!(data138 % 1) && !isNaN(data138)) && isFinite(data138))) {
                                                         const err71 = { instancePath: instancePath + "/functionalVerification/afterSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/afterSessionId/anyOf/0/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
                                                         if (vErrors === null) {
                                                           vErrors = [err71];
@@ -7333,9 +7414,9 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                         }
                                                         errors++;
                                                       }
-                                                      if (errors === _errs308) {
-                                                        if (typeof data134 == "number" && isFinite(data134)) {
-                                                          if (data134 < 1 || isNaN(data134)) {
+                                                      if (errors === _errs315) {
+                                                        if (typeof data138 == "number" && isFinite(data138)) {
+                                                          if (data138 < 1 || isNaN(data138)) {
                                                             const err72 = { instancePath: instancePath + "/functionalVerification/afterSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/afterSessionId/anyOf/0/minimum", keyword: "minimum", params: { comparison: ">=", limit: 1 }, message: "must be >= 1" };
                                                             if (vErrors === null) {
                                                               vErrors = [err72];
@@ -7346,10 +7427,10 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                           }
                                                         }
                                                       }
-                                                      var _valid8 = _errs308 === errors;
+                                                      var _valid8 = _errs315 === errors;
                                                       valid41 = valid41 || _valid8;
-                                                      const _errs310 = errors;
-                                                      if (data134 !== null) {
+                                                      const _errs317 = errors;
+                                                      if (data138 !== null) {
                                                         const err73 = { instancePath: instancePath + "/functionalVerification/afterSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/afterSessionId/anyOf/1/type", keyword: "type", params: { type: "null" }, message: "must be null" };
                                                         if (vErrors === null) {
                                                           vErrors = [err73];
@@ -7358,7 +7439,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                         }
                                                         errors++;
                                                       }
-                                                      var _valid8 = _errs310 === errors;
+                                                      var _valid8 = _errs317 === errors;
                                                       valid41 = valid41 || _valid8;
                                                       if (!valid41) {
                                                         const err74 = { instancePath: instancePath + "/functionalVerification/afterSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/afterSessionId/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
@@ -7369,23 +7450,23 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                         }
                                                         errors++;
                                                       } else {
-                                                        errors = _errs307;
+                                                        errors = _errs314;
                                                         if (vErrors !== null) {
-                                                          if (_errs307) {
-                                                            vErrors.length = _errs307;
+                                                          if (_errs314) {
+                                                            vErrors.length = _errs314;
                                                           } else {
                                                             vErrors = null;
                                                           }
                                                         }
                                                       }
-                                                      var valid39 = _errs306 === errors;
+                                                      var valid39 = _errs313 === errors;
                                                     } else {
                                                       var valid39 = true;
                                                     }
                                                     if (valid39) {
-                                                      if (data131.comparable !== void 0) {
-                                                        const _errs312 = errors;
-                                                        if (typeof data131.comparable !== "boolean") {
+                                                      if (data135.comparable !== void 0) {
+                                                        const _errs319 = errors;
+                                                        if (typeof data135.comparable !== "boolean") {
                                                           const err75 = { instancePath: instancePath + "/functionalVerification/comparable", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/comparable/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
                                                           if (vErrors === null) {
                                                             vErrors = [err75];
@@ -7394,17 +7475,17 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                           }
                                                           errors++;
                                                         }
-                                                        var valid39 = _errs312 === errors;
+                                                        var valid39 = _errs319 === errors;
                                                       } else {
                                                         var valid39 = true;
                                                       }
                                                       if (valid39) {
-                                                        if (data131.reason !== void 0) {
-                                                          let data136 = data131.reason;
-                                                          const _errs314 = errors;
-                                                          if (errors === _errs314) {
-                                                            if (typeof data136 === "string") {
-                                                              if (func3(data136) > 2048) {
+                                                        if (data135.reason !== void 0) {
+                                                          let data140 = data135.reason;
+                                                          const _errs321 = errors;
+                                                          if (errors === _errs321) {
+                                                            if (typeof data140 === "string") {
+                                                              if (func3(data140) > 2048) {
                                                                 const err76 = { instancePath: instancePath + "/functionalVerification/reason", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/reason/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" };
                                                                 if (vErrors === null) {
                                                                   vErrors = [err76];
@@ -7423,17 +7504,17 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                               errors++;
                                                             }
                                                           }
-                                                          var valid39 = _errs314 === errors;
+                                                          var valid39 = _errs321 === errors;
                                                         } else {
                                                           var valid39 = true;
                                                         }
                                                         if (valid39) {
-                                                          if (data131.changesDb !== void 0) {
-                                                            let data137 = data131.changesDb;
-                                                            const _errs316 = errors;
-                                                            if (errors === _errs316) {
-                                                              if (Array.isArray(data137)) {
-                                                                if (data137.length > 8) {
+                                                          if (data135.changesDb !== void 0) {
+                                                            let data141 = data135.changesDb;
+                                                            const _errs323 = errors;
+                                                            if (errors === _errs323) {
+                                                              if (Array.isArray(data141)) {
+                                                                if (data141.length > 8) {
                                                                   const err78 = { instancePath: instancePath + "/functionalVerification/changesDb", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/changesDb/maxItems", keyword: "maxItems", params: { limit: 8 }, message: "must NOT have more than 8 items" };
                                                                   if (vErrors === null) {
                                                                     vErrors = [err78];
@@ -7443,11 +7524,11 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                   errors++;
                                                                 } else {
                                                                   var valid42 = true;
-                                                                  const len17 = data137.length;
+                                                                  const len17 = data141.length;
                                                                   for (let i17 = 0; i17 < len17; i17++) {
-                                                                    let data138 = data137[i17];
-                                                                    const _errs318 = errors;
-                                                                    if (!(typeof data138 == "number" && isFinite(data138))) {
+                                                                    let data142 = data141[i17];
+                                                                    const _errs325 = errors;
+                                                                    if (!(typeof data142 == "number" && isFinite(data142))) {
                                                                       const err79 = { instancePath: instancePath + "/functionalVerification/changesDb/" + i17, schemaPath: "#/properties/functionalVerification/anyOf/1/properties/changesDb/items/type", keyword: "type", params: { type: "number" }, message: "must be number" };
                                                                       if (vErrors === null) {
                                                                         vErrors = [err79];
@@ -7456,7 +7537,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                       }
                                                                       errors++;
                                                                     }
-                                                                    var valid42 = _errs318 === errors;
+                                                                    var valid42 = _errs325 === errors;
                                                                     if (!valid42) {
                                                                       break;
                                                                     }
@@ -7472,15 +7553,15 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                 errors++;
                                                               }
                                                             }
-                                                            var valid39 = _errs316 === errors;
+                                                            var valid39 = _errs323 === errors;
                                                           } else {
                                                             var valid39 = true;
                                                           }
                                                           if (valid39) {
-                                                            if (data131.userOutcome !== void 0) {
-                                                              let data139 = data131.userOutcome;
-                                                              const _errs320 = errors;
-                                                              if (!(data139 === "unverified" || data139 === "improved" || data139 === "unchanged" || data139 === "worse")) {
+                                                            if (data135.userOutcome !== void 0) {
+                                                              let data143 = data135.userOutcome;
+                                                              const _errs327 = errors;
+                                                              if (!(data143 === "unverified" || data143 === "improved" || data143 === "unchanged" || data143 === "worse")) {
                                                                 const err81 = { instancePath: instancePath + "/functionalVerification/userOutcome", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/userOutcome/enum", keyword: "enum", params: { allowedValues: schema40.properties.functionalVerification.anyOf[1].properties.userOutcome.enum }, message: "must be equal to one of the allowed values" };
                                                                 if (vErrors === null) {
                                                                   vErrors = [err81];
@@ -7489,7 +7570,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                                                 }
                                                                 errors++;
                                                               }
-                                                              var valid39 = _errs320 === errors;
+                                                              var valid39 = _errs327 === errors;
                                                             } else {
                                                               var valid39 = true;
                                                             }
@@ -7511,7 +7592,7 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                             errors++;
                                           }
                                         }
-                                        var _valid6 = _errs295 === errors;
+                                        var _valid6 = _errs302 === errors;
                                         valid38 = valid38 || _valid6;
                                         if (!valid38) {
                                           const err83 = { instancePath: instancePath + "/functionalVerification", schemaPath: "#/properties/functionalVerification/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
@@ -7524,16 +7605,16 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                           validate25.errors = vErrors;
                                           return false;
                                         } else {
-                                          errors = _errs292;
+                                          errors = _errs299;
                                           if (vErrors !== null) {
-                                            if (_errs292) {
-                                              vErrors.length = _errs292;
+                                            if (_errs299) {
+                                              vErrors.length = _errs299;
                                             } else {
                                               vErrors = null;
                                             }
                                           }
                                         }
-                                        var valid0 = _errs291 === errors;
+                                        var valid0 = _errs298 === errors;
                                       } else {
                                         var valid0 = true;
                                       }

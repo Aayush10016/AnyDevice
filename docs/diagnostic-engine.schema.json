@@ -297,6 +297,23 @@
               "availability",
               "reason"
             ]
+          },
+          "classification": {
+            "enum": [
+              "confirmed_issue",
+              "potential_issue",
+              "informational",
+              "inconclusive",
+              "unsupported",
+              "not_tested"
+            ]
+          },
+          "observedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 100
           }
         },
         "required": [
@@ -626,6 +643,18 @@
           },
           "cleanup": {
             "type": "boolean"
+          },
+          "engineConsumedFrames": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "elapsedMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12000
           }
         },
         "required": [

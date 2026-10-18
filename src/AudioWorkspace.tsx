@@ -1,3 +1,5 @@
+import { readinessCheck, type Readiness } from "./nativeInvestigation";
+import type { DiagnosticCheck } from "./diagnosticEngine";
 import { streamProgress, type AudioFailure } from "./audioLifecycle";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -9,6 +11,7 @@ import { RepairPanel } from "./RepairPanel";
 import type { RepairAudit } from "./bridge";
 import {
   inspectAudio,
+  probeAudio,
   startAudioTest,
   audioTestStatus,
   stopAudioTest,
@@ -34,8 +37,10 @@ export function AudioWorkspace({
   repairHistory = [],
   routingHistory = [],
   onRouting,
+  onReadiness,
 }: {
   initialEndpoint?: string;
+  onReadiness?: (c: DiagnosticCheck) => void;
   repairHistory?: RepairAudit[];
   routingHistory?: RoutingReport[];
   onRouting?: (r: RoutingReport) => void;
@@ -54,6 +59,7 @@ export function AudioWorkspace({
     [heard, setHeard] = useState<"yes" | "no" | "unknown">("unknown"),
     [staticReport, setStaticReport] = useState<boolean | null>(null),
     [preview, setPreview] = useState("");
+  const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [failure, setFailure] = useState<AudioFailure | null>(null);
   const [starting, setStarting] = useState(false);
   const [observationFailed, setObservationFailed] = useState(false);
@@ -94,6 +100,7 @@ export function AudioWorkspace({
     }
   }
   async function refresh() {
+    setReadiness(null);
     setPreview("");
     setBusy(true);
     try {
@@ -286,6 +293,7 @@ export function AudioWorkspace({
               void discardAudioTest(current.current).catch(() => {});
             current.current = null;
             setTarget(e.target.value);
+            setReadiness(null);
             setFailure(null);
             setObservationFailed(false);
             setSession(null);
@@ -311,6 +319,52 @@ export function AudioWorkspace({
       <button disabled={running || busy} onClick={() => void refresh()}>
         Refresh audio endpoints
       </button>
+      {endpoint && (
+        <>
+          <button
+            disabled={running || busy || endpoint.state !== "active"}
+            onClick={async () => {
+              setBusy(true);
+              setReadiness(null);
+              setMessage(
+                "Checking initialization without starting sound or recording…",
+              );
+              try {
+                const r = await probeAudio(endpoint.id, endpoint.kind);
+                if (mounted.current) {
+                  setReadiness(r);
+                  onReadiness?.(readinessCheck(r));
+                  setMessage(readinessCheck(r).conclusion);
+                }
+              } catch (e) {
+                if (mounted.current)
+                  setMessage(`Readiness request failed: ${String(e)}`);
+              } finally {
+                if (mounted.current) setBusy(false);
+              }
+            }}
+          >
+            Check endpoint readiness (no sound or capture)
+          </button>
+          {readiness && (
+            <article className="finding">
+              <h3>
+                {readiness.complete
+                  ? "Initialization and service access confirmed"
+                  : "Readiness check could not complete"}
+              </h3>
+              <p>{readinessCheck(readiness).conclusion}</p>
+              <p>{readinessCheck(readiness).nextStep}</p>
+              <details>
+                <summary>
+                  Advanced evidence — initialization stage and original error
+                </summary>
+                <pre>{JSON.stringify(readiness, null, 2)}</pre>
+              </details>
+            </article>
+          )}
+        </>
+      )}
       {endpoint && (
         <>
           <p>
@@ -597,6 +651,16 @@ export function AudioWorkspace({
             </article>
           ))}
         </details>
+      )}
+      {session && (
+        <p>
+          Current interval: {session.elapsedMs ?? "unknown"} ms ·{" "}
+          {session.frames}{" "}
+          {endpoint?.kind === "recording" ? "captured" : "submitted"} frames ·{" "}
+          {session.engineConsumedFrames ?? "not measured"} frames dequeued from
+          playback buffer. Dequeued frames are engine-buffer evidence, not
+          loopback or proof of audible sound.
+        </p>
       )}
       <h3>{failure ? "Inconclusive" : result.outcome}</h3>
       <p>

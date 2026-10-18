@@ -251,7 +251,10 @@ export function systemChecks(
       "Use read-only interface evidence; a documented model-specific provider and physical verification are required.",
     hypotheses: [],
   });
-  return checks;
+  return checks.map((c) => ({
+    ...c,
+    measurements: { ...c.measurements, observedAt: scan.collectedAt },
+  }));
 }
 export function staticHypotheses(
   s: AudioSession | null,
@@ -328,6 +331,10 @@ export function diagnosticExport(
     })),
     checks: checks.slice(0, 8192).map((c, i) => ({
       ...structureCheck(c),
+      measurements:
+        sanitized && "originalError" in c.measurements
+          ? { ...c.measurements, originalError: "Technical free-text withheld" }
+          : c.measurements,
       id: sanitized ? `check-${i + 1}` : c.id,
       target: sanitized ? alias(c.target) : c.target,
     })),

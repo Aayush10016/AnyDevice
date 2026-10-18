@@ -1,3 +1,4 @@
+import { LightingDiscoveryPanel } from "./LightingDiscoveryPanel";
 import type { InputSnapshot } from "./workbench";
 export interface LightingRecord {
   model: string | null;
@@ -62,16 +63,18 @@ export function LightingInvestigation({
       <summary>
         Investigate a key light — model and right-arrow comparison
       </summary>
+      <LightingDiscoveryPanel />
       <p>
         Keyboard input, physical layout, lock indicators, whole-keyboard
         backlighting, per-key RGB, vendor controls and visible illumination are
         separate capabilities.
       </p>
       <p>
-        Backlight control not detected by supported interfaces. This does not
-        mean a built-in or external keyboard has no backlight. Generic HID
-        lock-indicator usages do not establish RGB control. No ACPI/WMI/vendor
-        backlight provider is implemented.
+        No validated backlight control is currently available. Use discovery
+        above to test supported interfaces. This does not mean a built-in or
+        external keyboard has no backlight. Generic HID lock-indicator usages do
+        not establish RGB control. No ACPI/WMI/vendor backlight provider is
+        implemented.
       </p>
       <label>
         Exact keyboard model and revision

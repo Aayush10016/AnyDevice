@@ -4,6 +4,7 @@ import { AudioWorkspace } from "./AudioWorkspace";
 import { RepairPanel } from "./RepairPanel";
 import {
   inspectAudio,
+  probeAudio,
   startAudioTest,
   audioTestStatus,
   stopAudioTest,
@@ -13,6 +14,7 @@ import {
 } from "./bridge";
 vi.mock("./bridge", () => ({
   inspectAudio: vi.fn(),
+  probeAudio: vi.fn(),
   startAudioTest: vi.fn(),
   audioTestStatus: vi.fn(),
   stopAudioTest: vi.fn().mockResolvedValue(undefined),
@@ -383,4 +385,47 @@ it("discards a delayed mute proposal after target or initial state changes", asy
     ).toBeNull(),
   );
   expect(executeAudioRepair).not.toHaveBeenCalled();
+});
+
+it("checks only the exact chosen endpoint readiness without starting playback or capture", async () => {
+  vi.mocked(probeAudio).mockResolvedValue({
+    operation: "audio-readiness",
+    targetId: endpoint.id,
+    kind: "playback",
+    observedAt: "2026-10-18T00:00:00Z",
+    complete: false,
+    started: false,
+    frames: 0,
+    facts: null,
+    errors: [
+      {
+        stage: "Initialize shared stream",
+        message: "Original synthetic error 0x88890004",
+      },
+    ],
+  });
+  const onReadiness = vi.fn();
+  render(
+    <AudioWorkspace
+      initialEndpoint={endpoint.id}
+      {...callbacks()}
+      onReadiness={onReadiness}
+    />,
+  );
+  const probe = await screen.findByRole("button", {
+    name: "Check endpoint readiness (no sound or capture)",
+  });
+  await waitFor(() => expect(probe).toBeEnabled());
+  fireEvent.click(probe);
+  await screen.findByRole("heading", {
+    name: "Readiness check could not complete",
+  });
+  expect(probeAudio).toHaveBeenCalledWith(endpoint.id, "playback");
+  expect(startAudioTest).not.toHaveBeenCalled();
+  expect(onReadiness).toHaveBeenCalled();
+  expect(
+    screen.getByText(/Original synthetic error 0x88890004/, {
+      selector: "pre",
+    }),
+  ).toBeInTheDocument();
 });

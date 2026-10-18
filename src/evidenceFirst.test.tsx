@@ -256,7 +256,7 @@ it("requires exact model evidence before owner lighting comparison and never inf
   );
   expect(screen.getByLabelText("Right-arrow light")).toBeDisabled();
   expect(
-    screen.getByText(/Backlight control not detected by supported interfaces/),
+    screen.getByText(/No validated backlight control is currently available/),
   ).toBeInTheDocument();
   expect(
     lightingConclusion({ ...emptyLighting, model: "Cosmic Byte" }),

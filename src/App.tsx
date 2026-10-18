@@ -799,6 +799,9 @@ export default function App() {
             {route === "Audio" && (
               <AudioWorkspace
                 initialEndpoint={audioSelected}
+                onReadiness={(c) =>
+                  setChecks((v) => [...v.filter((p) => p.id !== c.id), c])
+                }
                 repairHistory={repairAudits}
                 routingHistory={routingReports}
                 onRouting={(r) => {

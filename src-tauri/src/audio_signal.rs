@@ -1,5 +1,17 @@
 //! Exact interleaved render-buffer generation, shared by WASAPI and synthetic tests.
 use crate::audio_metrics::{decode, encode, Accumulator};
+pub fn consumed_frames(submitted: u64, padding: u32) -> Result<u64, String> {
+    submitted
+        .checked_sub(padding as u64)
+        .ok_or_else(|| "Playback progress: padding exceeds submitted frames".into())
+}
+pub fn failure_record(reason: &str) -> serde_json::Value {
+    let code = reason
+        .find("0x")
+        .and_then(|i| reason.get(i..i + 10))
+        .filter(|s| s[2..].chars().all(|c| c.is_ascii_hexdigit()));
+    serde_json::json!({"stage":reason.split(':').next().unwrap_or("Unknown"),"message":reason,"hresult":code})
+}
 pub fn stereo(channels: u16, mask: u32) -> bool {
     channels == 2 && (mask == 0 || mask == 3)
 }
@@ -95,5 +107,24 @@ mod tests {
             &mut vec![Accumulator::default(); 2]
         )
         .is_err());
+    }
+}
+
+#[cfg(test)]
+mod investigation_tests {
+    use super::*;
+    #[test]
+    fn distinguishes_queued_frames_from_consumed_frames() {
+        assert_eq!(consumed_frames(4800, 4800).unwrap(), 0);
+        assert_eq!(consumed_frames(4800, 2400).unwrap(), 2400);
+        assert_eq!(consumed_frames(4800, 0).unwrap(), 4800);
+        assert!(consumed_frames(1, 2).is_err());
+    }
+    #[test]
+    fn preserves_original_stage_and_hresult_without_inventing_codes() {
+        let error = failure_record("Initialize shared stream: synthetic error (0x88890004)");
+        assert_eq!(error["stage"], "Initialize shared stream");
+        assert_eq!(error["hresult"], "0x88890004");
+        assert!(failure_record("Endpoint state: unavailable")["hresult"].is_null());
     }
 }

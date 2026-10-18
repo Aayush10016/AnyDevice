@@ -44,6 +44,8 @@ export interface AudioSession {
   startedAt: string;
   format: AudioFormat | null;
   frames: number;
+  engineConsumedFrames?: number | null;
+  elapsedMs?: number;
   aggregate: Levels[];
   window: Levels[];
   discontinuities: number;
