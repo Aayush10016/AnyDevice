@@ -149,10 +149,15 @@ it("a both-ear observation cannot pass either isolated channel, and interrupted 
     mode: "left",
     cleanup: true,
     status: "completed",
+    frames: 480,
+    format: e.format,
   } as AudioSession;
   expect(routingAssessment(s, "both").outcome).toBe("Issue detected");
   expect(routingAssessment(s, "right").outcome).toBe("Issue detected");
   expect(routingAssessment(s, "left").outcome).toBe("Passed");
+  expect(routingAssessment({ ...s, frames: 0 }, "left").outcome).toBe(
+    "Inconclusive",
+  );
   expect(routingAssessment({ ...s, cleanup: false }, "left").outcome).toBe(
     "Inconclusive",
   );

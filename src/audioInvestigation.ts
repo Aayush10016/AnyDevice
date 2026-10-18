@@ -48,7 +48,8 @@ export function investigateAudio(
     hypotheses: [
       {
         cause: "Application-generated channel duplication",
-        confidence: "Possible",
+        confidence:
+          mismatch && !generatedSilent ? "Possible" : "Insufficient evidence",
         distinguishingTest:
           "Inspect submitted per-channel peaks and repeat the isolated-channel test.",
         supportingEvidence: generatedSilent

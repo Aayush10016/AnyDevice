@@ -84,7 +84,13 @@ export function routingAssessment(
   s: AudioSession,
   observation: EarObservation,
 ) {
-  if (observation === "unsure" || !s.cleanup || s.status !== "completed")
+  if (
+    observation === "unsure" ||
+    !s.cleanup ||
+    s.status !== "completed" ||
+    !s.frames ||
+    !s.format?.supported
+  )
     return {
       outcome: "Inconclusive",
       text: "Complete the interval and report which ear produced sound. Physical separation is not independently measured.",
