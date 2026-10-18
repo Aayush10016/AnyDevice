@@ -81,6 +81,7 @@ export function DeviceWorkbench({
     setPreview("");
   }, [sanitized]);
   const session = useRef<number | null>(null);
+  const lostFocus = useRef(false);
   const mounted = useRef(true);
   const archived = useRef<number | null>(null);
   const surface = useRef<HTMLDivElement>(null);
@@ -173,7 +174,16 @@ export function DeviceWorkbench({
         polling = false;
       }
     }, 250);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [snapshot?.sessionId, snapshot?.cleanup]);
+  // Install privacy guards for the entire workspace lifetime, including the
+  // interval between a start request and its first native snapshot.
+  useEffect(() => {
     const blur = () => {
+      lostFocus.current = true;
       if (session.current !== null)
         void stopInputTest(session.current, "focusLost").catch(() => {});
     };
@@ -193,13 +203,11 @@ export function DeviceWorkbench({
     };
     document.addEventListener("focusin", editing);
     return () => {
-      cancelled = true;
-      window.clearInterval(timer);
       window.removeEventListener("blur", blur);
       document.removeEventListener("visibilitychange", hidden);
       document.removeEventListener("focusin", editing);
     };
-  }, [snapshot?.sessionId, snapshot?.cleanup]);
+  }, [device.id]);
   async function stop(reason?: "navigation" | "reset") {
     const id = session.current;
     if (id === null) return;
@@ -220,6 +228,7 @@ export function DeviceWorkbench({
     setMessage("");
     try {
       if (session.current !== null && !snapshot?.cleanup) await stop();
+      lostFocus.current = false;
       surface.current?.focus();
       const id = await startInputTest(endpoint.instanceId, mode);
       session.current = id;
@@ -227,6 +236,8 @@ export function DeviceWorkbench({
         await discardInputTest(id);
         return;
       }
+      if (lostFocus.current || document.hidden)
+        await stopInputTest(id, "focusLost");
       setSnapshot(null);
       setPreview("");
       receive(await inputTestStatus(id));

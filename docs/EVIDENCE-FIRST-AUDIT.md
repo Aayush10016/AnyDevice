@@ -31,3 +31,5 @@ New controller provider, event-log correlation, ACPI/WMI/vendor lighting access,
 
 Actual mouse/key events, per-ear listening, quiet/speech/static reproduction, permission/indicator cleanup, an intentional mute/rollback exercise and illumination comparison under the exact model's documented mode. Laptop/Cosmic Byte model identity remains unknown until reliable evidence is supplied; lack of generic HID LED metadata never proves lack of backlighting.
 
+
+CI found a focus-guard startup race: the listener previously waited for the first snapshot effect. Lifetime guards now cover pending start/first status too, with a regression test. Native OS foreground checks remain in place.

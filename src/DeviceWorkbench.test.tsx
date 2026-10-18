@@ -272,3 +272,25 @@ it("clears previous measurements when the input endpoint changes", async () => {
   expect(screen.getByText("Not tested")).toBeInTheDocument();
   expect(bridge.discardInputTest).toHaveBeenCalledWith(7);
 });
+
+it("stops a pending input start if editing begins before the first snapshot", async () => {
+  let acknowledge!: (id: number) => void;
+  vi.mocked(bridge.startInputTest).mockImplementationOnce(
+    () =>
+      new Promise((r) => {
+        acknowledge = r;
+      }),
+  );
+  mount();
+  await live();
+  fireEvent.click(screen.getByRole("button", { name: "Start Test" }));
+  await waitFor(() => expect(bridge.startInputTest).toHaveBeenCalled());
+  const input = document.createElement("input");
+  document.body.appendChild(input);
+  fireEvent.focusIn(input);
+  acknowledge(7);
+  await waitFor(() =>
+    expect(bridge.stopInputTest).toHaveBeenCalledWith(7, "focusLost"),
+  );
+  input.remove();
+});
