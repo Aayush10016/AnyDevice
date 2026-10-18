@@ -14,7 +14,7 @@ Baseline: commit 1fb381f, draft PR #5. New branch is based on that complete tree
 
 - [x] Dashboard currently promotes all Inconclusive entries into main findings; group coverage, collapse passes, retain every detailed check in exports.
 - [x] Muted inactive records can misleadingly describe mute instead of unavailability. Mute in an automatic scan is a configuration warning, not proof of malfunction.
-- [x] Audio startup/status failures retain a generic empty/active state; show lifecycle, actual stage/error and cleanup uncertainty, terminate a failed observation path.
+- [x] Audio startup/status failures retain a generic empty/active state, and a nonzero helper exit overwrites the validated native error stage; show lifecycle, actual stage/error and cleanup uncertainty, terminate a failed observation path.
 - [x] Completed stream without valid measurement data must not pass; quiet/speech comparison must reject incomplete channel arrays and stream errors.
 - [x] Diagnostic checks need versioned definition, evidence rationale, counter-evidence, unknowns, repair eligibility and verification requirements.
 - [x] General keyboard tester exposes obsolete X-key mode; remove it from ordinary tests and correct fixed-unit row geometry.
@@ -30,3 +30,4 @@ New controller provider, event-log correlation, ACPI/WMI/vendor lighting access,
 ## Requires owner participation
 
 Actual mouse/key events, per-ear listening, quiet/speech/static reproduction, permission/indicator cleanup, an intentional mute/rollback exercise and illumination comparison under the exact model's documented mode. Laptop/Cosmic Byte model identity remains unknown until reliable evidence is supplied; lack of generic HID LED metadata never proves lack of backlighting.
+

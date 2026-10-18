@@ -42,6 +42,15 @@ struct Inner {
     interrupted: bool,
 }
 static NEXT: AtomicU64 = AtomicU64::new(1);
+// Preserve a validated terminal failure packet when a helper exits nonzero.
+// Otherwise the useful WASAPI stage/HRESULT would be overwritten by a generic
+// process-exit message in start_audio_test's final snapshot update.
+fn helper_exit_error(snapshot: Option<&Snapshot>) -> String {
+    snapshot
+        .filter(|s| s.status == "failed" && !s.reason.is_empty() && s.reason.len() <= 2048)
+        .map(|s| s.reason.clone())
+        .unwrap_or_else(|| "Audio helper exited with an error".into())
+}
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
 enum Packet {
@@ -329,7 +338,10 @@ async fn stream(
     };
     cleanup.store(true, Ordering::Release);
     if result.is_ok() && !cancel.is_cancelled() && !exit.success() {
-        return Err("Audio helper exited with an error".into());
+        let inner = state.0.lock().map_err(|_| "Audio state unavailable")?;
+        return Err(helper_exit_error(
+            inner.snapshot.as_ref().filter(|s| s.session_id == id),
+        ));
     }
     result
 }
@@ -399,6 +411,27 @@ pub async fn discard_audio_test(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn preserves_valid_terminal_native_failure_stage_only() {
+        let mut snapshot = Snapshot {
+            status: "failed".into(),
+            reason: "Initialize shared stream: synthetic HRESULT 0x88890004".into(),
+            ..Default::default()
+        };
+        assert!(helper_exit_error(Some(&snapshot)).starts_with("Initialize shared stream:"));
+        snapshot.status = "running".into();
+        assert_eq!(
+            helper_exit_error(Some(&snapshot)),
+            "Audio helper exited with an error"
+        );
+        snapshot.status = "failed".into();
+        snapshot.reason = "x".repeat(2049);
+        assert_eq!(
+            helper_exit_error(Some(&snapshot)),
+            "Audio helper exited with an error"
+        );
+        assert_eq!(helper_exit_error(None), "Audio helper exited with an error");
+    }
     #[test]
     fn audio_packets_reject_stale_counts_invalid_levels_and_unbounded_channels() {
         let mut s = Snapshot::default();
