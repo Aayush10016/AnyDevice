@@ -9,6 +9,7 @@ import { inspectDescriptor } from "./hidDescriptor";
 import { investigateAudio } from "./audioInvestigation";
 import { diagnosticExport } from "./diagnosticEngine";
 import { validateExport } from "./reporting";
+import { compareRepair } from "./repairVerification";
 import { buildInventory } from "./inventoryModel";
 import { normalize } from "./core";
 import { fixtureScan, healthyMouse } from "./fixtures";
@@ -40,6 +41,46 @@ const audio = {
   source: "synthetic",
   observedAt: "2026-10-18T00:00:00Z",
 };
+it("requires a real matching before/after pair and does not convert level change to repair success", () => {
+  const before = {
+    sessionId: 1,
+    targetId: e.id,
+    mode: "ambient",
+    cleanup: true,
+    status: "completed",
+    format: e.format,
+    frames: 20,
+    discontinuities: 0,
+    timestampErrors: 0,
+    aggregate: [{ samples: 20, rmsDbfs: -40, invalidSamples: 0 }],
+  } as AudioSession;
+  const after = {
+    ...before,
+    sessionId: 2,
+    aggregate: [{ ...before.aggregate[0], rmsDbfs: -35 }],
+  };
+  expect(compareRepair(before, after)).toMatchObject({
+    comparable: true,
+    changesDb: [5],
+  });
+  expect(compareRepair(before, before).comparable).toBe(false);
+  expect(compareRepair(null, after).comparable).toBe(false);
+  expect(
+    compareRepair(before, { ...after, targetId: "unrelated" }).comparable,
+  ).toBe(false);
+  expect(
+    compareRepair(before, { ...after, discontinuities: 1 }).comparable,
+  ).toBe(false);
+  expect(compareRepair(before, { ...after, mode: "speech" }).comparable).toBe(
+    false,
+  );
+  expect(
+    compareRepair(before, {
+      ...after,
+      format: { ...e.format!, bits: 16, float: false },
+    }).comparable,
+  ).toBe(false);
+});
 it("exports structured counter-evidence without identities or PCM, and never proves physical separation", () => {
   const s = {
     sessionId: 2,

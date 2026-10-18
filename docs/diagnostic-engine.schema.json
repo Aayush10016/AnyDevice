@@ -658,6 +658,76 @@
           "observation"
         ]
       }
+    },
+    "functionalVerification": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repairId": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "beforeSessionId": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "afterSessionId": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "comparable": {
+              "type": "boolean"
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 2048
+            },
+            "changesDb": {
+              "type": "array",
+              "maxItems": 8,
+              "items": {
+                "type": "number"
+              }
+            },
+            "userOutcome": {
+              "enum": [
+                "unverified",
+                "improved",
+                "unchanged",
+                "worse"
+              ]
+            }
+          },
+          "required": [
+            "repairId",
+            "beforeSessionId",
+            "afterSessionId",
+            "comparable",
+            "reason",
+            "changesDb",
+            "userOutcome"
+          ]
+        }
+      ]
     }
   },
   "required": [

@@ -66,6 +66,11 @@ export function inspectDescriptor(bytes: Uint8Array) {
       }
     }
     if (type === 0) {
+      if (
+        ([8, 9, 10, 11].includes(tag) && !length) ||
+        (tag === 12 && length !== 0)
+      )
+        throw new Error("Malformed main item length.");
       if (tag === 10 && ++depth > 32)
         throw new Error("Collection nesting too deep.");
       if (tag === 12 && --depth < 0) throw new Error("Collection underflow.");

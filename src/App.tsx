@@ -37,7 +37,12 @@ import {
   diagnosticExport,
   type DiagnosticCheck,
 } from "./diagnosticEngine";
-import type { AudioInventory, AudioSession } from "./audio";
+import {
+  audioConclusion,
+  type RoutingReport,
+  type AudioInventory,
+  type AudioSession,
+} from "./audio";
 import { DeviceWorkbench } from "./DeviceWorkbench";
 import { DeviceInventory } from "./DeviceInventory";
 import { buildInventory } from "./inventoryModel";
@@ -125,6 +130,7 @@ export default function App() {
   const [audioInventory, setAudioInventory] = useState<AudioInventory | null>(
     null,
   );
+  const [routingReports, setRoutingReports] = useState<RoutingReport[]>([]);
   const [audioSessions, setAudioSessions] = useState<AudioSession[]>([]);
   const [audioSelected, setAudioSelected] = useState<string>();
   const [repairAudits, setRepairAudits] = useState<
@@ -768,6 +774,8 @@ export default function App() {
                             audioSessions,
                             preferences.sanitize,
                             repairAudits,
+                            null,
+                            routingReports,
                           ),
                           null,
                           2,
@@ -786,9 +794,70 @@ export default function App() {
               <AudioWorkspace
                 initialEndpoint={audioSelected}
                 repairHistory={repairAudits}
+                routingHistory={routingReports}
+                onRouting={(r) => {
+                  setRoutingReports((v) =>
+                    [...v.filter((p) => p.sessionId !== r.sessionId), r].slice(
+                      -8,
+                    ),
+                  );
+                  setChecks((v) => [
+                    ...v.filter((c) => c.id !== `ear:${r.sessionId}`),
+                    {
+                      id: `ear:${r.sessionId}`,
+                      target: r.targetId,
+                      test: "User-reported channel observation",
+                      outcome:
+                        r.observation === "unsure"
+                          ? "Inconclusive"
+                          : r.mode === "tone"
+                            ? r.observation === "neither"
+                              ? "Issue detected"
+                              : "Passed"
+                            : r.observation === r.mode
+                              ? "Passed"
+                              : "Issue detected",
+                      confidence: "User-reported",
+                      measurements: {
+                        mode: r.mode,
+                        observedEar: r.observation,
+                        sessionId: r.sessionId,
+                        independentPhysicalVerification: false,
+                      },
+                      conclusion:
+                        "Your reported ear observation is separate from generated signal and Windows stream evidence.",
+                      nextStep:
+                        "Compare both isolated channels; investigate any mismatch without assuming a physical fault.",
+                      hypotheses: [],
+                    },
+                  ]);
+                }}
                 onBack={() => setRoute("Devices")}
                 onInventory={setAudioInventory}
-                onSession={(s) => setAudioSessions((v) => [...v, s].slice(-8))}
+                onSession={(s) => {
+                  setAudioSessions((v) => [...v, s].slice(-8));
+                  setChecks((v) => [
+                    ...v.filter((c) => c.id !== `stream:${s.sessionId}`),
+                    {
+                      id: `stream:${s.sessionId}`,
+                      target: s.targetId,
+                      test: "Explicit audio stream measurement",
+                      outcome: audioConclusion(s)
+                        .outcome as DiagnosticCheck["outcome"],
+                      confidence: "Measured",
+                      measurements: {
+                        mode: s.mode,
+                        frames: s.frames,
+                        completed: s.status === "completed",
+                        cleanup: s.cleanup,
+                      },
+                      conclusion: audioConclusion(s).text,
+                      nextStep:
+                        "Record physical observations separately; rerun under matching conditions when comparing.",
+                      hypotheses: [],
+                    },
+                  ]);
+                }}
                 onRepair={(a) => setRepairAudits((v) => [...v, a].slice(-8))}
               />
             )}

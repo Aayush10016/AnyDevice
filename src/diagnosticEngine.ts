@@ -292,6 +292,8 @@ export function diagnosticExport(
     staticReported: boolean | null;
   } | null = null,
   routingReports: import("./audio").RoutingReport[] = [],
+  functionalVerification:
+    import("./repairVerification").FunctionalVerification | null = null,
 ) {
   const aliases = new Map<string, string>();
   const alias = (id: string) => {
@@ -314,12 +316,11 @@ export function diagnosticExport(
         }
       : null,
     userAudioReport,
-    routingReports: routingReports
-      .slice(-8)
-      .map((r) => ({
-        ...r,
-        targetId: sanitized ? alias(r.targetId) : r.targetId,
-      })),
+    functionalVerification,
+    routingReports: routingReports.slice(-8).map((r) => ({
+      ...r,
+      targetId: sanitized ? alias(r.targetId) : r.targetId,
+    })),
     checks: checks.slice(0, 8192).map((c, i) => ({
       ...c,
       id: sanitized ? `check-${i + 1}` : c.id,

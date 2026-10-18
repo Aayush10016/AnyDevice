@@ -3895,7 +3895,7 @@ function validate24(data: any, { instancePath = "", parentData, parentDataProper
 }
 validate24.evaluated = { "props": true, "dynamicProps": false, "dynamicItems": false };
 var engine = validate25;
-var schema40 = { "type": "object", "additionalProperties": false, "properties": { "schemaVersion": { "const": "diagnostic-engine-1.0" }, "appVersion": { "const": "0.2.0" }, "createdAt": { "type": "string", "maxLength": 100 }, "sanitized": { "type": "boolean" }, "coverage": { "type": "string", "maxLength": 2048 }, "scanComplete": { "type": "boolean" }, "discoveryProvenance": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "provider": { "type": "string", "maxLength": 2048 }, "scope": { "type": "string", "maxLength": 2048 }, "collectedAt": { "type": "string", "maxLength": 100 } }, "required": ["provider", "scope", "collectedAt"] }, { "type": "null" }] }, "userAudioReport": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "heardExpected": { "enum": ["yes", "no", "unknown"] }, "staticReported": { "type": ["boolean", "null"] } }, "required": ["sessionId", "heardExpected", "staticReported"] }, { "type": "null" }] }, "checks": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string", "maxLength": 8192 }, "target": { "type": "string", "maxLength": 8192 }, "test": { "type": "string", "maxLength": 2048 }, "outcome": { "enum": ["Passed", "Issue detected", "Inconclusive", "Not supported", "Not tested", "Cancelled or interrupted"] }, "confidence": { "enum": ["Windows-reported", "Measured", "User-reported", "Limited"] }, "measurements": { "type": "object", "maxProperties": 32, "additionalProperties": { "anyOf": [{ "type": "string", "maxLength": 2048 }, { "type": "number" }, { "type": "boolean" }, { "type": "null" }] } }, "conclusion": { "type": "string", "maxLength": 2048 }, "nextStep": { "type": "string", "maxLength": 2048 }, "hypotheses": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "cause": { "type": "string", "maxLength": 2048 }, "confidence": { "enum": ["Confirmed configuration", "Possible", "Insufficient evidence"] }, "distinguishingTest": { "type": "string", "maxLength": 2048 }, "supportingEvidence": { "type": "array", "maxItems": 32, "items": { "type": "string", "maxLength": 2048 } }, "contradictingEvidence": { "type": "array", "maxItems": 32, "items": { "type": "string", "maxLength": 2048 } }, "verificationCriterion": { "type": "string", "maxLength": 2048 } }, "required": ["cause", "confidence", "distinguishingTest"] }, "maxItems": 16 } }, "required": ["id", "target", "test", "outcome", "confidence", "measurements", "conclusion", "nextStep", "hypotheses"] }, "maxItems": 8192 }, "audioEndpoints": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string", "maxLength": 2048 }, "name": { "type": ["string", "null"], "maxLength": 2048 }, "instanceId": { "type": ["string", "null"], "maxLength": 2048 }, "containerId": { "type": ["string", "null"], "maxLength": 2048 }, "kind": { "enum": ["playback", "recording"] }, "state": { "enum": ["active", "disabled", "unplugged", "notPresent"] }, "defaultRoles": { "type": "array", "items": { "enum": ["console", "multimedia", "communications"] }, "maxItems": 3 }, "mute": { "type": ["boolean", "null"] }, "volume": { "type": ["number", "null"] }, "format": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sampleRate": { "type": "integer", "minimum": 0 }, "channels": { "type": "integer", "minimum": 0 }, "bits": { "type": "integer", "minimum": 0 }, "float": { "type": "boolean" }, "blockAlign": { "type": "integer", "minimum": 0 }, "channelMask": { "type": "integer", "minimum": 0 }, "supported": { "type": "boolean" } }, "required": ["sampleRate", "channels", "bits", "float", "blockAlign", "channelMask", "supported"] }, { "type": "null" }] } }, "required": ["id", "name", "instanceId", "containerId", "kind", "state", "defaultRoles", "mute", "volume", "format"] }, "maxItems": 256 }, "audioSessions": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "sessionId": { "type": "integer", "minimum": 0 }, "targetId": { "type": "string", "maxLength": 2048 }, "mode": { "enum": ["left", "right", "tone", "ambient", "speech"] }, "status": { "type": "string", "maxLength": 100 }, "reason": { "type": "string", "maxLength": 2048 }, "startedAt": { "type": "string", "maxLength": 100 }, "format": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sampleRate": { "type": "integer", "minimum": 0 }, "channels": { "type": "integer", "minimum": 0 }, "bits": { "type": "integer", "minimum": 0 }, "float": { "type": "boolean" }, "blockAlign": { "type": "integer", "minimum": 0 }, "channelMask": { "type": "integer", "minimum": 0 }, "supported": { "type": "boolean" } }, "required": ["sampleRate", "channels", "bits", "float", "blockAlign", "channelMask", "supported"] }, { "type": "null" }] }, "frames": { "type": "integer", "minimum": 0 }, "aggregate": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "samples": { "type": "integer", "minimum": 0 }, "rms": { "type": "number" }, "rmsDbfs": { "type": "number" }, "peak": { "type": "number" }, "clippingProportion": { "type": "number" }, "zeroProportion": { "type": "number" }, "invalidSamples": { "type": "integer", "minimum": 0 } }, "required": ["samples", "rms", "rmsDbfs", "peak", "clippingProportion", "zeroProportion", "invalidSamples"] }, "maxItems": 8 }, "window": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "samples": { "type": "integer", "minimum": 0 }, "rms": { "type": "number" }, "rmsDbfs": { "type": "number" }, "peak": { "type": "number" }, "clippingProportion": { "type": "number" }, "zeroProportion": { "type": "number" }, "invalidSamples": { "type": "integer", "minimum": 0 } }, "required": ["samples", "rms", "rmsDbfs", "peak", "clippingProportion", "zeroProportion", "invalidSamples"] }, "maxItems": 8 }, "discontinuities": { "type": "integer", "minimum": 0 }, "timestampErrors": { "type": "integer", "minimum": 0 }, "cleanup": { "type": "boolean" } }, "required": ["sessionId", "targetId", "mode", "status", "reason", "startedAt", "format", "frames", "aggregate", "window", "discontinuities", "timestampErrors", "cleanup"] }, "maxItems": 8 }, "repairs": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "integer", "minimum": 0 }, "targetId": { "type": "string", "maxLength": 2048 }, "approved": { "type": "boolean" }, "beforeMute": { "type": "boolean" }, "desiredMute": { "type": "boolean" }, "afterMute": { "type": ["boolean", "null"] }, "verified": { "type": "boolean" }, "rolledBack": { "type": "boolean" }, "status": { "type": "string", "maxLength": 2048 } }, "required": ["id", "targetId", "approved", "beforeMute", "desiredMute", "afterMute", "verified", "rolledBack", "status"] }, "maxItems": 8 }, "limitations": { "type": "array", "items": { "type": "string", "maxLength": 2048 }, "maxItems": 32 }, "routingReports": { "type": "array", "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "properties": { "sessionId": { "type": "integer", "minimum": 1 }, "targetId": { "type": "string", "maxLength": 2048 }, "mode": { "enum": ["left", "right", "tone"] }, "observation": { "enum": ["left", "right", "both", "neither", "unsure"] } }, "required": ["sessionId", "targetId", "mode", "observation"] } } }, "required": ["schemaVersion", "appVersion", "createdAt", "sanitized", "coverage", "scanComplete", "discoveryProvenance", "userAudioReport", "checks", "audioEndpoints", "audioSessions", "repairs", "limitations"], "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://anydevice.local/diagnostic-engine.schema.json" };
+var schema40 = { "type": "object", "additionalProperties": false, "properties": { "schemaVersion": { "const": "diagnostic-engine-1.0" }, "appVersion": { "const": "0.2.0" }, "createdAt": { "type": "string", "maxLength": 100 }, "sanitized": { "type": "boolean" }, "coverage": { "type": "string", "maxLength": 2048 }, "scanComplete": { "type": "boolean" }, "discoveryProvenance": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "provider": { "type": "string", "maxLength": 2048 }, "scope": { "type": "string", "maxLength": 2048 }, "collectedAt": { "type": "string", "maxLength": 100 } }, "required": ["provider", "scope", "collectedAt"] }, { "type": "null" }] }, "userAudioReport": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "heardExpected": { "enum": ["yes", "no", "unknown"] }, "staticReported": { "type": ["boolean", "null"] } }, "required": ["sessionId", "heardExpected", "staticReported"] }, { "type": "null" }] }, "checks": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string", "maxLength": 8192 }, "target": { "type": "string", "maxLength": 8192 }, "test": { "type": "string", "maxLength": 2048 }, "outcome": { "enum": ["Passed", "Issue detected", "Inconclusive", "Not supported", "Not tested", "Cancelled or interrupted"] }, "confidence": { "enum": ["Windows-reported", "Measured", "User-reported", "Limited"] }, "measurements": { "type": "object", "maxProperties": 32, "additionalProperties": { "anyOf": [{ "type": "string", "maxLength": 2048 }, { "type": "number" }, { "type": "boolean" }, { "type": "null" }] } }, "conclusion": { "type": "string", "maxLength": 2048 }, "nextStep": { "type": "string", "maxLength": 2048 }, "hypotheses": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "cause": { "type": "string", "maxLength": 2048 }, "confidence": { "enum": ["Confirmed configuration", "Possible", "Insufficient evidence"] }, "distinguishingTest": { "type": "string", "maxLength": 2048 }, "supportingEvidence": { "type": "array", "maxItems": 32, "items": { "type": "string", "maxLength": 2048 } }, "contradictingEvidence": { "type": "array", "maxItems": 32, "items": { "type": "string", "maxLength": 2048 } }, "verificationCriterion": { "type": "string", "maxLength": 2048 } }, "required": ["cause", "confidence", "distinguishingTest"] }, "maxItems": 16 } }, "required": ["id", "target", "test", "outcome", "confidence", "measurements", "conclusion", "nextStep", "hypotheses"] }, "maxItems": 8192 }, "audioEndpoints": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "string", "maxLength": 2048 }, "name": { "type": ["string", "null"], "maxLength": 2048 }, "instanceId": { "type": ["string", "null"], "maxLength": 2048 }, "containerId": { "type": ["string", "null"], "maxLength": 2048 }, "kind": { "enum": ["playback", "recording"] }, "state": { "enum": ["active", "disabled", "unplugged", "notPresent"] }, "defaultRoles": { "type": "array", "items": { "enum": ["console", "multimedia", "communications"] }, "maxItems": 3 }, "mute": { "type": ["boolean", "null"] }, "volume": { "type": ["number", "null"] }, "format": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sampleRate": { "type": "integer", "minimum": 0 }, "channels": { "type": "integer", "minimum": 0 }, "bits": { "type": "integer", "minimum": 0 }, "float": { "type": "boolean" }, "blockAlign": { "type": "integer", "minimum": 0 }, "channelMask": { "type": "integer", "minimum": 0 }, "supported": { "type": "boolean" } }, "required": ["sampleRate", "channels", "bits", "float", "blockAlign", "channelMask", "supported"] }, { "type": "null" }] } }, "required": ["id", "name", "instanceId", "containerId", "kind", "state", "defaultRoles", "mute", "volume", "format"] }, "maxItems": 256 }, "audioSessions": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "sessionId": { "type": "integer", "minimum": 0 }, "targetId": { "type": "string", "maxLength": 2048 }, "mode": { "enum": ["left", "right", "tone", "ambient", "speech"] }, "status": { "type": "string", "maxLength": 100 }, "reason": { "type": "string", "maxLength": 2048 }, "startedAt": { "type": "string", "maxLength": 100 }, "format": { "anyOf": [{ "type": "object", "additionalProperties": false, "properties": { "sampleRate": { "type": "integer", "minimum": 0 }, "channels": { "type": "integer", "minimum": 0 }, "bits": { "type": "integer", "minimum": 0 }, "float": { "type": "boolean" }, "blockAlign": { "type": "integer", "minimum": 0 }, "channelMask": { "type": "integer", "minimum": 0 }, "supported": { "type": "boolean" } }, "required": ["sampleRate", "channels", "bits", "float", "blockAlign", "channelMask", "supported"] }, { "type": "null" }] }, "frames": { "type": "integer", "minimum": 0 }, "aggregate": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "samples": { "type": "integer", "minimum": 0 }, "rms": { "type": "number" }, "rmsDbfs": { "type": "number" }, "peak": { "type": "number" }, "clippingProportion": { "type": "number" }, "zeroProportion": { "type": "number" }, "invalidSamples": { "type": "integer", "minimum": 0 } }, "required": ["samples", "rms", "rmsDbfs", "peak", "clippingProportion", "zeroProportion", "invalidSamples"] }, "maxItems": 8 }, "window": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "samples": { "type": "integer", "minimum": 0 }, "rms": { "type": "number" }, "rmsDbfs": { "type": "number" }, "peak": { "type": "number" }, "clippingProportion": { "type": "number" }, "zeroProportion": { "type": "number" }, "invalidSamples": { "type": "integer", "minimum": 0 } }, "required": ["samples", "rms", "rmsDbfs", "peak", "clippingProportion", "zeroProportion", "invalidSamples"] }, "maxItems": 8 }, "discontinuities": { "type": "integer", "minimum": 0 }, "timestampErrors": { "type": "integer", "minimum": 0 }, "cleanup": { "type": "boolean" } }, "required": ["sessionId", "targetId", "mode", "status", "reason", "startedAt", "format", "frames", "aggregate", "window", "discontinuities", "timestampErrors", "cleanup"] }, "maxItems": 8 }, "repairs": { "type": "array", "items": { "type": "object", "additionalProperties": false, "properties": { "id": { "type": "integer", "minimum": 0 }, "targetId": { "type": "string", "maxLength": 2048 }, "approved": { "type": "boolean" }, "beforeMute": { "type": "boolean" }, "desiredMute": { "type": "boolean" }, "afterMute": { "type": ["boolean", "null"] }, "verified": { "type": "boolean" }, "rolledBack": { "type": "boolean" }, "status": { "type": "string", "maxLength": 2048 } }, "required": ["id", "targetId", "approved", "beforeMute", "desiredMute", "afterMute", "verified", "rolledBack", "status"] }, "maxItems": 8 }, "limitations": { "type": "array", "items": { "type": "string", "maxLength": 2048 }, "maxItems": 32 }, "routingReports": { "type": "array", "maxItems": 8, "items": { "type": "object", "additionalProperties": false, "properties": { "sessionId": { "type": "integer", "minimum": 1 }, "targetId": { "type": "string", "maxLength": 2048 }, "mode": { "enum": ["left", "right", "tone"] }, "observation": { "enum": ["left", "right", "both", "neither", "unsure"] } }, "required": ["sessionId", "targetId", "mode", "observation"] } }, "functionalVerification": { "anyOf": [{ "type": "null" }, { "type": "object", "additionalProperties": false, "properties": { "repairId": { "type": "integer", "minimum": 1 }, "beforeSessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "afterSessionId": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }, "comparable": { "type": "boolean" }, "reason": { "type": "string", "maxLength": 2048 }, "changesDb": { "type": "array", "maxItems": 8, "items": { "type": "number" } }, "userOutcome": { "enum": ["unverified", "improved", "unchanged", "worse"] } }, "required": ["repairId", "beforeSessionId", "afterSessionId", "comparable", "reason", "changesDb", "userOutcome"] }] } }, "required": ["schemaVersion", "appVersion", "createdAt", "sanitized", "coverage", "scanComplete", "discoveryProvenance", "userAudioReport", "checks", "audioEndpoints", "audioSessions", "repairs", "limitations"], "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://anydevice.local/diagnostic-engine.schema.json" };
 function validate25(data: any, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}): boolean {
   ;
   let vErrors = null;
@@ -6519,6 +6519,366 @@ function validate25(data: any, { instancePath = "", parentData, parentDataProper
                                       var valid0 = _errs244 === errors;
                                     } else {
                                       var valid0 = true;
+                                    }
+                                    if (valid0) {
+                                      if (data.functionalVerification !== void 0) {
+                                        let data112 = data.functionalVerification;
+                                        const _errs255 = errors;
+                                        const _errs256 = errors;
+                                        let valid32 = false;
+                                        const _errs257 = errors;
+                                        if (data112 !== null) {
+                                          const err62 = { instancePath: instancePath + "/functionalVerification", schemaPath: "#/properties/functionalVerification/anyOf/0/type", keyword: "type", params: { type: "null" }, message: "must be null" };
+                                          if (vErrors === null) {
+                                            vErrors = [err62];
+                                          } else {
+                                            vErrors.push(err62);
+                                          }
+                                          errors++;
+                                        }
+                                        var _valid6 = _errs257 === errors;
+                                        valid32 = valid32 || _valid6;
+                                        const _errs259 = errors;
+                                        if (errors === _errs259) {
+                                          if (data112 && typeof data112 == "object" && !Array.isArray(data112)) {
+                                            let missing13;
+                                            if (data112.repairId === void 0 && (missing13 = "repairId") || data112.beforeSessionId === void 0 && (missing13 = "beforeSessionId") || data112.afterSessionId === void 0 && (missing13 = "afterSessionId") || data112.comparable === void 0 && (missing13 = "comparable") || data112.reason === void 0 && (missing13 = "reason") || data112.changesDb === void 0 && (missing13 = "changesDb") || data112.userOutcome === void 0 && (missing13 = "userOutcome")) {
+                                              const err63 = { instancePath: instancePath + "/functionalVerification", schemaPath: "#/properties/functionalVerification/anyOf/1/required", keyword: "required", params: { missingProperty: missing13 }, message: "must have required property '" + missing13 + "'" };
+                                              if (vErrors === null) {
+                                                vErrors = [err63];
+                                              } else {
+                                                vErrors.push(err63);
+                                              }
+                                              errors++;
+                                            } else {
+                                              const _errs261 = errors;
+                                              for (const key14 in data112) {
+                                                if (!(key14 === "repairId" || key14 === "beforeSessionId" || key14 === "afterSessionId" || key14 === "comparable" || key14 === "reason" || key14 === "changesDb" || key14 === "userOutcome")) {
+                                                  const err64 = { instancePath: instancePath + "/functionalVerification", schemaPath: "#/properties/functionalVerification/anyOf/1/additionalProperties", keyword: "additionalProperties", params: { additionalProperty: key14 }, message: "must NOT have additional properties" };
+                                                  if (vErrors === null) {
+                                                    vErrors = [err64];
+                                                  } else {
+                                                    vErrors.push(err64);
+                                                  }
+                                                  errors++;
+                                                  break;
+                                                }
+                                              }
+                                              if (_errs261 === errors) {
+                                                if (data112.repairId !== void 0) {
+                                                  let data113 = data112.repairId;
+                                                  const _errs262 = errors;
+                                                  if (!(typeof data113 == "number" && (!(data113 % 1) && !isNaN(data113)) && isFinite(data113))) {
+                                                    const err65 = { instancePath: instancePath + "/functionalVerification/repairId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/repairId/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
+                                                    if (vErrors === null) {
+                                                      vErrors = [err65];
+                                                    } else {
+                                                      vErrors.push(err65);
+                                                    }
+                                                    errors++;
+                                                  }
+                                                  if (errors === _errs262) {
+                                                    if (typeof data113 == "number" && isFinite(data113)) {
+                                                      if (data113 < 1 || isNaN(data113)) {
+                                                        const err66 = { instancePath: instancePath + "/functionalVerification/repairId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/repairId/minimum", keyword: "minimum", params: { comparison: ">=", limit: 1 }, message: "must be >= 1" };
+                                                        if (vErrors === null) {
+                                                          vErrors = [err66];
+                                                        } else {
+                                                          vErrors.push(err66);
+                                                        }
+                                                        errors++;
+                                                      }
+                                                    }
+                                                  }
+                                                  var valid33 = _errs262 === errors;
+                                                } else {
+                                                  var valid33 = true;
+                                                }
+                                                if (valid33) {
+                                                  if (data112.beforeSessionId !== void 0) {
+                                                    let data114 = data112.beforeSessionId;
+                                                    const _errs264 = errors;
+                                                    const _errs265 = errors;
+                                                    let valid34 = false;
+                                                    const _errs266 = errors;
+                                                    if (!(typeof data114 == "number" && (!(data114 % 1) && !isNaN(data114)) && isFinite(data114))) {
+                                                      const err67 = { instancePath: instancePath + "/functionalVerification/beforeSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/beforeSessionId/anyOf/0/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
+                                                      if (vErrors === null) {
+                                                        vErrors = [err67];
+                                                      } else {
+                                                        vErrors.push(err67);
+                                                      }
+                                                      errors++;
+                                                    }
+                                                    if (errors === _errs266) {
+                                                      if (typeof data114 == "number" && isFinite(data114)) {
+                                                        if (data114 < 1 || isNaN(data114)) {
+                                                          const err68 = { instancePath: instancePath + "/functionalVerification/beforeSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/beforeSessionId/anyOf/0/minimum", keyword: "minimum", params: { comparison: ">=", limit: 1 }, message: "must be >= 1" };
+                                                          if (vErrors === null) {
+                                                            vErrors = [err68];
+                                                          } else {
+                                                            vErrors.push(err68);
+                                                          }
+                                                          errors++;
+                                                        }
+                                                      }
+                                                    }
+                                                    var _valid7 = _errs266 === errors;
+                                                    valid34 = valid34 || _valid7;
+                                                    const _errs268 = errors;
+                                                    if (data114 !== null) {
+                                                      const err69 = { instancePath: instancePath + "/functionalVerification/beforeSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/beforeSessionId/anyOf/1/type", keyword: "type", params: { type: "null" }, message: "must be null" };
+                                                      if (vErrors === null) {
+                                                        vErrors = [err69];
+                                                      } else {
+                                                        vErrors.push(err69);
+                                                      }
+                                                      errors++;
+                                                    }
+                                                    var _valid7 = _errs268 === errors;
+                                                    valid34 = valid34 || _valid7;
+                                                    if (!valid34) {
+                                                      const err70 = { instancePath: instancePath + "/functionalVerification/beforeSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/beforeSessionId/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
+                                                      if (vErrors === null) {
+                                                        vErrors = [err70];
+                                                      } else {
+                                                        vErrors.push(err70);
+                                                      }
+                                                      errors++;
+                                                    } else {
+                                                      errors = _errs265;
+                                                      if (vErrors !== null) {
+                                                        if (_errs265) {
+                                                          vErrors.length = _errs265;
+                                                        } else {
+                                                          vErrors = null;
+                                                        }
+                                                      }
+                                                    }
+                                                    var valid33 = _errs264 === errors;
+                                                  } else {
+                                                    var valid33 = true;
+                                                  }
+                                                  if (valid33) {
+                                                    if (data112.afterSessionId !== void 0) {
+                                                      let data115 = data112.afterSessionId;
+                                                      const _errs270 = errors;
+                                                      const _errs271 = errors;
+                                                      let valid35 = false;
+                                                      const _errs272 = errors;
+                                                      if (!(typeof data115 == "number" && (!(data115 % 1) && !isNaN(data115)) && isFinite(data115))) {
+                                                        const err71 = { instancePath: instancePath + "/functionalVerification/afterSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/afterSessionId/anyOf/0/type", keyword: "type", params: { type: "integer" }, message: "must be integer" };
+                                                        if (vErrors === null) {
+                                                          vErrors = [err71];
+                                                        } else {
+                                                          vErrors.push(err71);
+                                                        }
+                                                        errors++;
+                                                      }
+                                                      if (errors === _errs272) {
+                                                        if (typeof data115 == "number" && isFinite(data115)) {
+                                                          if (data115 < 1 || isNaN(data115)) {
+                                                            const err72 = { instancePath: instancePath + "/functionalVerification/afterSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/afterSessionId/anyOf/0/minimum", keyword: "minimum", params: { comparison: ">=", limit: 1 }, message: "must be >= 1" };
+                                                            if (vErrors === null) {
+                                                              vErrors = [err72];
+                                                            } else {
+                                                              vErrors.push(err72);
+                                                            }
+                                                            errors++;
+                                                          }
+                                                        }
+                                                      }
+                                                      var _valid8 = _errs272 === errors;
+                                                      valid35 = valid35 || _valid8;
+                                                      const _errs274 = errors;
+                                                      if (data115 !== null) {
+                                                        const err73 = { instancePath: instancePath + "/functionalVerification/afterSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/afterSessionId/anyOf/1/type", keyword: "type", params: { type: "null" }, message: "must be null" };
+                                                        if (vErrors === null) {
+                                                          vErrors = [err73];
+                                                        } else {
+                                                          vErrors.push(err73);
+                                                        }
+                                                        errors++;
+                                                      }
+                                                      var _valid8 = _errs274 === errors;
+                                                      valid35 = valid35 || _valid8;
+                                                      if (!valid35) {
+                                                        const err74 = { instancePath: instancePath + "/functionalVerification/afterSessionId", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/afterSessionId/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
+                                                        if (vErrors === null) {
+                                                          vErrors = [err74];
+                                                        } else {
+                                                          vErrors.push(err74);
+                                                        }
+                                                        errors++;
+                                                      } else {
+                                                        errors = _errs271;
+                                                        if (vErrors !== null) {
+                                                          if (_errs271) {
+                                                            vErrors.length = _errs271;
+                                                          } else {
+                                                            vErrors = null;
+                                                          }
+                                                        }
+                                                      }
+                                                      var valid33 = _errs270 === errors;
+                                                    } else {
+                                                      var valid33 = true;
+                                                    }
+                                                    if (valid33) {
+                                                      if (data112.comparable !== void 0) {
+                                                        const _errs276 = errors;
+                                                        if (typeof data112.comparable !== "boolean") {
+                                                          const err75 = { instancePath: instancePath + "/functionalVerification/comparable", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/comparable/type", keyword: "type", params: { type: "boolean" }, message: "must be boolean" };
+                                                          if (vErrors === null) {
+                                                            vErrors = [err75];
+                                                          } else {
+                                                            vErrors.push(err75);
+                                                          }
+                                                          errors++;
+                                                        }
+                                                        var valid33 = _errs276 === errors;
+                                                      } else {
+                                                        var valid33 = true;
+                                                      }
+                                                      if (valid33) {
+                                                        if (data112.reason !== void 0) {
+                                                          let data117 = data112.reason;
+                                                          const _errs278 = errors;
+                                                          if (errors === _errs278) {
+                                                            if (typeof data117 === "string") {
+                                                              if (func3(data117) > 2048) {
+                                                                const err76 = { instancePath: instancePath + "/functionalVerification/reason", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/reason/maxLength", keyword: "maxLength", params: { limit: 2048 }, message: "must NOT have more than 2048 characters" };
+                                                                if (vErrors === null) {
+                                                                  vErrors = [err76];
+                                                                } else {
+                                                                  vErrors.push(err76);
+                                                                }
+                                                                errors++;
+                                                              }
+                                                            } else {
+                                                              const err77 = { instancePath: instancePath + "/functionalVerification/reason", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/reason/type", keyword: "type", params: { type: "string" }, message: "must be string" };
+                                                              if (vErrors === null) {
+                                                                vErrors = [err77];
+                                                              } else {
+                                                                vErrors.push(err77);
+                                                              }
+                                                              errors++;
+                                                            }
+                                                          }
+                                                          var valid33 = _errs278 === errors;
+                                                        } else {
+                                                          var valid33 = true;
+                                                        }
+                                                        if (valid33) {
+                                                          if (data112.changesDb !== void 0) {
+                                                            let data118 = data112.changesDb;
+                                                            const _errs280 = errors;
+                                                            if (errors === _errs280) {
+                                                              if (Array.isArray(data118)) {
+                                                                if (data118.length > 8) {
+                                                                  const err78 = { instancePath: instancePath + "/functionalVerification/changesDb", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/changesDb/maxItems", keyword: "maxItems", params: { limit: 8 }, message: "must NOT have more than 8 items" };
+                                                                  if (vErrors === null) {
+                                                                    vErrors = [err78];
+                                                                  } else {
+                                                                    vErrors.push(err78);
+                                                                  }
+                                                                  errors++;
+                                                                } else {
+                                                                  var valid36 = true;
+                                                                  const len12 = data118.length;
+                                                                  for (let i12 = 0; i12 < len12; i12++) {
+                                                                    let data119 = data118[i12];
+                                                                    const _errs282 = errors;
+                                                                    if (!(typeof data119 == "number" && isFinite(data119))) {
+                                                                      const err79 = { instancePath: instancePath + "/functionalVerification/changesDb/" + i12, schemaPath: "#/properties/functionalVerification/anyOf/1/properties/changesDb/items/type", keyword: "type", params: { type: "number" }, message: "must be number" };
+                                                                      if (vErrors === null) {
+                                                                        vErrors = [err79];
+                                                                      } else {
+                                                                        vErrors.push(err79);
+                                                                      }
+                                                                      errors++;
+                                                                    }
+                                                                    var valid36 = _errs282 === errors;
+                                                                    if (!valid36) {
+                                                                      break;
+                                                                    }
+                                                                  }
+                                                                }
+                                                              } else {
+                                                                const err80 = { instancePath: instancePath + "/functionalVerification/changesDb", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/changesDb/type", keyword: "type", params: { type: "array" }, message: "must be array" };
+                                                                if (vErrors === null) {
+                                                                  vErrors = [err80];
+                                                                } else {
+                                                                  vErrors.push(err80);
+                                                                }
+                                                                errors++;
+                                                              }
+                                                            }
+                                                            var valid33 = _errs280 === errors;
+                                                          } else {
+                                                            var valid33 = true;
+                                                          }
+                                                          if (valid33) {
+                                                            if (data112.userOutcome !== void 0) {
+                                                              let data120 = data112.userOutcome;
+                                                              const _errs284 = errors;
+                                                              if (!(data120 === "unverified" || data120 === "improved" || data120 === "unchanged" || data120 === "worse")) {
+                                                                const err81 = { instancePath: instancePath + "/functionalVerification/userOutcome", schemaPath: "#/properties/functionalVerification/anyOf/1/properties/userOutcome/enum", keyword: "enum", params: { allowedValues: schema40.properties.functionalVerification.anyOf[1].properties.userOutcome.enum }, message: "must be equal to one of the allowed values" };
+                                                                if (vErrors === null) {
+                                                                  vErrors = [err81];
+                                                                } else {
+                                                                  vErrors.push(err81);
+                                                                }
+                                                                errors++;
+                                                              }
+                                                              var valid33 = _errs284 === errors;
+                                                            } else {
+                                                              var valid33 = true;
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          } else {
+                                            const err82 = { instancePath: instancePath + "/functionalVerification", schemaPath: "#/properties/functionalVerification/anyOf/1/type", keyword: "type", params: { type: "object" }, message: "must be object" };
+                                            if (vErrors === null) {
+                                              vErrors = [err82];
+                                            } else {
+                                              vErrors.push(err82);
+                                            }
+                                            errors++;
+                                          }
+                                        }
+                                        var _valid6 = _errs259 === errors;
+                                        valid32 = valid32 || _valid6;
+                                        if (!valid32) {
+                                          const err83 = { instancePath: instancePath + "/functionalVerification", schemaPath: "#/properties/functionalVerification/anyOf", keyword: "anyOf", params: {}, message: "must match a schema in anyOf" };
+                                          if (vErrors === null) {
+                                            vErrors = [err83];
+                                          } else {
+                                            vErrors.push(err83);
+                                          }
+                                          errors++;
+                                          validate25.errors = vErrors;
+                                          return false;
+                                        } else {
+                                          errors = _errs256;
+                                          if (vErrors !== null) {
+                                            if (_errs256) {
+                                              vErrors.length = _errs256;
+                                            } else {
+                                              vErrors = null;
+                                            }
+                                          }
+                                        }
+                                        var valid0 = _errs255 === errors;
+                                      } else {
+                                        var valid0 = true;
+                                      }
                                     }
                                   }
                                 }
