@@ -78,6 +78,10 @@ enum Packet {
         elapsed_ms: u64,
     },
 }
+fn decode_packet(bytes: &[u8]) -> Result<Packet, String> {
+    serde_json::from_slice(bytes)
+        .map_err(|e| format!("Decode audio measurement/status packet: {e}"))
+}
 fn apply(s: &mut Snapshot, p: Packet) -> Result<(), String> {
     match p {
         Packet::Status { status, reason } => {
@@ -257,7 +261,7 @@ async fn stream(
     command.creation_flags(0x08000000);
     let mut child = command
         .spawn()
-        .map_err(|_| "Audio helper could not start")?;
+        .map_err(|e| format!("Start audio helper: {e}"))?;
     cleanup.store(false, Ordering::Release);
     let mut pipe = child
         .stdout
@@ -289,7 +293,7 @@ async fn stream(
         let read = tokio::select! {_=cancel.cancelled()=>break Ok(()),_=&mut timeout=>break Err("Audio test timed out".into()),read=pipe.read(&mut bytes)=>read};
         let count = match read {
             Ok(n) => n,
-            Err(_) => break Err("Audio pipe failed".into()),
+            Err(e) => break Err(format!("Read audio helper pipe: {e}")),
         };
         if count == 0 {
             break if pending.is_empty() {
@@ -305,8 +309,7 @@ async fn stream(
         let mut failure = None;
         for byte in &bytes[..count] {
             if *byte == b'\n' {
-                let packet = serde_json::from_slice(&pending)
-                    .map_err(|_| "Malformed audio packet".to_string());
+                let packet = decode_packet(&pending);
                 pending.clear();
                 let applied = packet.and_then(|p| {
                     let mut inner = state.0.lock().map_err(|_| "Audio state unavailable")?;
@@ -432,15 +435,19 @@ mod tests {
     fn accepts_real_camel_case_measurement_wire_packets_and_rejects_unknown_fields() {
         let level = serde_json::json!({"samples":480,"rms":0.1,"rmsDbfs":-20.0,"peak":0.2,"clippingProportion":0.0,"zeroProportion":0.0,"invalidSamples":0});
         let mut wire = serde_json::json!({"type":"measurement","format":{"sampleRate":48000,"channels":1,"bits":32,"float":true,"blockAlign":4,"channelMask":0,"supported":true},"frames":480,"aggregate":[level.clone()],"window":[level],"discontinuities":0,"timestampErrors":0,"engineConsumedFrames":400,"elapsedMs":10});
-        let packet: Packet =
-            serde_json::from_value(wire.clone()).expect("Actual helper wire format must parse");
+        let packet = decode_packet(&serde_json::to_vec(&wire).unwrap())
+            .expect("Actual helper wire format must parse");
         let mut snapshot = Snapshot::default();
         apply(&mut snapshot, packet).unwrap();
         assert_eq!(snapshot.frames, 480);
         assert_eq!(snapshot.engine_consumed_frames, Some(400));
         assert_eq!(snapshot.elapsed_ms, 10);
         wire["physicallyHeardFrames"] = serde_json::json!(480);
-        assert!(serde_json::from_value::<Packet>(wire).is_err());
+        let error = decode_packet(&serde_json::to_vec(&wire).unwrap())
+            .err()
+            .unwrap();
+        assert!(error.contains("Decode audio measurement/status packet"));
+        assert!(error.contains("physicallyHeardFrames"));
     }
     #[test]
     fn preserves_valid_terminal_native_failure_stage_only() {
