@@ -116,6 +116,15 @@ export function normalize(input: unknown): Scan {
             .filter((x): x is string => x !== null)
         : [];
     devices.push({
+      ...(Object.hasOwn(r, "driverDate")
+        ? { driverDate: text(r.driverDate) }
+        : {}),
+      ...(Object.hasOwn(r, "driverProvider")
+        ? { driverProvider: text(r.driverProvider) }
+        : {}),
+      ...(Object.hasOwn(r, "driverVersion")
+        ? { driverVersion: text(r.driverVersion) }
+        : {}),
       ...(Object.hasOwn(r, "deviceCapabilities")
         ? {
             deviceCapabilities:
@@ -366,6 +375,9 @@ export function makeReport(
   const scrub = (d: Device): Device => ({
     ...d,
     id: alias(d.id),
+    ...(d.driverDate !== undefined ? { driverDate: null } : {}),
+    ...(d.driverProvider !== undefined ? { driverProvider: null } : {}),
+    ...(d.driverVersion !== undefined ? { driverVersion: null } : {}),
     ...(d.containerId !== undefined ? { containerId: null } : {}),
     ...(d.compatibleIds !== undefined ? { compatibleIds: [] } : {}),
     ...(d.locationPaths !== undefined ? { locationPaths: [] } : {}),

@@ -1,4 +1,9 @@
 import { useState, useEffect, useRef } from "react";
+import {
+  compareRepair,
+  type FunctionalVerification,
+} from "./repairVerification";
+import { investigateAudio } from "./audioInvestigation";
 import { RepairPanel } from "./RepairPanel";
 import type { RepairAudit } from "./bridge";
 import {
@@ -11,6 +16,9 @@ import {
 } from "./bridge";
 import {
   audioConclusion,
+  routingAssessment,
+  type EarObservation,
+  type RoutingReport,
   compareQuietSpeech,
   type AudioInventory,
   type AudioSession,
@@ -22,8 +30,14 @@ export function AudioWorkspace({
   onInventory,
   onSession,
   onRepair,
+  repairHistory = [],
+  routingHistory = [],
+  onRouting,
 }: {
   initialEndpoint?: string;
+  repairHistory?: RepairAudit[];
+  routingHistory?: RoutingReport[];
+  onRouting?: (r: RoutingReport) => void;
   onBack: () => void;
   onInventory: (v: AudioInventory) => void;
   onSession: (s: AudioSession) => void;
@@ -39,7 +53,13 @@ export function AudioWorkspace({
     [heard, setHeard] = useState<"yes" | "no" | "unknown">("unknown"),
     [staticReport, setStaticReport] = useState<boolean | null>(null),
     [preview, setPreview] = useState("");
-  const [repairs, setRepairs] = useState<RepairAudit[]>([]);
+  const [routing, setRouting] = useState<RoutingReport[]>(routingHistory);
+  const [ear, setEar] = useState<EarObservation>("unsure");
+  const [trace, setTrace] = useState<number[]>([]);
+  const [repairs, setRepairs] = useState<RepairAudit[]>(repairHistory);
+  const [verification, setVerification] =
+    useState<FunctionalVerification | null>(null);
+  const beforeRepair = useRef<AudioSession | null>(null);
   const current = useRef<number | null>(null),
     mounted = useRef(true),
     lastArchived = useRef<number | null>(null),
@@ -49,13 +69,28 @@ export function AudioWorkspace({
   function receive(v: AudioSession) {
     if (!mounted.current || v.sessionId !== current.current) return;
     setSession(v);
+    if (v.mode === "ambient" || v.mode === "speech")
+      setTrace((t) =>
+        [...t, Math.max(0, ...v.window.map((l) => l.peak))].slice(-80),
+      );
     if (v.cleanup && lastArchived.current !== v.sessionId) {
       lastArchived.current = v.sessionId;
       setHistory((h) => [...h, v].slice(-8));
       onSession(v);
+      setVerification((old) =>
+        old && old.beforeSessionId !== v.sessionId
+          ? {
+              ...old,
+              afterSessionId: v.sessionId,
+              ...compareRepair(beforeRepair.current, v),
+              userOutcome: "unverified",
+            }
+          : old,
+      );
     }
   }
   async function refresh() {
+    setPreview("");
     setBusy(true);
     try {
       const v = await inspectAudio();
@@ -135,6 +170,8 @@ export function AudioWorkspace({
             setSession(null);
             setHeard("unknown");
             setStaticReport(null);
+            setEar("unsure");
+            setTrace([]);
             setPreview("");
           }
           return;
@@ -156,9 +193,15 @@ export function AudioWorkspace({
     setMessage("");
     setPreview("");
     setHeard("unknown");
+    setEar("unsure");
+    setTrace([]);
     setStaticReport(null);
     try {
       focus.current?.focus();
+      if (current.current !== null) {
+        await discardAudioTest(current.current);
+        current.current = null;
+      }
       const id = await startAudioTest(endpoint.id, mode);
       if (!mounted.current) {
         await discardAudioTest(id);
@@ -172,7 +215,10 @@ export function AudioWorkspace({
       if (mounted.current) setBusy(false);
     }
   }
-  const result = audioConclusion(session, heard),
+  const result =
+      session && ["left", "right", "tone"].includes(session.mode)
+        ? routingAssessment(session, ear)
+        : audioConclusion(session, heard),
     quiet = [...history]
       .reverse()
       .find((s) => s.mode === "ambient" && s.targetId === target),
@@ -202,6 +248,8 @@ export function AudioWorkspace({
             setConsent(false);
             setHeard("unknown");
             setStaticReport(null);
+            setEar("unsure");
+            setTrace([]);
             setPreview("");
           }}
         >
@@ -259,7 +307,9 @@ export function AudioWorkspace({
                     busy ||
                     endpoint.state !== "active" ||
                     !endpoint.format?.supported ||
-                    (mode !== "tone" && endpoint.format.channels !== 2)
+                    (mode !== "tone" &&
+                      (endpoint.format.channels !== 2 ||
+                        ![0, 3].includes(endpoint.format.channelMask)))
                   }
                   onClick={() => void start(mode)}
                 >
@@ -347,22 +397,131 @@ export function AudioWorkspace({
             </div>
           ))}
       </div>
-      {session?.cleanup && endpoint?.kind === "playback" && (
-        <label>
-          Was sound audible in the expected channel?{" "}
-          <select
-            aria-label="Audible expected sound"
-            value={heard}
-            onChange={(e) => {
-              setHeard(e.target.value as typeof heard);
-              setPreview("");
-            }}
+      {session?.cleanup &&
+        session.status === "completed" &&
+        endpoint?.kind === "playback" && (
+          <>
+            <label>
+              Which ear produced sound during the {session.mode} test?{" "}
+              <select
+                aria-label="Observed ear"
+                value={ear}
+                onChange={(e) => {
+                  const observation = e.target.value as EarObservation;
+                  setEar(observation);
+                  setPreview("");
+                  setHeard(
+                    observation === "unsure"
+                      ? "unknown"
+                      : observation === session.mode ||
+                          (session.mode === "tone" && observation !== "neither")
+                        ? "yes"
+                        : "no",
+                  );
+                  onRouting?.({
+                    sessionId: session.sessionId,
+                    targetId: session.targetId,
+                    mode: session.mode,
+                    observation,
+                  });
+                  setRouting((v) =>
+                    [
+                      ...v.filter((r) => r.sessionId !== session.sessionId),
+                      {
+                        sessionId: session.sessionId,
+                        targetId: session.targetId,
+                        mode: session.mode,
+                        observation,
+                      },
+                    ].slice(-8),
+                  );
+                }}
+              >
+                <option value="unsure">Not checked / unsure</option>
+                <option value="left">Left only</option>
+                <option value="right">Right only</option>
+                <option value="both">Both earbuds</option>
+                <option value="neither">Neither earbud</option>
+              </select>
+            </label>
+            <p>
+              First test left, record what you heard, then test right and record
+              again. Each stream is stopped before the next is created.
+            </p>
+            <p>
+              Generated/submitted channel evidence:{" "}
+              {session.aggregate
+                .map((l, i) => `channel ${i + 1} peak ${l.peak.toFixed(4)}`)
+                .join("; ")}
+              . Windows accepted frames does not prove downstream physical
+              routing. Bluetooth profile, system mono audio and device
+              processing remain unverified.
+            </p>
+            {session.mode === "left" && ear !== "unsure" && (
+              <button
+                disabled={busy || !consent || endpoint.state !== "active"}
+                onClick={() => void start("right")}
+              >
+                Continue with right channel
+              </button>
+            )}
+          </>
+        )}
+      {!!trace.length && endpoint?.kind === "recording" && (
+        <figure aria-label="Live microphone level history">
+          <svg
+            role="img"
+            aria-label="Peak level envelope"
+            viewBox="0 0 400 100"
+            style={{ width: "100%", height: 100 }}
           >
-            <option value="unknown">Not checked / unsure</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-        </label>
+            <polyline
+              fill="none"
+              stroke="currentColor"
+              points={trace
+                .map((p, i) => `${i * 5},${50 - Math.min(1, p) * 48}`)
+                .join(" ")}
+            />
+            <polyline
+              fill="none"
+              stroke="currentColor"
+              points={trace
+                .map((p, i) => `${i * 5},${50 + Math.min(1, p) * 48}`)
+                .join(" ")}
+            />
+          </svg>
+          <figcaption>
+            Live peak envelope, at most 80 updates. This is a downsampled level
+            history, not a stored or replayable speech waveform.
+          </figcaption>
+        </figure>
+      )}
+      {endpoint && (
+        <details>
+          <summary>
+            Investigate this audio path — evidence for and against
+          </summary>
+          <p>{investigateAudio(endpoint, session, ear).conclusion}</p>
+          {investigateAudio(endpoint, session, ear).hypotheses.map((h) => (
+            <article key={h.cause}>
+              <strong>
+                {h.cause} — {h.confidence}
+              </strong>
+              <p>Next test: {h.distinguishingTest}</p>
+              <p>
+                Supports:{" "}
+                {h.supportingEvidence?.join(" ") ||
+                  "No supporting evidence yet."}
+              </p>
+              <p>
+                Against / limits:{" "}
+                {h.contradictingEvidence?.join(" ") ||
+                  "No contradicting evidence recorded."}
+              </p>
+              <p>Verify: {h.verificationCriterion}</p>
+            </article>
+          ))}
+        </details>
       )}
       <h3>{result.outcome}</h3>
       <p>{result.text}</p>
@@ -381,6 +540,23 @@ export function AudioWorkspace({
             </li>
           </ol>
           <p>{compareQuietSpeech(quiet, speech)}</p>
+          {quiet?.status === "completed" && !!quiet.aggregate[0]?.samples && (
+            <p>
+              Requested-quiet digital noise-floor estimate by channel:{" "}
+              {quiet.aggregate
+                .map((l, i) => `${i + 1}: ${l.rmsDbfs.toFixed(1)} dBFS`)
+                .join("; ")}
+              . This includes environment, gain and processing and is not a
+              calibrated acoustic noise floor.
+            </p>
+          )}
+          {!!session?.discontinuities && (
+            <p>
+              Windows signalled {session.discontinuities} stream
+              discontinuities. This does not measure the number or duration of
+              physical audio dropouts.
+            </p>
+          )}
           <label>
             Was static audible in your own listening/comparison?{" "}
             <select
@@ -388,13 +564,14 @@ export function AudioWorkspace({
               value={
                 staticReport === null ? "unknown" : staticReport ? "yes" : "no"
               }
-              onChange={(e) =>
+              onChange={(e) => {
+                setPreview("");
                 setStaticReport(
                   e.target.value === "unknown"
                     ? null
                     : e.target.value === "yes",
-                )
-              }
+                );
+              }}
             >
               <option value="unknown">Not checked / unsure</option>
               <option value="yes">Yes</option>
@@ -447,10 +624,23 @@ export function AudioWorkspace({
       {endpoint && (
         <RepairPanel
           key={endpoint.id}
+          previousAudit={repairs.at(-1)}
           targetId={endpoint.id}
           muted={endpoint.mute}
           running={running || busy}
           onVerified={(a) => {
+            beforeRepair.current = session;
+            setVerification(
+              a.verified && !a.rolledBack
+                ? {
+                    repairId: a.id,
+                    beforeSessionId: session?.sessionId ?? null,
+                    afterSessionId: null,
+                    ...compareRepair(session, null),
+                    userOutcome: "unverified",
+                  }
+                : null,
+            );
             setRepairs((v) => [...v, a].slice(-8));
             onRepair(a);
             setPreview("");
@@ -458,16 +648,82 @@ export function AudioWorkspace({
           }}
         />
       )}
+      {verification && (
+        <section aria-label="Functional repair verification">
+          <h3>Verify the original symptom</h3>
+          <p>{verification.reason}</p>
+          {beforeRepair.current && (
+            <button
+              disabled={
+                running ||
+                busy ||
+                !consent ||
+                beforeRepair.current.targetId !== target ||
+                endpoint?.state !== "active"
+              }
+              onClick={() => void start(beforeRepair.current!.mode)}
+            >
+              Repeat the same test after repair
+            </button>
+          )}
+          <p>
+            Before test: {verification.beforeSessionId ?? "not recorded"}; after
+            test: {verification.afterSessionId ?? "not recorded"}.{" "}
+            {verification.changesDb.length
+              ? `Digital RMS changes: ${verification.changesDb.map((v) => v.toFixed(1)).join(", ")} dB.`
+              : "No microphone level comparison recorded."}
+          </p>
+          <label>
+            Did the original symptom improve after that repeat?{" "}
+            <select
+              aria-label="Repair symptom outcome"
+              disabled={!verification.comparable}
+              value={verification.userOutcome}
+              onChange={(e) => {
+                setVerification((v) =>
+                  v
+                    ? {
+                        ...v,
+                        userOutcome: e.target
+                          .value as FunctionalVerification["userOutcome"],
+                      }
+                    : v,
+                );
+                setPreview("");
+              }}
+            >
+              <option value="unverified">Not verified / unsure</option>
+              <option value="improved">I observed improvement</option>
+              <option value="unchanged">I observed no improvement</option>
+              <option value="worse">I observed worse behavior</option>
+            </select>
+          </label>
+          <p>
+            This is your report, separate from mute readback and numerical
+            measurements. No independent physical verification is claimed.
+          </p>
+        </section>
+      )}
       <button
         disabled={running}
         onClick={() =>
           setPreview(
             JSON.stringify(
-              diagnosticExport(null, [], inventory, history, true, repairs, {
-                sessionId: session?.sessionId ?? null,
-                heardExpected: heard,
-                staticReported: staticReport,
-              }),
+              diagnosticExport(
+                null,
+                endpoint ? [investigateAudio(endpoint, session, ear)] : [],
+                inventory,
+                history,
+                true,
+                repairs,
+                {
+                  sessionId: session?.sessionId ?? null,
+                  heardExpected: heard,
+                  staticReported: staticReport,
+                },
+                routing,
+                verification,
+              ),
               null,
               2,
             ),

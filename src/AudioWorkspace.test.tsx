@@ -48,6 +48,65 @@ const callbacks = () => ({
   onSession: vi.fn(),
   onRepair: vi.fn(),
 });
+it("records both-ear mismatch and requires a new user action for the opposite channel", async () => {
+  vi.mocked(audioTestStatus).mockResolvedValue({
+    sessionId: 17,
+    targetId: endpoint.id,
+    mode: "left",
+    status: "completed",
+    reason: "Synthetic submitted buffer",
+    startedAt: "2026-10-18T00:00:00Z",
+    format,
+    frames: 480,
+    aggregate: [
+      {
+        samples: 480,
+        rms: 0.02,
+        rmsDbfs: -34,
+        peak: 0.03,
+        zeroProportion: 0,
+        clippingProportion: 0,
+        invalidSamples: 0,
+      },
+      {
+        samples: 480,
+        rms: 0,
+        rmsDbfs: -120,
+        peak: 0,
+        zeroProportion: 1,
+        clippingProportion: 0,
+        invalidSamples: 0,
+      },
+    ],
+    window: [],
+    discontinuities: 0,
+    timestampErrors: 0,
+    cleanup: true,
+  });
+  render(<AudioWorkspace initialEndpoint={endpoint.id} {...callbacks()} />);
+  await waitFor(() =>
+    expect(
+      screen.getByRole("checkbox", { name: "Allow this audio test" }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Allow this audio test" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Test left channel" }));
+  const answer = await screen.findByRole("combobox", { name: "Observed ear" });
+  fireEvent.change(answer, { target: { value: "both" } });
+  expect(
+    screen.getByRole("heading", { name: "Issue detected" }),
+  ).toBeInTheDocument();
+  expect(startAudioTest).toHaveBeenCalledTimes(1);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Continue with right channel" }),
+  );
+  await waitFor(() =>
+    expect(startAudioTest).toHaveBeenCalledWith(endpoint.id, "right"),
+  );
+  expect(discardAudioTest).toHaveBeenCalledWith(17);
+});
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(inspectAudio).mockResolvedValue({

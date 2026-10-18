@@ -2,6 +2,10 @@
 
 A local-first desktop toolkit for inspecting devices, collecting technical evidence, investigating problems, and progressively reverse-engineering supported interfaces.
 
+## Deep diagnostics milestone
+
+The `codex/deep-diagnostics` branch connects device pages to supported tests, keeps technical grouping details advanced, records explicit left/right/both-ear observations, and tests the exact native tone-buffer generator. It adds read-only HID collection metadata fallback, bounded offline descriptor inspection, driver metadata, full-scope diagnostic coverage, competing hypotheses, before/after repair comparisons and guided system-change investigation. See [implementation and limits](docs/DEEP-DIAGNOSTICS.md) and [baseline code audit](docs/DEEP-DIAGNOSTICS-AUDIT.md). Individual per-key LEDs still require a verified model/protocol and physical observations; no lighting writes are performed.
+
 ## Diagnostic engine and audio milestone
 
 The current `codex/audio-diagnostics` branch adds Core Audio endpoint discovery, explicit bounded WASAPI tone/microphone level tests, read-only whole-inventory diagnostics, conservative findings, sanitized measurement reports, read-only Windows HID capability profiles, and approval-gated reversible endpoint mute changes. See [architecture and limits](docs/AUDIO-DIAGNOSTIC-ARCHITECTURE.md) and [manual acceptance](docs/AUDIO-MANUAL-ACCEPTANCE.md). Physical audio/input/repair tests must be recorded separately from synthetic tests and Windows CI. Open Diagnostics to Run diagnostics; open Audio tests for endpoint-specific consent and tests. Automatic scans do not play sound, record microphones or change settings.

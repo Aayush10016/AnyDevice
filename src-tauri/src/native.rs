@@ -78,6 +78,28 @@ fn property(node: u32, key: &DEVPROPKEY, id: &str, errors: &mut Vec<Value>) -> V
     }
 }
 
+fn driver_date(node: u32) -> Option<String> {
+    let mut bytes = [0u8; 8];
+    let mut size = 8;
+    let mut ty = 0;
+    if unsafe {
+        CM_Get_DevNode_PropertyW(
+            node,
+            &DEVPKEY_Device_DriverDate,
+            &mut ty,
+            bytes.as_mut_ptr(),
+            &mut size,
+            0,
+        )
+    } != CR_SUCCESS
+        || size != 8
+        || ty != DEVPROP_TYPE_FILETIME
+    {
+        return None;
+    }
+    let millis = (u64::from_le_bytes(bytes) / 10_000) as i64 - 11_644_473_600_000;
+    chrono::DateTime::<chrono::Utc>::from_timestamp_millis(millis).map(|date| date.to_rfc3339())
+}
 fn device_id(node: u32) -> Result<String, u32> {
     let mut len = 0;
     let code = unsafe { CM_Get_Device_ID_Size(&mut len, node, 0) };
@@ -332,7 +354,13 @@ pub fn collect(scope: &str) -> Value {
         let container_id = container(node);
         let compatible = property(node, &DEVPKEY_Device_CompatibleIds, &id, &mut errors);
         let paths = property(node, &DEVPKEY_Device_LocationPaths, &id, &mut errors);
-        let entry = json!({"deviceCapabilities":uint_property(node, &DEVPKEY_Device_Capabilities),"removalPolicy":uint_property(node, &DEVPKEY_Device_RemovalPolicy),"enumeratorName":property(node, &DEVPKEY_Device_EnumeratorName, &id, &mut errors).first().cloned(),"containerId":container_id,"compatibleIds":compatible,"locationPaths":paths,"instanceId":id,"name":name,"category":category,"hardwareIds":hardware,"present":present,
+        let driver_provider = property(node, &DEVPKEY_Device_DriverProvider, &id, &mut errors)
+            .first()
+            .cloned();
+        let driver_version = property(node, &DEVPKEY_Device_DriverVersion, &id, &mut errors)
+            .first()
+            .cloned();
+        let entry = json!({"driverDate":driver_date(node),"driverProvider":driver_provider,"driverVersion":driver_version,"deviceCapabilities":uint_property(node, &DEVPKEY_Device_Capabilities),"removalPolicy":uint_property(node, &DEVPKEY_Device_RemovalPolicy),"enumeratorName":property(node, &DEVPKEY_Device_EnumeratorName, &id, &mut errors).first().cloned(),"containerId":container_id,"compatibleIds":compatible,"locationPaths":paths,"instanceId":id,"name":name,"category":category,"hardwareIds":hardware,"present":present,
             "manufacturer":manufacturer,"location":location,"parent":parent,"status":status,"problemCode":problem_code});
         serialized_bytes += entry.to_string().len();
         if serialized_bytes > 12 * 1024 * 1024 {

@@ -194,7 +194,7 @@ export function symptomPlan(
   if (/light|led|backlight/i.test(symptom))
     items.push({
       classification: "Unknown",
-      text: "No validated lighting control or physical-state feedback provider is available. Input events do not test LEDs. No lighting command will be sent.",
+      text: "No validated lighting control or physical-state feedback provider is available. Record the exact keyboard model from its label/manual before choosing model-specific software. For a dark arrow key, test that named key's input separately, then compare its visible light with neighboring keys in a documented uniform-light setting you choose manually. Input events do not test LEDs. Standard lock-light usages do not establish per-key RGB control. No lighting command will be sent; Windows cannot distinguish LED, circuit or board faults without further evidence.",
       source: "capability registry",
     });
   if (/scroll|wheel/i.test(symptom) && kind === "mouse")

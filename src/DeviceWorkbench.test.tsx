@@ -14,6 +14,44 @@ vi.mock("./bridge", () => ({
   saveReport: vi.fn(),
 }));
 const device = normalize(fixtureScan([healthyMouse])).devices[0];
+it("keeps removability facts advanced and routes an ambiguous audio device to explicit endpoint choice", async () => {
+  const onAudio = vi.fn();
+  render(
+    <DeviceWorkbench
+      device={device}
+      devices={[device]}
+      findings={[]}
+      sanitized={true}
+      onClose={vi.fn()}
+      onAudio={onAudio}
+      candidate={{
+        id: "audio-candidate",
+        device,
+        nodes: [device],
+        category: "Audio devices and headsets",
+        name: "Synthetic headset",
+        placement: "Unknown or ambiguous",
+        evidence: [
+          "Windows removability metadata: capabilities 196, removal policy 2",
+        ],
+        endpoints: [],
+      }}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Choose audio endpoint" }),
+  );
+  expect(onAudio).toHaveBeenCalledWith(undefined);
+  const evidence = screen.getByText(
+    /Windows removability metadata: capabilities 196/,
+  );
+  expect(evidence.closest("details")).not.toBeNull();
+  expect(
+    screen.queryByText(
+      /validated device-specific functional test is not available/,
+    ),
+  ).toBeNull();
+});
 let current: InputSnapshot;
 beforeEach(() => {
   vi.clearAllMocks();

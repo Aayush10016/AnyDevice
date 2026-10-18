@@ -73,6 +73,37 @@ export function normalizeAudio(value: unknown): AudioInventory {
     throw new Error("Invalid Core Audio inventory");
   return r;
 }
+export type EarObservation = "left" | "right" | "both" | "neither" | "unsure";
+export interface RoutingReport {
+  sessionId: number;
+  targetId: string;
+  mode: string;
+  observation: EarObservation;
+}
+export function routingAssessment(
+  s: AudioSession,
+  observation: EarObservation,
+) {
+  if (
+    observation === "unsure" ||
+    !s.cleanup ||
+    s.status !== "completed" ||
+    !s.frames ||
+    !s.format?.supported
+  )
+    return {
+      outcome: "Inconclusive",
+      text: "Complete the interval and report which ear produced sound. Physical separation is not independently measured.",
+    };
+  const match =
+    s.mode === "tone" ? observation !== "neither" : observation === s.mode;
+  return {
+    outcome: match ? "Passed" : "Issue detected",
+    text: match
+      ? "You reported the expected physical channel. This is user-observed, not independent verification."
+      : "Your observation differs from the intended routing. Verify the endpoint and channel layout, compare another supported playback path, and inspect Windows mono audio/device processing manually. No physical headphone defect is established.",
+  };
+}
 export function audioConclusion(
   s: AudioSession | null,
   heard: "yes" | "no" | "unknown" = "unknown",

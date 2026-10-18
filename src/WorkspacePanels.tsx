@@ -1,3 +1,4 @@
+import { inspectDescriptor } from "./hidDescriptor";
 import { useState } from "react";
 import type { Scan } from "./models";
 import {
@@ -39,10 +40,37 @@ export function InvestigationPanel({
   return (
     <section>
       <p>
-        Record a complete baseline, perform your own controlled action, refresh
-        the inventory, then capture the observation. History stays in memory
+        Compare the system before and after one controlled action, such as
+        reconnecting your own peripheral. This helps identify associated
+        changes; it does not prove what caused a fault. History stays in memory
         until exported.
       </p>
+      <ol>
+        <li>Scan devices and record the starting observation (baseline).</li>
+        <li>
+          Change one thing yourself, such as reconnecting the affected
+          peripheral.
+        </li>
+        <li>
+          Refresh scan, describe your action, then capture the next observation.
+        </li>
+        <li>
+          Review what changed and repeat to check whether the association is
+          reproducible.
+        </li>
+      </ol>
+      {!scan && (
+        <p>
+          Begin with Scan devices above. A complete scan enables Record
+          baseline.
+        </p>
+      )}
+      {scan && !scan.complete && (
+        <p>
+          The current scan is incomplete. Refresh successfully before recording
+          a baseline.
+        </p>
+      )}
       <div className="segmented">
         <button
           disabled={!scan?.complete || !!session}
@@ -101,6 +129,12 @@ export function InvestigationPanel({
           >
             Capture current snapshot
           </button>
+          {scan?.collectedAt === latest?.scan.collectedAt && (
+            <p>
+              After your controlled action, use Refresh scan above to enable
+              Capture current snapshot.
+            </p>
+          )}
           <p>
             {session.captures.length}/8 captures ·{" "}
             {sanitized
@@ -111,29 +145,40 @@ export function InvestigationPanel({
             <>
               <h2>Changes since last capture</h2>
               <p>{diff.reason}</p>
-              <ul>
-                {diff.changes.map((d) => (
-                  <li key={d.id}>
-                    <strong>{d.kind}</strong> · <code>{d.id}</code>
-                    {d.fields.length ? ` · ${d.fields.join(", ")}` : ""}
-                  </li>
-                ))}
-              </ul>
+              <p>
+                {diff.comparable
+                  ? `${diff.changes.length} Windows node changes observed. These are associations, not proof of a physical fault.`
+                  : "These observations cannot be reliably compared; review scope and completeness."}
+              </p>
+              <details>
+                <summary>Stats for nerds — changed nodes</summary>
+                <ul>
+                  {diff.changes.map((d) => (
+                    <li key={d.id}>
+                      <strong>{d.kind}</strong> · <code>{d.id}</code>
+                      {d.fields.length ? ` · ${d.fields.join(", ")}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </details>
               {diff.comparable && !diff.changes.length && (
                 <p>No supported property changes observed.</p>
               )}
             </>
           )}
-          <h2>Collection timeline</h2>
-          <ol>
-            {session.captures.map((c, i) => (
-              <li key={i}>
-                {c.scan.collectedAt} · {c.scan.devices.length} nodes ·{" "}
-                {c.scan.complete ? "complete" : "partial"}
-                <p>User annotation: {c.annotation || "None"}</p>
-              </li>
-            ))}
-          </ol>
+          <details>
+            <summary>Stats for nerds — collection timeline</summary>
+            <h2>Collection timeline</h2>
+            <ol>
+              {session.captures.map((c, i) => (
+                <li key={i}>
+                  {c.scan.collectedAt} · {c.scan.devices.length} nodes ·{" "}
+                  {c.scan.complete ? "complete" : "partial"}
+                  <p>User annotation: {c.annotation || "None"}</p>
+                </li>
+              ))}
+            </ol>
+          </details>
           <details>
             <summary>Exact investigation export preview</summary>
             <pre className="report-preview">{preview}</pre>
@@ -178,6 +223,9 @@ export function BinaryPanel({
   onWorkspace: (v: BinaryWorkspace) => void;
 }) {
   const { sample, second, annotations } = workspace;
+  const [descriptor, setDescriptor] = useState<ReturnType<
+    typeof inspectDescriptor
+  > | null>(null);
   const [offset, setOffset] = useState(0),
     [length, setLength] = useState(1),
     [label, setLabel] = useState("");
@@ -186,6 +234,7 @@ export function BinaryPanel({
   async function load(file: File | undefined, comparison: boolean) {
     if (!file) return;
     setBusy(true);
+    setDescriptor(null);
     try {
       const next = await readSample(file);
       onWorkspace(
@@ -219,6 +268,32 @@ export function BinaryPanel({
         Files remain in memory. Imported bytes are never executed or sent to a
         device.
       </p>
+      <button
+        disabled={!sample || sample.bytes.length > 4096}
+        onClick={() => {
+          try {
+            setDescriptor(inspectDescriptor(sample!.bytes));
+            setMessage(
+              "Imported descriptor declaration inspected. No connected device identity or operation is validated.",
+            );
+          } catch (e) {
+            setDescriptor(null);
+            setMessage(String(e));
+          }
+        }}
+      >
+        Inspect sample as HID report descriptor
+      </button>
+      {descriptor && (
+        <details open>
+          <summary>Stats for nerds — offline descriptor facts</summary>
+          <p>
+            Unknown usages are numerical declarations. No output/feature reports
+            are sent; no individual LED behavior is established.
+          </p>
+          <pre>{JSON.stringify(descriptor, null, 2)}</pre>
+        </details>
+      )}
       <div className="segmented">
         <label className="field">
           Primary sample

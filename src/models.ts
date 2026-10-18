@@ -4,6 +4,9 @@ export interface CollectionError {
   deviceId?: string;
 }
 export interface Device {
+  driverDate?: string | null;
+  driverProvider?: string | null;
+  driverVersion?: string | null;
   deviceCapabilities?: number | null;
   removalPolicy?: number | null;
   enumeratorName?: string | null;

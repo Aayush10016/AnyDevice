@@ -277,6 +277,27 @@
             "null"
           ],
           "maxLength": 8192
+        },
+        "driverProvider": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2048
+        },
+        "driverVersion": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 2048
+        },
+        "driverDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
         }
       },
       "additionalProperties": false

@@ -19,6 +19,9 @@ export interface DiagnosticCheck {
   nextStep: string;
   hypotheses: {
     cause: string;
+    supportingEvidence?: string[];
+    contradictingEvidence?: string[];
+    verificationCriterion?: string;
     confidence:
       "Confirmed configuration" | "Possible" | "Insufficient evidence";
     distinguishingTest: string;
@@ -288,6 +291,9 @@ export function diagnosticExport(
     heardExpected: string;
     staticReported: boolean | null;
   } | null = null,
+  routingReports: import("./audio").RoutingReport[] = [],
+  functionalVerification:
+    import("./repairVerification").FunctionalVerification | null = null,
 ) {
   const aliases = new Map<string, string>();
   const alias = (id: string) => {
@@ -310,6 +316,11 @@ export function diagnosticExport(
         }
       : null,
     userAudioReport,
+    functionalVerification,
+    routingReports: routingReports.slice(-8).map((r) => ({
+      ...r,
+      targetId: sanitized ? alias(r.targetId) : r.targetId,
+    })),
     checks: checks.slice(0, 8192).map((c, i) => ({
       ...c,
       id: sanitized ? `check-${i + 1}` : c.id,

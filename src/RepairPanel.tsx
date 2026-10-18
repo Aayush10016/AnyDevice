@@ -10,14 +10,18 @@ export function RepairPanel({
   muted,
   running,
   onVerified,
+  previousAudit,
 }: {
   targetId: string;
+  previousAudit?: RepairAudit;
   muted: boolean | null;
   running: boolean;
   onVerified: (audit: RepairAudit) => void;
 }) {
   const [proposal, setProposal] = useState<MuteProposal | null>(null),
-    [audit, setAudit] = useState<RepairAudit | null>(null),
+    [audit, setAudit] = useState<RepairAudit | null>(
+      previousAudit?.targetId === targetId ? previousAudit : null,
+    ),
     [approved, setApproved] = useState(false),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
@@ -57,7 +61,11 @@ export function RepairPanel({
         setMessage(result.status);
       }
     } catch (e) {
-      if (alive.current) setMessage(String(e));
+      if (alive.current) {
+        setMessage(String(e));
+        setApproved(false);
+        setProposal(null);
+      }
     } finally {
       if (alive.current) setBusy(false);
     }
@@ -81,7 +89,16 @@ export function RepairPanel({
             {proposal.name}: mute {String(proposal.beforeMute)} →{" "}
             {String(proposal.desiredMute)}
           </strong>
+          <p>
+            Finding: Windows currently reports this named endpoint muted. Unmute
+            may restore signal only if mute is the relevant cause; other causes
+            remain untested.
+          </p>
           <p>{proposal.exactChange}</p>
+          <p>
+            Normal user permissions; no restart expected. Other applications can
+            immediately receive or play sound after unmute.
+          </p>
           <p>{proposal.risks}</p>
           <p>Rollback: {proposal.reversal}</p>
           <p>Verification: {proposal.verification}</p>
@@ -101,10 +118,25 @@ export function RepairPanel({
           >
             Apply approved unmute
           </button>
+          <button
+            disabled={busy}
+            onClick={() => {
+              setProposal(null);
+              setApproved(false);
+              setMessage("Proposal cancelled; no setting changed.");
+            }}
+          >
+            Cancel repair proposal
+          </button>
         </article>
       )}
       {audit?.verified && !audit.rolledBack && !proposal && (
         <>
+          <p>
+            Setting verification completed; the original symptom is still
+            unverified. Repeat the same endpoint test using the controls above.
+            No playback or capture is started by this repair.
+          </p>
           <p>
             The mute flag was read back as {String(audit.afterMute)}. Repeat the
             explicit functional test to check audible/input behavior.

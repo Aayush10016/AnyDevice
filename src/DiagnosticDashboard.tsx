@@ -9,8 +9,12 @@ export function DiagnosticDashboard({
   onCancel,
   onAudio,
   onExport,
+  onTest,
+  onSkip,
 }: {
   checks: DiagnosticCheck[];
+  onTest?: (target: string) => void;
+  onSkip?: (id: string) => void;
   progress: string;
   busy: boolean;
   paused: boolean;
@@ -61,14 +65,19 @@ export function DiagnosticDashboard({
   }
   return (
     <section aria-label="Unified diagnostics">
-      <h2>Run diagnostics</h2>
+      <h2>Full diagnostic scan</h2>
       <p>
         Automatic checks read Windows device and audio status. They do not play
         sound, record a microphone, press keys, change settings or test LEDs.
       </p>
       <div className="row">
-        <button className="primary" disabled={busy} onClick={onRun}>
-          Run diagnostics
+        <button
+          aria-label="Run diagnostics"
+          className="primary"
+          disabled={busy}
+          onClick={onRun}
+        >
+          Run full diagnostic scan
         </button>
         <button disabled={!busy} onClick={onPause}>
           {paused ? "Resume diagnostics" : "Pause after current check"}
@@ -101,6 +110,32 @@ export function DiagnosticDashboard({
               tests remain separate.
             </p>
           )}
+          <h3>Tests needing your participation</h3>
+          <p>
+            Listening, speaking, key presses and mouse actions require you.
+            Skipping preserves Not tested; it never creates a passing result.
+          </p>
+          {checks
+            .filter((c) => c.outcome === "Not tested")
+            .map((c, i) => (
+              <div key={c.id}>
+                <strong>
+                  {c.test} — target {i + 1}: Not tested
+                </strong>
+                <button
+                  disabled={busy || !onTest}
+                  onClick={() => onTest?.(c.target)}
+                >
+                  Choose and run this test
+                </button>
+                <button
+                  disabled={busy || !onSkip}
+                  onClick={() => onSkip?.(c.id)}
+                >
+                  Skip for now
+                </button>
+              </div>
+            ))}
           <details>
             <summary>All checks, skipped tests and coverage</summary>
             {checks.map(view)}
