@@ -1,5 +1,5 @@
 //! Read-only Windows interpretation of a collection's HID preparsed data.
-//! No device handle is opened and no input/output/feature report is transferred.
+//! Metadata-only collection handles may be opened; no input/output/feature payload is transferred.
 use serde_json::{json, Value};
 use windows_sys::Win32::{Devices::HumanInterfaceDevice::*, Foundation::HANDLE, UI::Input::*};
 fn bounded(length: u32, counts: &[u16]) -> bool {
@@ -38,6 +38,9 @@ fn inspect(handle: HANDLE) -> Result<Value, String> {
         return Err("Preparsed data changed or failed bounds checks".into());
     }
     let pointer = data.as_ptr() as PHIDP_PREPARSED_DATA;
+    parse(pointer, length)
+}
+fn parse(pointer: PHIDP_PREPARSED_DATA, length: u32) -> Result<Value, String> {
     let mut caps = HIDP_CAPS::default();
     if unsafe { HidP_GetCaps(pointer, &mut caps) } != HIDP_STATUS_SUCCESS {
         return Err("Windows rejected invalid/unsupported preparsed data".into());
@@ -127,8 +130,56 @@ fn inspect(handle: HANDLE) -> Result<Value, String> {
         json!({"profileVersion":"windows-hid-capabilities-1.0","status":"observed","source":"Windows Raw Input / HidP parser","usagePage":caps.UsagePage,"usage":caps.Usage,"reports":reports,"verifiedModel":false,"validatedHardwareOperations":[],"limitations":["Windows interpreted capabilities, not raw report-descriptor bytes or a reverse-engineered protocol.","Report ID zero means no numbered report; lengths are maximum Windows collection report lengths.","Unknown usages and ranges are preserved numerically. No payload semantics or LED state is inferred."]}),
     )
 }
-pub fn read(handle: HANDLE) -> Value {
-    inspect(handle).unwrap_or_else(|reason| json!({"profileVersion":"windows-hid-capabilities-1.0","status":"unavailable","reason":reason}))
+struct HidFile(HANDLE);
+impl Drop for HidFile {
+    fn drop(&mut self) {
+        unsafe {
+            windows_sys::Win32::Foundation::CloseHandle(self.0);
+        }
+    }
+}
+struct Preparsed(PHIDP_PREPARSED_DATA);
+impl Drop for Preparsed {
+    fn drop(&mut self) {
+        unsafe {
+            HidD_FreePreparsedData(self.0);
+        }
+    }
+}
+fn collection(path: &str) -> Result<Value, String> {
+    use windows_sys::Win32::{Foundation::INVALID_HANDLE_VALUE, Storage::FileSystem::*};
+    if path.len() > 8192 || path.contains('\0') || !path.to_uppercase().starts_with(r"\\?\HID#") {
+        return Err("No supported native HID collection path".into());
+    }
+    let wide: Vec<u16> = path.encode_utf16().chain(Some(0)).collect();
+    // Zero desired access: metadata queries only. Never ReadFile/WriteFile/GetFeature/SetFeature.
+    let handle = unsafe {
+        CreateFileW(
+            wide.as_ptr(),
+            0,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            std::ptr::null(),
+            OPEN_EXISTING,
+            0,
+            std::ptr::null_mut(),
+        )
+    };
+    if handle == INVALID_HANDLE_VALUE {
+        return Err("Collection metadata access unavailable".into());
+    }
+    let file = HidFile(handle);
+    let mut pointer = 0;
+    if !unsafe { HidD_GetPreparsedData(file.0, &mut pointer) } || pointer == 0 {
+        return Err("Collection preparsed data unavailable".into());
+    }
+    let data = Preparsed(pointer);
+    // Opaque OS-owned buffer length is not exposed; HidP validates it. Control counts remain bounded.
+    let mut result = parse(data.0, 1)?;
+    result["source"] = json!("Windows zero-access HID collection / HidP parser");
+    Ok(result)
+}
+pub fn read(handle: HANDLE, path: Option<&str>) -> Value {
+    inspect(handle).or_else(|_| collection(path.ok_or("HID collection path unavailable")?)).unwrap_or_else(|reason| json!({"profileVersion":"windows-hid-capabilities-1.0","status":"unavailable","reason":reason}))
 }
 #[cfg(test)]
 mod tests {

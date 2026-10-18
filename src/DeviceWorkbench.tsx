@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { deviceCapabilities } from "./capabilities";
+import type { AudioInventory } from "./audio";
 import type { Candidate } from "./inventoryModel";
 import {
   keyboardLayout,
@@ -42,14 +44,21 @@ export function DeviceWorkbench({
   sanitized,
   onClose,
   candidate,
+  audio = null,
+  onAudio,
+  onDiagnostics,
 }: {
   device: Device;
   candidate?: Candidate;
+  audio?: AudioInventory | null;
+  onAudio?: (id?: string) => void;
+  onDiagnostics?: () => void;
   devices: Device[];
   findings: Finding[];
   sanitized: boolean;
   onClose: () => void;
 }) {
+  const capabilities = candidate ? deviceCapabilities(candidate, audio) : [];
   const [tab, setTab] = useState("Overview");
   const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
   const [index, setIndex] = useState(0);
@@ -80,7 +89,9 @@ export function DeviceWorkbench({
   );
   const available = endpoints.filter((e) =>
     candidate
-      ? (candidate.inputKinds??(candidate.kind?[candidate.kind]:[])).includes(e.kind) &&
+      ? (
+          candidate.inputKinds ?? (candidate.kind ? [candidate.kind] : [])
+        ).includes(e.kind) &&
         candidate.nodes.some(
           (n) => e.instanceId?.toUpperCase() === n.id.toUpperCase(),
         )
@@ -120,7 +131,9 @@ export function DeviceWorkbench({
         );
         const matches = rows.filter((e) =>
           candidate
-            ? (candidate.inputKinds??(candidate.kind?[candidate.kind]:[])).includes(e.kind) &&
+            ? (
+                candidate.inputKinds ?? (candidate.kind ? [candidate.kind] : [])
+              ).includes(e.kind) &&
               candidate.nodes.some(
                 (n) => e.instanceId?.toUpperCase() === n.id.toUpperCase(),
               )
@@ -299,7 +312,9 @@ export function DeviceWorkbench({
       >
         {[
           "Overview",
-          ...(candidate && !candidate.kind && !candidate.inputKinds?.length ? [] : ["Live Tests"]),
+          ...(candidate && !candidate.kind && !candidate.inputKinds?.length
+            ? []
+            : ["Live Tests"]),
           "Report a Problem",
           "History & export",
         ].map((t) => (
@@ -319,14 +334,45 @@ export function DeviceWorkbench({
             Windows reports {device.status ?? "no status"}. This is a connection
             observation, not a functional health verdict.
           </p>
+          <h3>Available tests</h3>
+          {capabilities
+            .filter((c) => c.id !== "led")
+            .map((c) => (
+              <div key={c.id}>
+                {c.state === "available" &&
+                ["mouse", "keyboard"].includes(c.id) ? (
+                  <button onClick={() => setTab("Live Tests")}>
+                    {c.label}
+                  </button>
+                ) : c.endpointId || c.id === "audio-choice" ? (
+                  <button
+                    disabled={!onAudio || c.state === "unavailable"}
+                    onClick={() => onAudio?.(c.endpointId)}
+                  >
+                    {c.label}
+                  </button>
+                ) : (
+                  <strong>
+                    {c.label} — {c.state}
+                  </strong>
+                )}
+                <p>{c.reason}</p>
+              </div>
+            ))}
+          {!capabilities.some((c) => c.state === "available") && (
+            <p>
+              Choose an available endpoint or review the supported read-only
+              checks. No functional result has been recorded for this device.
+            </p>
+          )}
+          <button onClick={onDiagnostics} disabled={!onDiagnostics}>
+            Run device diagnostics
+          </button>
           <p>
-            {(candidate?.kind||candidate?.inputKinds?.length)
-              ? "Open Live Tests to check this device’s input. Keep AnyDevice active while testing."
-              : "Read-only diagnostics are available. A validated device-specific functional test is not available for this category."}
+            Individual LED testing requires a verified model-specific protocol
+            and your observation of actual illumination. Windows cannot identify
+            a failed LED circuit.
           </p>
-          {candidate?.evidence.map((e, i) => (
-            <p key={i}>{e}</p>
-          ))}
           {relevantFindings.map((f) => (
             <article className="finding" key={f.id}>
               <h3>{f.title}</h3>

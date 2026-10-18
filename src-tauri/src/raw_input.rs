@@ -266,7 +266,7 @@ fn endpoints() -> Result<Vec<Endpoint>, String> {
             } else {
                 Value::Null
             };
-            out.push(Endpoint{handle:entry.hDevice,kind:entry.dwType,value:json!({"instanceId":id,"path":name,"kind":if entry.dwType==RIM_TYPEMOUSE {"mouse"}else{"keyboard"},"ancestors":parents,"capabilities":capabilities,"hid":crate::hid_inspection::read(entry.hDevice),"source":"Windows Raw Input / Configuration Manager","observedAt":chrono::Utc::now().to_rfc3339()})});
+            out.push(Endpoint{handle:entry.hDevice,kind:entry.dwType,value:json!({"instanceId":id,"path":name,"kind":if entry.dwType==RIM_TYPEMOUSE {"mouse"}else{"keyboard"},"ancestors":parents,"capabilities":capabilities,"hid":crate::hid_inspection::read(entry.hDevice, name.as_deref()),"source":"Windows Raw Input / Configuration Manager","observedAt":chrono::Utc::now().to_rfc3339()})});
             evidence_bytes += out.last().unwrap().value.to_string().len();
             if out.len() > 256 || evidence_bytes > 2 * 1024 * 1024 {
                 return Err("Input capability inventory exceeded its evidence budget".into());

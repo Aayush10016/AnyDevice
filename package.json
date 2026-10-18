@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "npm run schemas && tsc --noEmit && vite build",
-    "test": "npm run schemas && vitest run",
+    "test": "npm run schemas && vitest run --maxWorkers=2",
     "tauri": "tauri",
     "desktop": "tauri dev",
     "package": "tauri build --bundles nsis --features custom-protocol --no-binary-patching",

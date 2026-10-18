@@ -59,7 +59,15 @@
           "additionalProperties": false,
           "properties": {
             "sessionId": {
-              "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }]
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "heardExpected": {
               "enum": [
@@ -169,6 +177,26 @@
                   ]
                 },
                 "distinguishingTest": {
+                  "type": "string",
+                  "maxLength": 2048
+                },
+                "supportingEvidence": {
+                  "type": "array",
+                  "maxItems": 32,
+                  "items": {
+                    "type": "string",
+                    "maxLength": 2048
+                  }
+                },
+                "contradictingEvidence": {
+                  "type": "array",
+                  "maxItems": 32,
+                  "items": {
+                    "type": "string",
+                    "maxLength": 2048
+                  }
+                },
+                "verificationCriterion": {
                   "type": "string",
                   "maxLength": 2048
                 }
@@ -590,6 +618,46 @@
         "maxLength": 2048
       },
       "maxItems": 32
+    },
+    "routingReports": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sessionId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "targetId": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "mode": {
+            "enum": [
+              "left",
+              "right",
+              "tone"
+            ]
+          },
+          "observation": {
+            "enum": [
+              "left",
+              "right",
+              "both",
+              "neither",
+              "unsure"
+            ]
+          }
+        },
+        "required": [
+          "sessionId",
+          "targetId",
+          "mode",
+          "observation"
+        ]
+      }
     }
   },
   "required": [

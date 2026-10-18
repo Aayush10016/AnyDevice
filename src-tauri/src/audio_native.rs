@@ -1,5 +1,5 @@
 //! Original Core Audio/WASAPI implementation, using Microsoft API bindings.
-use crate::audio_metrics::{decode, encode, Accumulator, Levels};
+use crate::audio_metrics::{decode, Accumulator, Levels};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
@@ -234,7 +234,7 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
         );
     }
     if ["left", "right"].contains(&mode)
-        && (format.channels != 2 || format.channel_mask != 0 && format.channel_mask != 3)
+        && !crate::audio_signal::stereo(format.channels, format.channel_mask)
     {
         return output(
             json!({"type":"status","status":"unsupported","reason":"Left/right testing requires standard stereo channel mapping"}),
@@ -347,32 +347,21 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
                         frames as usize * format.block_align as usize,
                     )
                 };
-                let step = format.bits as usize / 8;
-                let mut failure = None;
-                for frame in 0..frames as usize {
-                    let phase = (frames_total + frame as u64) as f64 / format.sample_rate as f64;
-                    let envelope = (phase / 0.05).min(1.0) * ((3.0 - phase) / 0.05).clamp(0.0, 1.0);
-                    let value = 0.03 * envelope * (std::f64::consts::TAU * 440.0 * phase).sin();
-                    for ch in 0..format.channels as usize {
-                        let sample = if mode == "left" && ch != 0 || mode == "right" && ch != 1 {
-                            0.0
-                        } else {
-                            value
-                        };
-                        let offset = frame * format.block_align as usize + ch * step;
-                        if let Err(e) =
-                            encode(sample, &mut slice[offset..offset + step], format.float)
-                        {
-                            failure = Some(e);
-                        }
-                    }
-                }
+                let generated = crate::audio_signal::fill(
+                    slice,
+                    format.channels,
+                    format.bits,
+                    format.float,
+                    format.sample_rate,
+                    frames_total,
+                    mode,
+                    &mut aggregate,
+                );
+                window = aggregate.clone(); // submitted signal evidence; not a loopback measurement
                 let released =
                     unsafe { render.ReleaseBuffer(frames, 0) }.map_err(|e| e.to_string());
                 released?;
-                if let Some(e) = failure {
-                    return Err(e);
-                }
+                generated?;
                 frames_total += frames as u64;
             }
         }

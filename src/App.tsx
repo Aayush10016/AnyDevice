@@ -263,9 +263,11 @@ export default function App() {
     }
     try {
       await checkpoint("1 / 4 — Refreshing Windows devices");
-      const fresh = normalize(await discover(provider, scope));
+      const fresh = normalize(await discover("windows-cfgmgr32", "all-pnp"));
       setPrevious(scan);
       setScan(fresh);
+      setSelected(undefined);
+      setCandidateId(undefined);
       setInputEndpoints([]);
       setAudioInventory(null);
       setChecks(systemChecks(fresh, buildInventory(fresh.devices, []), null));
@@ -295,6 +297,19 @@ export default function App() {
         "Read-only diagnostics complete. Input, audibility, microphone quality and LED tests were not performed automatically.",
       );
     } catch (e) {
+      setChecks((v) =>
+        v.map((c) =>
+          c.id === "enumeration"
+            ? {
+                ...c,
+                outcome: "Cancelled or interrupted",
+                conclusion:
+                  "The full workflow did not complete; retained observations are partial coverage.",
+                nextStep: "Resume with a fresh scan or run a selected test.",
+              }
+            : c,
+        ),
+      );
       setDiagnosticProgress(String(e));
     } finally {
       setDiagnosticBusy(false);
@@ -584,6 +599,15 @@ export default function App() {
                 devices={scan?.devices ?? []}
                 findings={findings}
                 sanitized={preferences.sanitize}
+                audio={audioInventory}
+                onAudio={(id) => {
+                  setAudioSelected(id);
+                  setRoute("Audio");
+                }}
+                onDiagnostics={() => {
+                  setRoute("Diagnostics");
+                  void runDiagnostics();
+                }}
                 candidate={
                   candidate ?? {
                     id: "advanced-node",
@@ -688,6 +712,36 @@ export default function App() {
             {route === "Diagnostics" && (
               <DiagnosticDashboard
                 checks={checks}
+                onTest={(target) => {
+                  const endpoint = audioInventory?.endpoints.find(
+                    (e) => e.id === target,
+                  );
+                  if (endpoint) {
+                    setAudioSelected(endpoint.id);
+                    setRoute("Audio");
+                    return;
+                  }
+                  const c = candidates.find((c) => c.id === target);
+                  if (c) {
+                    setSelected(c.device.id);
+                    setCandidateId(c.id);
+                    setRoute("Devices");
+                  }
+                }}
+                onSkip={(id) =>
+                  setChecks((v) =>
+                    v.map((c) =>
+                      c.id === id
+                        ? {
+                            ...c,
+                            conclusion:
+                              "You skipped this interactive check for now; no functional evidence was recorded.",
+                            nextStep: "Choose and run the test when ready.",
+                          }
+                        : c,
+                    ),
+                  )
+                }
                 progress={diagnosticProgress}
                 busy={diagnosticBusy}
                 paused={diagnosticPaused}
@@ -731,6 +785,7 @@ export default function App() {
             {route === "Audio" && (
               <AudioWorkspace
                 initialEndpoint={audioSelected}
+                repairHistory={repairAudits}
                 onBack={() => setRoute("Devices")}
                 onInventory={setAudioInventory}
                 onSession={(s) => setAudioSessions((v) => [...v, s].slice(-8))}
