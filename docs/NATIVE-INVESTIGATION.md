@@ -2,6 +2,8 @@
 
 ## Audio path
 
+The critical zero-frame defect was in the wire protocol: Serde renamed enum variants but not measurement fields. Native camelCase timestampErrors failed the strict parser expecting snake_case, before any frame reached the snapshot. The parser now explicitly renames enum fields; a regression test deserializes the helper JSON rather than constructing a Packet directly. Unknown fields remain rejected. This is a demonstrated code defect, not independent physical acceptance.
+
 The readiness command and real playback/capture share `audio_native::prepare`: resolve the exact active endpoint, validate flow, read the shared format, initialize WASAPI, obtain buffer size and open the appropriate service. Readiness releases these objects without calling Start, obtaining capture data or submitting a render buffer. It establishes only initialization/service access. It may fail on endpoint availability, policy, format or resource conditions; the actual stage, original Windows text and available HRESULT are retained.
 
 The dedicated audio helper now initializes COM as STA, following Microsoft's first-use guidance for IAudioClient. This is a documented implementation correction, not proof that MTA caused the owner's failure. Playback prefills its own buffer before Start, submits the bounded three-second signal, and waits for its queue to drain with a five-second deadline. A partial submission or undrained queue is a failure. Render generation failure releases silence instead of exposing unfinished data. Microphone capture remains an explicitly approved eight-second level-only measurement.

@@ -54,7 +54,12 @@ fn helper_exit_error(snapshot: Option<&Snapshot>) -> String {
         .unwrap_or_else(|| "Audio helper exited with an error".into())
 }
 #[derive(Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
+#[serde(
+    tag = "type",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
 enum Packet {
     Status {
         status: String,
@@ -423,6 +428,20 @@ pub async fn discard_audio_test(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn accepts_real_camel_case_measurement_wire_packets_and_rejects_unknown_fields() {
+        let level = serde_json::json!({"samples":480,"rms":0.1,"rmsDbfs":-20.0,"peak":0.2,"clippingProportion":0.0,"zeroProportion":0.0,"invalidSamples":0});
+        let mut wire = serde_json::json!({"type":"measurement","format":{"sampleRate":48000,"channels":1,"bits":32,"float":true,"blockAlign":4,"channelMask":0,"supported":true},"frames":480,"aggregate":[level.clone()],"window":[level],"discontinuities":0,"timestampErrors":0,"engineConsumedFrames":400,"elapsedMs":10});
+        let packet: Packet =
+            serde_json::from_value(wire.clone()).expect("Actual helper wire format must parse");
+        let mut snapshot = Snapshot::default();
+        apply(&mut snapshot, packet).unwrap();
+        assert_eq!(snapshot.frames, 480);
+        assert_eq!(snapshot.engine_consumed_frames, Some(400));
+        assert_eq!(snapshot.elapsed_ms, 10);
+        wire["physicallyHeardFrames"] = serde_json::json!(480);
+        assert!(serde_json::from_value::<Packet>(wire).is_err());
+    }
     #[test]
     fn preserves_valid_terminal_native_failure_stage_only() {
         let mut snapshot = Snapshot {
