@@ -7,7 +7,13 @@ export interface Readiness {
   complete: boolean;
   started: false;
   frames: 0;
-  facts: { initialized: true; serviceReady: true; bufferFrames: number } | null;
+  facts: {
+    initialized: true;
+    serviceReady: true;
+    bufferFrames: number;
+    sessionVolume?: { mute: boolean; level: number } | null;
+    sessionVolumeError?: { stage: string; message: string } | null;
+  } | null;
   errors: { stage: string; message: string }[];
 }
 export interface LightingDiscovery {
@@ -55,6 +61,11 @@ export function validateReadiness(
         e.message.length > 2048 ||
         typeof e.stage !== "string",
     ) ||
+    (r.facts?.sessionVolume != null &&
+      (typeof r.facts.sessionVolume.mute !== "boolean" ||
+        !Number.isFinite(r.facts.sessionVolume.level) ||
+        r.facts.sessionVolume.level < 0 ||
+        r.facts.sessionVolume.level > 1)) ||
     (r.complete &&
       (!r.facts?.initialized || !r.facts.serviceReady || r.errors.length))
   )
@@ -83,6 +94,8 @@ export function readinessCheck(r: Readiness): DiagnosticCheck {
       stage: r.errors[0]?.stage ?? "Initialized and service opened",
       originalError: r.errors[0]?.message ?? "",
       bufferFrames: r.facts?.bufferFrames ?? null,
+      sessionMuted: r.facts?.sessionVolume?.mute ?? null,
+      sessionLevel: r.facts?.sessionVolume?.level ?? null,
     },
     conclusion: r.complete
       ? "Windows initialized the exact endpoint and opened its stream service. No stream was started, no sound/capture was performed, and physical function is not verified."
@@ -92,4 +105,13 @@ export function readinessCheck(r: Readiness): DiagnosticCheck {
       : "Resolve the reported API stage before testing physical output; refresh the exact endpoint, review Windows permissions or exclusive-use applications as applicable.",
     hypotheses: [],
   };
+}
+
+export function sessionVolumeSummary(r: Readiness) {
+  const volume = r.facts?.sessionVolume;
+  if (!volume)
+    return "Audio-session mute/volume unavailable; initialization alone cannot rule out application-level silence.";
+  if (volume.mute || volume.level === 0)
+    return "Windows reports this readiness session muted or at zero volume. Review AnyDevice in Windows Volume mixer before a controlled retest; no setting was changed.";
+  return `Readiness session: not muted, ${Math.round(volume.level * 100)}% volume. This is a separate observation from endpoint volume and does not verify a later test session or audible sound.`;
 }

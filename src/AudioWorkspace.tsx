@@ -1,4 +1,8 @@
-import { readinessCheck, type Readiness } from "./nativeInvestigation";
+import {
+  readinessCheck,
+  sessionVolumeSummary,
+  type Readiness,
+} from "./nativeInvestigation";
 import type { DiagnosticCheck } from "./diagnosticEngine";
 import { streamProgress, type AudioFailure } from "./audioLifecycle";
 import { useState, useEffect, useRef } from "react";
@@ -355,6 +359,7 @@ export function AudioWorkspace({
               </h3>
               <p>{readinessCheck(readiness).conclusion}</p>
               <p>{readinessCheck(readiness).nextStep}</p>
+              <p>{sessionVolumeSummary(readiness)}</p>
               <details>
                 <summary>
                   Advanced evidence — initialization stage and original error
@@ -472,7 +477,7 @@ export function AudioWorkspace({
         className="input-test-surface"
         aria-label="Audio test focus"
       >
-        <p role="status">{streamProgress(session, failure, starting)}</p>
+        <p role="status">{streamProgress(session, failure, starting, heard)}</p>
         {endpoint?.kind === "recording" &&
           session?.window.map((level, i) => (
             <div key={i}>
@@ -573,6 +578,23 @@ export function AudioWorkspace({
                 <option value="neither">Neither earbud</option>
               </select>
             </label>
+            {ear === "neither" && (
+              <article className="finding" role="alert">
+                <h3>No sound reported</h3>
+                <p>
+                  The stream finished, but the audible test did not pass.
+                  Compare ordinary audio through this same endpoint. If that is
+                  also silent, investigate the shared Windows/Bluetooth/device
+                  path. If ordinary audio works, inspect AnyDevice in Windows
+                  Volume mixer and compare its readiness evidence.
+                </p>
+                <p>
+                  Record one change at a time and retry explicitly. No driver,
+                  connection, mute or volume setting has been changed by this
+                  test.
+                </p>
+              </article>
+            )}
             <p>
               First test left, record what you heard, then test right and record
               again. Each stream is stopped before the next is created.

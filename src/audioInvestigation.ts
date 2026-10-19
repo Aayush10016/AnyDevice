@@ -7,13 +7,14 @@ export function investigateAudio(
 ): DiagnosticCheck {
   const mismatch =
     !!s &&
+    s.targetId === e.id &&
     s.cleanup &&
     s.status === "completed" &&
     s.frames > 0 &&
     !!s.format?.supported &&
-    ["left", "right"].includes(s.mode) &&
+    ["left", "right", "tone"].includes(s.mode) &&
     ear !== "unsure" &&
-    ear !== s.mode;
+    (s.mode === "tone" ? ear === "neither" : ear !== s.mode);
   const opposite =
     s && s.format?.channels === 2
       ? s.aggregate[s.mode === "left" ? 1 : 0]
@@ -39,7 +40,9 @@ export function investigateAudio(
       independentPhysicalVerification: false,
     },
     conclusion: mismatch
-      ? "The reported ear differs from the selected isolated-channel test. The cause is unresolved."
+      ? ear === "neither"
+        ? "No sound was reported despite completed stream submission. Compare ordinary playback on this endpoint to separate a shared audio-path problem from application-specific silence. The cause is unresolved."
+        : "The reported ear differs from the selected isolated-channel test. The cause is unresolved."
       : e.mute === true
         ? "Windows reports the selected endpoint muted; its contribution to the symptom needs a controlled retest."
         : "Available observations do not establish a physical fault or symptom resolution.",

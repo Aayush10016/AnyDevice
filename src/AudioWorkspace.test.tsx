@@ -96,6 +96,14 @@ it("records both-ear mismatch and requires a new user action for the opposite ch
   );
   fireEvent.click(screen.getByRole("button", { name: "Test left channel" }));
   const answer = await screen.findByRole("combobox", { name: "Observed ear" });
+  fireEvent.change(answer, { target: { value: "neither" } });
+  expect(
+    screen.getByRole("heading", { name: "No sound reported" }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "audible test did not pass",
+  );
+  expect(startAudioTest).toHaveBeenCalledTimes(1);
   fireEvent.change(answer, { target: { value: "both" } });
   expect(
     screen.getByRole("heading", { name: "Issue detected" }),

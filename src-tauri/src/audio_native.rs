@@ -274,7 +274,26 @@ pub fn readiness(id: &str, kind: &str) -> Value {
             let _: IAudioRenderClient = unsafe { stream.0.GetService() }
                 .map_err(|e| format!("Open render service: {e}"))?;
         }
-        Ok(json!({"initialized":true,"serviceReady":true,"format":format,"bufferFrames":size}))
+        let session_volume = (|| -> Result<Value, String> {
+            let control: ISimpleAudioVolume = unsafe { stream.0.GetService() }
+                .map_err(|e| format!("Open session volume: {e}"))?;
+            let mute = unsafe { control.GetMute() }
+                .map_err(|e| format!("Read session mute: {e}"))?
+                .as_bool();
+            let level = unsafe { control.GetMasterVolume() }
+                .map_err(|e| format!("Read session volume: {e}"))?;
+            Ok(json!({"mute":mute,"level":level}))
+        })();
+        let (session_volume, session_volume_error) = match session_volume {
+            Ok(value) => (value, Value::Null),
+            Err(error) => (
+                Value::Null,
+                json!(crate::audio_signal::failure_record(&error)),
+            ),
+        };
+        Ok(
+            json!({"initialized":true,"serviceReady":true,"format":format,"bufferFrames":size,"sessionVolume":session_volume,"sessionVolumeError":session_volume_error}),
+        )
     })();
     match result {
         Ok(facts) => {

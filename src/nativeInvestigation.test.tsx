@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { expect, it, vi, beforeEach } from "vitest";
 import {
   lightingSummary,
+  sessionVolumeSummary,
   readinessCheck,
   validateReadiness,
   type LightingDiscovery,
@@ -142,4 +143,35 @@ it("exports classification/time and withholds identifying original free-text in 
     "Technical free-text withheld",
   );
   expect(() => validateExport(JSON.stringify(report))).not.toThrow();
+});
+
+it("separates session mute from endpoint readiness and rejects invalid volume evidence", () => {
+  const result: Readiness = {
+    ...readiness,
+    complete: true,
+    errors: [],
+    facts: {
+      initialized: true,
+      serviceReady: true,
+      bufferFrames: 480,
+      sessionVolume: { mute: true, level: 0.4 },
+    },
+  };
+  expect(
+    sessionVolumeSummary(
+      validateReadiness(result, result.targetId, result.kind),
+    ),
+  ).toContain("muted or at zero volume");
+  expect(readinessCheck(result).measurements.sessionMuted).toBe(true);
+  expect(() =>
+    validateReadiness(
+      {
+        ...result,
+        facts: { ...result.facts!, sessionVolume: { mute: false, level: 2 } },
+      },
+      result.targetId,
+      result.kind,
+    ),
+  ).toThrow();
+  expect(sessionVolumeSummary(readiness)).toContain("unavailable");
 });

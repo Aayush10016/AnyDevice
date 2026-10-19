@@ -374,6 +374,10 @@ fn main() {
             }
             return;
         }
+        if args.get(1).map(String::as_str) == Some("--inspect-lamparray") {
+            println!("{}", lighting_native::lamps());
+            return;
+        }
         if args.get(1).map(String::as_str) == Some("--inspect-lighting") {
             println!("{}", lighting_native::collect());
             return;
