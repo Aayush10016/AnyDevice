@@ -9,7 +9,7 @@ import {
   type Readiness,
 } from "./nativeInvestigation";
 import { LightingDiscoveryPanel } from "./LightingDiscoveryPanel";
-import { inspectLighting, cancelScan } from "./bridge";
+import { inspectLighting, cancelScan, saveReport } from "./bridge";
 import { diagnosticExport } from "./diagnosticEngine";
 import { validateExport } from "./reporting";
 vi.mock("./bridge", () => ({
@@ -174,4 +174,28 @@ it("separates session mute from endpoint readiness and rejects invalid volume ev
     ),
   ).toThrow();
   expect(sessionVolumeSummary(readiness)).toContain("unavailable");
+});
+
+it("exports a crashed lighting query as inconclusive while retaining system evidence", async () => {
+  vi.mocked(inspectLighting).mockResolvedValue({
+    ...lighting,
+    complete: false,
+    lampEnumerationComplete: false,
+    errors: ["Windows exception 0xC0000005"],
+  });
+  vi.mocked(saveReport).mockResolvedValue(true);
+  render(<LightingDiscoveryPanel />);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Discover lighting capabilities" }),
+  );
+  await screen.findByText(/Windows system: Synthetic vendor/);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Export sanitized lighting evidence" }),
+  );
+  await waitFor(() => expect(saveReport).toHaveBeenCalled());
+  const report = JSON.parse(vi.mocked(saveReport).mock.calls[0][0]);
+  expect(report.checks[0].classification).toBe("inconclusive");
+  expect(report.checks[0].measurements.lampEnumerationComplete).toBe(false);
+  expect(JSON.stringify(report)).not.toContain("0xC0000005");
+  validateExport(JSON.stringify(report));
 });

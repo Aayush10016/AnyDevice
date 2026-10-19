@@ -40,7 +40,10 @@ export function LightingDiscoveryPanel() {
       id: "lighting-discovery",
       target: "system",
       test: "Keyboard lighting capability discovery",
-      outcome: result?.interfaces.length ? "Inconclusive" : "Not supported",
+      outcome:
+        result?.interfaces.length || !result?.lampEnumerationComplete
+          ? "Inconclusive"
+          : "Not supported",
       confidence: "Windows-reported",
       measurements: {
         observedAt: result!.observedAt,
