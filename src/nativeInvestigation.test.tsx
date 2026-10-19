@@ -183,7 +183,7 @@ it("exports a crashed lighting query as inconclusive while retaining system evid
     lampEnumerationComplete: false,
     errors: ["Windows exception 0xC0000005"],
   });
-  vi.mocked(saveReport).mockResolvedValue(true);
+  vi.mocked(saveReport).mockResolvedValue("synthetic-report.json");
   render(<LightingDiscoveryPanel />);
   fireEvent.click(
     screen.getByRole("button", { name: "Discover lighting capabilities" }),
