@@ -1,3 +1,7 @@
+import {
+  LightingInvestigation,
+  type LightingRecord,
+} from "./LightingInvestigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { deviceCapabilities } from "./capabilities";
 import type { AudioInventory } from "./audio";
@@ -20,7 +24,6 @@ import {
 import {
   relationships,
   endpointRelationship,
-  xAssessment,
   symptomPlan,
   workbenchExport,
   type Endpoint,
@@ -69,7 +72,7 @@ export function DeviceWorkbench({
   const [history, setHistory] = useState<InputSnapshot[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [xOnly, setXOnly] = useState(false);
+  const [lighting, setLighting] = useState<LightingRecord | null>(null);
   const [attemptText, setAttemptText] = useState("");
   const [symptom, setSymptom] = useState("");
   const [conditions, setConditions] = useState("");
@@ -78,6 +81,7 @@ export function DeviceWorkbench({
     setPreview("");
   }, [sanitized]);
   const session = useRef<number | null>(null);
+  const lostFocus = useRef(false);
   const mounted = useRef(true);
   const archived = useRef<number | null>(null);
   const surface = useRef<HTMLDivElement>(null);
@@ -98,8 +102,7 @@ export function DeviceWorkbench({
       : endpointRelationship(e, device, related),
   );
   const endpoint = available[index];
-  const mode =
-    endpoint?.kind === "mouse" ? "mouse" : xOnly ? "x-key" : "keyboard";
+  const mode = endpoint?.kind === "mouse" ? "mouse" : "keyboard";
   const attempts = attemptText === "" ? null : Number(attemptText);
   const running = !!snapshot && !snapshot.cleanup;
   function receive(value: InputSnapshot) {
@@ -171,7 +174,16 @@ export function DeviceWorkbench({
         polling = false;
       }
     }, 250);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [snapshot?.sessionId, snapshot?.cleanup]);
+  // Install privacy guards for the entire workspace lifetime, including the
+  // interval between a start request and its first native snapshot.
+  useEffect(() => {
     const blur = () => {
+      lostFocus.current = true;
       if (session.current !== null)
         void stopInputTest(session.current, "focusLost").catch(() => {});
     };
@@ -191,13 +203,11 @@ export function DeviceWorkbench({
     };
     document.addEventListener("focusin", editing);
     return () => {
-      cancelled = true;
-      window.clearInterval(timer);
       window.removeEventListener("blur", blur);
       document.removeEventListener("visibilitychange", hidden);
       document.removeEventListener("focusin", editing);
     };
-  }, [snapshot?.sessionId, snapshot?.cleanup]);
+  }, [device.id]);
   async function stop(reason?: "navigation" | "reset") {
     const id = session.current;
     if (id === null) return;
@@ -218,6 +228,7 @@ export function DeviceWorkbench({
     setMessage("");
     try {
       if (session.current !== null && !snapshot?.cleanup) await stop();
+      lostFocus.current = false;
       surface.current?.focus();
       const id = await startInputTest(endpoint.instanceId, mode);
       session.current = id;
@@ -225,6 +236,8 @@ export function DeviceWorkbench({
         await discardInputTest(id);
         return;
       }
+      if (lostFocus.current || document.hidden)
+        await stopInputTest(id, "focusLost");
       setSnapshot(null);
       setPreview("");
       receive(await inputTestStatus(id));
@@ -275,8 +288,10 @@ export function DeviceWorkbench({
               return (
                 <span
                   key={key.vk}
-                  style={{ flex: key.width ?? 1 }}
-                  className={`test-key ${count?.held ? "held" : ""} ${key.vk === 88 && xOnly ? "target-key" : ""}`}
+                  style={{
+                    gridColumn: `span ${Math.round((key.width ?? 1) * 4)}`,
+                  }}
+                  className={`test-key ${count?.held ? "held" : ""}`}
                   aria-label={`${key.label}: ${count?.down ?? 0} down, ${count?.up ?? 0} up, ${count?.repeat ?? 0} repeats${count?.held ? ", held" : ""}`}
                 >
                   <span>{key.label}</span>
@@ -373,6 +388,19 @@ export function DeviceWorkbench({
             and your observation of actual illumination. Windows cannot identify
             a failed LED circuit.
           </p>
+          {(candidate?.inputKinds?.includes("keyboard") ||
+            candidate?.kind === "keyboard" ||
+            device.category === "Keyboard") && (
+            <LightingInvestigation
+              record={lighting}
+              onRecord={(r) => {
+                setLighting(r);
+                setPreview("");
+              }}
+              input={snapshot}
+              onInput={() => setTab("Live Tests")}
+            />
+          )}
           {relevantFindings.map((f) => (
             <article className="finding" key={f.id}>
               <h3>{f.title}</h3>
@@ -392,7 +420,7 @@ export function DeviceWorkbench({
               onChange={(e) => {
                 clearCurrentTarget();
                 setIndex(Number(e.target.value));
-                setXOnly(false);
+                setAttemptText("");
                 setPreview("");
               }}
             >
@@ -420,20 +448,7 @@ export function DeviceWorkbench({
           )}
           {endpoint?.kind === "keyboard" && (
             <details>
-              <summary>Targeted test</summary>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={xOnly}
-                  disabled={running || busy}
-                  onChange={(e) => {
-                    clearCurrentTarget();
-                    setXOnly(e.target.checked);
-                    setPreview("");
-                  }}
-                />
-                Dedicated X-key test (other key data discarded)
-              </label>
+              <summary>Owner test conditions</summary>
               <label>
                 User-reported physical attempts{" "}
                 <input
@@ -592,6 +607,20 @@ export function DeviceWorkbench({
             )}
           </div>
           <h3>Results and next steps</h3>
+          <p>
+            Native events received: {snapshot?.stats.events ?? 0}.
+            Down/up/repeat counts describe the selected logical source only.
+          </p>
+          {snapshot && !snapshot.stats.events && (
+            <p>
+              No native events reached this session. Confirm the selected
+              source, click the test surface to keep focus, check whether
+              mapping is available, refresh input interfaces and retry each
+              associated source separately. Windows policy or endpoint routing
+              may prevent monitoring; no received events does not prove a broken
+              switch.
+            </p>
+          )}
           {testOutcome(snapshot, attempts).map((c) => (
             <article className="test-result" key={c.name}>
               <strong>
@@ -600,9 +629,6 @@ export function DeviceWorkbench({
               <p>{c.explanation}</p>
             </article>
           ))}
-          {xOnly && (
-            <p className="recommendation">{xAssessment(attempts, snapshot)}</p>
-          )}
         </>
       )}
       {tab === "Report a Problem" && (
@@ -678,6 +704,7 @@ export function DeviceWorkbench({
                       attempts,
                       history,
                       sanitized,
+                      lighting,
                     ),
                     null,
                     2,

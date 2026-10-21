@@ -8,6 +8,9 @@ mod audio_signal;
 #[cfg(windows)]
 mod hid_inspection;
 mod input_service;
+mod investigation_service;
+#[cfg(windows)]
+mod lighting_native;
 #[cfg(windows)]
 mod native;
 #[cfg(windows)]
@@ -160,7 +163,9 @@ async fn run_adapter(
         .map_err(|e| format!("Invalid Windows discovery response: {e}"))?;
     if (!json["devices"].is_array()
         && !json["endpoints"].is_array()
-        && !(json["operation"] == "audio-mute" && json["afterMute"].is_boolean()))
+        && !(json["operation"] == "audio-mute" && json["afterMute"].is_boolean())
+        && !["audio-readiness", "lighting-discovery"]
+            .contains(&json["operation"].as_str().unwrap_or("")))
         || !json["errors"].is_array()
     {
         return Err("Discovery response is incomplete".into());
@@ -369,12 +374,31 @@ fn main() {
             }
             return;
         }
-        if args.get(1).map(String::as_str) == Some("--audio-test") {
-            if args.len() != 5 {
+        if args.get(1).map(String::as_str) == Some("--inspect-lamparray") {
+            println!("{}", lighting_native::lamps());
+            return;
+        }
+        if args.get(1).map(String::as_str) == Some("--inspect-lighting") {
+            println!("{}", lighting_native::collect());
+            return;
+        }
+        if args.get(1).map(String::as_str) == Some("--probe-audio") {
+            if args.len() != 4 {
                 std::process::exit(2);
             }
-            if let Err(reason) = audio_native::run(&args[2], &args[3], args[4].parse().unwrap_or(0))
-            {
+            println!("{}", audio_native::readiness(&args[2], &args[3]));
+            return;
+        }
+        if args.get(1).map(String::as_str) == Some("--audio-test") {
+            if args.len() != 5 && args.len() != 6 {
+                std::process::exit(2);
+            }
+            if let Err(reason) = audio_native::run(
+                &args[2],
+                &args[3],
+                args[4].parse().unwrap_or(0),
+                args.get(5).map(String::as_str).unwrap_or("clearer"),
+            ) {
                 use std::io::Write;
                 // Broken consumer pipes must not turn a denied collector into a panic exit.
                 let _ = writeln!(
@@ -431,6 +455,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             repair_service::propose_audio_unmute,
             repair_service::execute_audio_repair,
+            investigation_service::inspect_lighting,
+            investigation_service::probe_audio,
             audio_service::inspect_audio,
             audio_service::start_audio_test,
             audio_service::audio_test_status,

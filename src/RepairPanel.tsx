@@ -1,3 +1,4 @@
+import { muteEligibility, repairProviders } from "./repairProviders";
 import { useState, useRef, useEffect } from "react";
 import {
   proposeUnmute,
@@ -11,8 +12,10 @@ export function RepairPanel({
   running,
   onVerified,
   previousAudit,
+  endpointState = "active",
 }: {
   targetId: string;
+  endpointState?: import("./audio").AudioEndpoint["state"];
   previousAudit?: RepairAudit;
   muted: boolean | null;
   running: boolean;
@@ -26,18 +29,37 @@ export function RepairPanel({
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const alive = useRef(true);
+  const targetRef = useRef(targetId);
+  targetRef.current = targetId;
+  const contextRef = useRef("");
+  contextRef.current = JSON.stringify([targetId, muted, endpointState]);
+  useEffect(() => {
+    setApproved(false);
+    setProposal(null);
+  }, [targetId, muted, endpointState]);
+  useEffect(() => {
+    setAudit(previousAudit?.targetId === targetId ? previousAudit : null);
+  }, [targetId]);
   useEffect(() => {
     alive.current = true;
     return () => {
       alive.current = false;
     };
   }, []);
+  const eligibility = muteEligibility({ state: endpointState, mute: muted });
   async function review() {
+    if (!eligibility.eligible) return;
+    const requestContext = contextRef.current;
     setBusy(true);
     setApproved(false);
     try {
       const p = await proposeUnmute(targetId);
-      if (alive.current) setProposal(p);
+      if (
+        alive.current &&
+        targetRef.current === p.targetId &&
+        contextRef.current === requestContext
+      )
+        setProposal(p);
     } catch (e) {
       if (alive.current) setMessage(String(e));
     } finally {
@@ -45,7 +67,15 @@ export function RepairPanel({
     }
   }
   async function execute(rollback = false) {
-    if (!approved) return;
+    if (
+      !approved ||
+      (rollback
+        ? audit?.targetId !== targetId
+        : proposal?.targetId !== targetId) ||
+      endpointState !== "active" ||
+      (!rollback && (!eligibility.eligible || proposal?.beforeMute !== muted))
+    )
+      return;
     setBusy(true);
     try {
       const result = await executeAudioRepair(
@@ -53,7 +83,7 @@ export function RepairPanel({
         approved,
         rollback,
       );
-      if (alive.current) {
+      if (alive.current && targetRef.current === result.targetId) {
         setAudit(result);
         setApproved(false);
         setProposal(null);
@@ -78,11 +108,23 @@ export function RepairPanel({
         explicitly approve this exact endpoint operation. Changing a setting is
         not a physical repair.
       </p>
-      {muted === true && !proposal && (
+      {eligibility.eligible && !proposal && (
         <button disabled={running || busy} onClick={() => void review()}>
           Review unmute proposal
         </button>
       )}
+      {!eligibility.eligible && (
+        <p>
+          {eligibility.reason} No other automated setting provider is available.
+        </p>
+      )}
+      <details>
+        <summary>Supported repair operation</summary>
+        <p>
+          {repairProviders[0].setting}. {repairProviders[0].permission}.{" "}
+          {repairProviders[0].verification}.
+        </p>
+      </details>
       {proposal && (
         <article className="finding">
           <strong>

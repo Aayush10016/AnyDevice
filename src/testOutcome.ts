@@ -40,7 +40,11 @@ export function testOutcome(
   if (s.mode === "mouse") {
     checks.push({
       name: "Movement",
-      state: s.stats.movements ? "Passed" : "Not tested",
+      state: interrupted
+        ? "Inconclusive"
+        : s.stats.movements
+          ? "Passed"
+          : "Not tested",
       explanation: `${s.stats.movements} movement reports observed; accuracy is not measured.`,
     });
     for (const [id, name] of [
@@ -67,12 +71,20 @@ export function testOutcome(
     }
     checks.push({
       name: "Vertical scrolling",
-      state: s.stats.wheelUp + s.stats.wheelDown ? "Passed" : "Not tested",
+      state: interrupted
+        ? "Inconclusive"
+        : s.stats.wheelUp + s.stats.wheelDown
+          ? "Passed"
+          : "Not tested",
       explanation: `${s.stats.wheelUp} upward / ${s.stats.wheelDown} downward reports observed.`,
     });
     checks.push({
       name: "Horizontal scrolling",
-      state: s.stats.horizontal ? "Passed" : "Not tested",
+      state: interrupted
+        ? "Inconclusive"
+        : s.stats.horizontal
+          ? "Passed"
+          : "Not tested",
       explanation: `${s.stats.horizontal} reports observed. Physical direction is available in advanced event evidence.`,
     });
   } else {

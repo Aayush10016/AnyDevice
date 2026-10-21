@@ -27,7 +27,7 @@ use windows::{
 struct Apartment;
 impl Apartment {
     fn new() -> Result<Self, String> {
-        unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) }
+        unsafe { CoInitializeEx(None, COINIT_APARTMENTTHREADED) }
             .ok()
             .map_err(|e| e.to_string())?;
         Ok(Self)
@@ -112,6 +112,60 @@ fn mix(client: &IAudioClient) -> Result<(Mix, Format), String> {
 fn volume(d: &IMMDevice) -> Option<IAudioEndpointVolume> {
     unsafe { d.Activate(CLSCTX_ALL, None) }.ok()
 }
+// Query status only: no service start/stop/configuration rights are requested.
+fn services() -> Vec<Value> {
+    use windows_sys::Win32::System::Services::*;
+    struct Handle(SC_HANDLE);
+    impl Drop for Handle {
+        fn drop(&mut self) {
+            unsafe {
+                CloseServiceHandle(self.0);
+            }
+        }
+    }
+    let manager = unsafe { OpenSCManagerW(std::ptr::null(), std::ptr::null(), SC_MANAGER_CONNECT) };
+    let manager = if manager.is_null() {
+        None
+    } else {
+        Some(Handle(manager))
+    };
+    let manager_error = if manager.is_none() {
+        Some(std::io::Error::last_os_error().to_string())
+    } else {
+        None
+    };
+    ["Audiosrv", "AudioEndpointBuilder"].into_iter().map(|name| {
+        let result = (|| -> Result<SERVICE_STATUS, String> {
+            let manager = manager.as_ref().ok_or_else(|| manager_error.clone().unwrap_or_default())?;
+            let name: Vec<u16> = name.encode_utf16().chain(Some(0)).collect();
+            let handle = unsafe { OpenServiceW(manager.0, name.as_ptr(), SERVICE_QUERY_STATUS) };
+            if handle.is_null() { return Err(std::io::Error::last_os_error().to_string()); }
+            let handle = Handle(handle);
+            let mut status: SERVICE_STATUS = unsafe { std::mem::zeroed() };
+            if unsafe { QueryServiceStatus(handle.0, &mut status) } == 0 { return Err(std::io::Error::last_os_error().to_string()); }
+            Ok(status)
+        })();
+        match result {
+            Ok(status) => json!({"name":name,"state":status.dwCurrentState,"win32ExitCode":status.dwWin32ExitCode,"serviceSpecificExitCode":status.dwServiceSpecificExitCode,"error":null}),
+            Err(error) => json!({"name":name,"state":null,"win32ExitCode":null,"serviceSpecificExitCode":null,"error":error}),
+        }
+    }).collect()
+}
+fn session_volume(client: &IAudioClient) -> Value {
+    let result = (|| -> Result<Value, String> {
+        let control: ISimpleAudioVolume =
+            unsafe { client.GetService() }.map_err(|e| format!("Open session volume: {e}"))?;
+        let mute = unsafe { control.GetMute() }
+            .map_err(|e| format!("Read session mute: {e}"))?
+            .as_bool();
+        let level = unsafe { control.GetMasterVolume() }
+            .map_err(|e| format!("Read session volume: {e}"))?;
+        Ok(json!({"type":"sessionVolume","mute":mute,"level":level,"error":null}))
+    })();
+    result.unwrap_or_else(
+        |error| json!({"type":"sessionVolume","mute":null,"level":null,"error":error}),
+    )
+}
 pub fn inventory() -> Result<Value, String> {
     let _com = Apartment::new()?;
     let en = enumerator()?;
@@ -163,7 +217,7 @@ pub fn inventory() -> Result<Value, String> {
         }
     }
     Ok(
-        json!({"endpoints":rows,"errors":errors,"complete":errors.is_empty(),"source":"Windows Core Audio","observedAt":chrono::Utc::now().to_rfc3339()}),
+        json!({"endpoints":rows,"services":services(),"errors":errors,"complete":errors.is_empty(),"source":"Windows Core Audio","observedAt":chrono::Utc::now().to_rfc3339()}),
     )
 }
 fn device(en: &IMMDeviceEnumerator, id: &str) -> Result<IMMDevice, String> {
@@ -202,42 +256,34 @@ impl Drop for CaptureLease<'_> {
         let _ = unsafe { self.capture.ReleaseBuffer(self.frames) };
     }
 }
-pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
-    let owner = crate::raw_input::verify_parent(parent)?;
-    if !["left", "right", "tone", "ambient", "speech"].contains(&mode) {
-        return Err("Unsupported audio mode".into());
+fn prepare(id: &str, capture_mode: bool, mode: &str) -> Result<(Stream, Format, u32), String> {
+    let en = enumerator().map_err(|e| format!("Endpoint enumeration: {e}"))?;
+    let d = device(&en, id).map_err(|e| format!("Select exact endpoint: {e}"))?;
+    if unsafe { d.GetState() }.map_err(|e| format!("Process WASAPI stream: {e}"))?
+        != DEVICE_STATE_ACTIVE
+    {
+        return Err("Endpoint state: selected endpoint is not active".into());
     }
-    if !foreground(parent) {
-        return output(
-            json!({"type":"status","status":"interrupted","reason":"Keep AnyDevice active before starting audio"}),
-        );
-    }
-    let capture_mode = ["ambient", "speech"].contains(&mode);
-    let _com = Apartment::new()?;
-    let en = enumerator()?;
-    let d = device(&en, id)?;
-    if unsafe { d.GetState() }.map_err(|e| e.to_string())? != DEVICE_STATE_ACTIVE {
-        return Err("Endpoint is not active".into());
-    }
-    let endpoint: IMMEndpoint = d.cast().map_err(|e| e.to_string())?;
-    if unsafe { endpoint.GetDataFlow() }.map_err(|e| e.to_string())?
+    let endpoint: IMMEndpoint = d
+        .cast()
+        .map_err(|e| format!("Process WASAPI stream: {e}"))?;
+    if unsafe { endpoint.GetDataFlow() }.map_err(|e| format!("Process WASAPI stream: {e}"))?
         != if capture_mode { eCapture } else { eRender }
     {
-        return Err("Endpoint flow does not match this test".into());
+        return Err("Endpoint flow: does not match the selected test".into());
     }
-    let client: IAudioClient =
-        unsafe { d.Activate(CLSCTX_ALL, None) }.map_err(|e| e.to_string())?;
-    let (owned_format, format) = mix(&client)?;
+    let client: IAudioClient = unsafe { d.Activate(CLSCTX_ALL, None) }
+        .map_err(|e| format!("Activate WASAPI client: {e}"))?;
+    let (owned_format, format) = mix(&client).map_err(|e| format!("Read shared format: {e}"))?;
     if !format.supported {
-        return output(
-            json!({"type":"status","status":"unsupported","reason":"Shared-mode sample format is not supported"}),
-        );
+        return Err("Format negotiation: shared-mode sample format is not supported".into());
     }
     if ["left", "right"].contains(&mode)
         && !crate::audio_signal::stereo(format.channels, format.channel_mask)
     {
-        return output(
-            json!({"type":"status","status":"unsupported","reason":"Left/right testing requires standard stereo channel mapping"}),
+        return Err(
+            "Format negotiation: left/right testing requires standard stereo channel mapping"
+                .into(),
         );
     }
     unsafe {
@@ -250,34 +296,158 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
             None,
         )
     }
-    .map_err(|e| e.to_string())?;
+    .map_err(|e| format!("Initialize shared stream: {e}"))?;
     let stream = Stream(client);
-    let size = unsafe { stream.0.GetBufferSize() }.map_err(|e| e.to_string())?;
-    if size > format.sample_rate * 2 {
+    let size =
+        unsafe { stream.0.GetBufferSize() }.map_err(|e| format!("Read stream buffer size: {e}"))?;
+    if size == 0 || size > format.sample_rate * 2 {
         return Err("Audio buffer exceeds bounded size".into());
     }
+    Ok((stream, format, size))
+}
+pub fn readiness(id: &str, kind: &str) -> Value {
+    let observed = chrono::Utc::now().to_rfc3339();
+    let result = (|| -> Result<Value, String> {
+        if !["playback", "recording"].contains(&kind) {
+            return Err("Selection: invalid endpoint kind".into());
+        }
+        let _com = Apartment::new().map_err(|e| format!("COM initialization: {e}"))?;
+        let (stream, format, size) = prepare(
+            id,
+            kind == "recording",
+            if kind == "recording" {
+                "ambient"
+            } else {
+                "tone"
+            },
+        )?;
+        if kind == "recording" {
+            let _: IAudioCaptureClient = unsafe { stream.0.GetService() }
+                .map_err(|e| format!("Open capture service: {e}"))?;
+        } else {
+            let _: IAudioRenderClient = unsafe { stream.0.GetService() }
+                .map_err(|e| format!("Open render service: {e}"))?;
+        }
+        let volume = session_volume(&stream.0);
+        let session_volume = if volume["error"].is_null() {
+            json!({"mute":volume["mute"],"level":volume["level"]})
+        } else {
+            Value::Null
+        };
+        let session_volume_error = volume["error"]
+            .as_str()
+            .map(crate::audio_signal::failure_record);
+        Ok(
+            json!({"initialized":true,"serviceReady":true,"format":format,"bufferFrames":size,"sessionVolume":session_volume,"sessionVolumeError":session_volume_error}),
+        )
+    })();
+    match result {
+        Ok(facts) => {
+            json!({"operation":"audio-readiness","targetId":id,"kind":kind,"observedAt":observed,"facts":facts,"started":false,"frames":0,"errors":[],"complete":true})
+        }
+        Err(reason) => {
+            json!({"operation":"audio-readiness","targetId":id,"kind":kind,"observedAt":observed,"facts":null,"started":false,"frames":0,"errors":[crate::audio_signal::failure_record(&reason)],"complete":false})
+        }
+    }
+}
+fn render_frames(
+    render: &IAudioRenderClient,
+    format: &Format,
+    frames: u32,
+    start: u64,
+    mode: &str,
+    peak: f64,
+    aggregate: &mut [Accumulator],
+) -> Result<(), String> {
+    let data =
+        unsafe { render.GetBuffer(frames) }.map_err(|e| format!("Process WASAPI stream: {e}"))?;
+    if data.is_null() {
+        let _ = unsafe { render.ReleaseBuffer(frames, AUDCLNT_BUFFERFLAGS_SILENT.0 as u32) };
+        return Err("Render returned a null buffer".into());
+    }
+    let slice = unsafe {
+        std::slice::from_raw_parts_mut(data, frames as usize * format.block_align as usize)
+    };
+    let generated = crate::audio_signal::fill_at_level(
+        slice,
+        format.channels,
+        format.bits,
+        format.float,
+        format.sample_rate,
+        start,
+        mode,
+        peak,
+        aggregate,
+    );
+    let released = unsafe {
+        render.ReleaseBuffer(
+            frames,
+            if generated.is_err() {
+                AUDCLNT_BUFFERFLAGS_SILENT.0 as u32
+            } else {
+                0
+            },
+        )
+    }
+    .map_err(|e| format!("Process WASAPI stream: {e}"));
+    released?;
+    generated?;
+    Ok(())
+}
+pub fn run(id: &str, mode: &str, parent: u32, signal_level: &str) -> Result<(), String> {
+    let owner = crate::raw_input::verify_parent(parent)?;
+    let peak = crate::audio_signal::signal_peak(signal_level)?;
+    if !["left", "right", "tone", "ambient", "speech"].contains(&mode) {
+        return Err("Unsupported audio mode".into());
+    }
+    if !foreground(parent) {
+        return output(
+            json!({"type":"status","status":"interrupted","reason":"Keep AnyDevice active before starting audio"}),
+        );
+    }
+    let capture_mode = ["ambient", "speech"].contains(&mode);
+    let _com = Apartment::new().map_err(|e| format!("COM initialization: {e}"))?;
+    let (stream, format, size) = match prepare(id, capture_mode, mode) {
+        Ok(v) => v,
+        Err(reason) if reason.starts_with("Format negotiation:") => {
+            return output(json!({"type":"status","status":"unsupported","reason":reason}))
+        }
+        Err(reason) => return Err(reason),
+    };
     let capture = if capture_mode {
-        Some(unsafe { stream.0.GetService::<IAudioCaptureClient>() }.map_err(|e| e.to_string())?)
+        Some(
+            unsafe { stream.0.GetService::<IAudioCaptureClient>() }
+                .map_err(|e| format!("Open capture service: {e}"))?,
+        )
     } else {
         None
     };
     let render = if !capture_mode {
-        Some(unsafe { stream.0.GetService::<IAudioRenderClient>() }.map_err(|e| e.to_string())?)
+        Some(
+            unsafe { stream.0.GetService::<IAudioRenderClient>() }
+                .map_err(|e| format!("Open render service: {e}"))?,
+        )
     } else {
         None
     };
-    unsafe { stream.0.Start() }.map_err(|e| e.to_string())?;
+    output(session_volume(&stream.0))?;
+    let mut aggregate = vec![Accumulator::default(); format.channels as usize];
+    let mut frames_total = 0u64;
+    if let Some(render) = &render {
+        let initial = size.min(format.sample_rate * 3);
+        render_frames(render, &format, initial, 0, mode, peak, &mut aggregate)?;
+        frames_total = initial as u64;
+    }
+    unsafe { stream.0.Start() }.map_err(|e| format!("Start WASAPI stream: {e}"))?;
     output(
-        json!({"type":"status","status":"running","reason":if capture_mode{"Temporary level measurement active; no audio samples retained"}else{"Quiet 3-second tone active; audibility requires your confirmation"}}),
+        json!({"type":"status","status":"running","reason":if capture_mode{"Temporary level measurement active; no audio samples retained"}else{"Prefilled bounded tone active; audibility requires your confirmation"}}),
     )?;
     let started = Instant::now();
     let mut published = Instant::now();
-    let mut aggregate = vec![Accumulator::default(); format.channels as usize];
     let mut window = aggregate.clone();
-    let mut frames_total = 0u64;
     let mut glitches = 0u32;
     let mut timestamp_errors = 0u32;
-    let duration = if capture_mode { 8.0 } else { 3.0 };
+    let duration = if capture_mode { 8.0 } else { 5.0 };
     while started.elapsed().as_secs_f64() < duration {
         if !owner.alive() || !foreground(parent) {
             return output(
@@ -286,14 +456,17 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
         }
         if let Some(capture) = &capture {
             for _ in 0..256 {
-                if unsafe { capture.GetNextPacketSize() }.map_err(|e| e.to_string())? == 0 {
+                if unsafe { capture.GetNextPacketSize() }
+                    .map_err(|e| format!("Process WASAPI stream: {e}"))?
+                    == 0
+                {
                     break;
                 }
                 let mut data = std::ptr::null_mut();
                 let mut frames = 0;
                 let mut flags = 0;
                 unsafe { capture.GetBuffer(&mut data, &mut frames, &mut flags, None, None) }
-                    .map_err(|e| e.to_string())?;
+                    .map_err(|e| format!("Process WASAPI stream: {e}"))?;
                 let _lease = CaptureLease { capture, frames };
                 let bytes = frames as usize * format.block_align as usize;
                 if bytes > 8 * 1024 * 1024 {
@@ -329,53 +502,59 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
         }
         if let Some(render) = &render {
             let available = size.saturating_sub(
-                unsafe { stream.0.GetCurrentPadding() }.map_err(|e| e.to_string())?,
+                unsafe { stream.0.GetCurrentPadding() }
+                    .map_err(|e| format!("Process WASAPI stream: {e}"))?,
             );
             let remaining = (format.sample_rate as u64 * 3).saturating_sub(frames_total);
             let frames = available.min(remaining as u32);
             if frames > 0 {
-                let data = unsafe { render.GetBuffer(frames) }.map_err(|e| e.to_string())?;
-                if data.is_null() {
-                    let _ = unsafe {
-                        render.ReleaseBuffer(frames, AUDCLNT_BUFFERFLAGS_SILENT.0 as u32)
-                    };
-                    return Err("Render returned a null buffer".into());
-                }
-                let slice = unsafe {
-                    std::slice::from_raw_parts_mut(
-                        data,
-                        frames as usize * format.block_align as usize,
-                    )
-                };
-                let generated = crate::audio_signal::fill(
-                    slice,
-                    format.channels,
-                    format.bits,
-                    format.float,
-                    format.sample_rate,
+                render_frames(
+                    render,
+                    &format,
+                    frames,
                     frames_total,
                     mode,
+                    peak,
                     &mut aggregate,
-                );
-                window = aggregate.clone(); // submitted signal evidence; not a loopback measurement
-                let released =
-                    unsafe { render.ReleaseBuffer(frames, 0) }.map_err(|e| e.to_string());
-                released?;
-                generated?;
+                )?;
+                window = aggregate.clone();
                 frames_total += frames as u64;
+            }
+        }
+        if !capture_mode && frames_total >= format.sample_rate as u64 * 3 {
+            let pending = unsafe { stream.0.GetCurrentPadding() }
+                .map_err(|e| format!("Drain playback buffer: {e}"))?;
+            if pending == 0 {
+                break;
             }
         }
         if published.elapsed() >= Duration::from_millis(100) {
             output(
-                json!({"type":"measurement","format":format,"frames":frames_total,"aggregate":aggregate.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"window":window.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"discontinuities":glitches,"timestampErrors":timestamp_errors}),
+                json!({"type":"measurement","format":format,"frames":frames_total,"aggregate":aggregate.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"window":window.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"discontinuities":glitches,"timestampErrors":timestamp_errors,"elapsedMs":started.elapsed().as_millis() as u64,"engineConsumedFrames":if capture_mode { None } else { Some(crate::audio_signal::consumed_frames(frames_total, unsafe { stream.0.GetCurrentPadding() }.map_err(|e|format!("Read playback progress: {e}"))?)?) }}),
             )?;
             window = vec![Accumulator::default(); format.channels as usize];
             published = Instant::now();
         }
         std::thread::sleep(Duration::from_millis(10));
     }
+    if !capture_mode && frames_total != format.sample_rate as u64 * 3 {
+        return Err(
+            "Playback submission: deadline expired before the full test signal was submitted"
+                .into(),
+        );
+    }
+    if !capture_mode
+        && unsafe { stream.0.GetCurrentPadding() }
+            .map_err(|e| format!("Final playback padding: {e}"))?
+            > 0
+    {
+        return Err(
+            "Drain playback buffer: queued frames remain after the bounded deadline".into(),
+        );
+    }
+    output(session_volume(&stream.0))?;
     output(
-        json!({"type":"measurement","format":format,"frames":frames_total,"aggregate":aggregate.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"window":window.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"discontinuities":glitches,"timestampErrors":timestamp_errors}),
+        json!({"type":"measurement","format":format,"frames":frames_total,"aggregate":aggregate.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"window":window.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"discontinuities":glitches,"timestampErrors":timestamp_errors,"elapsedMs":started.elapsed().as_millis() as u64,"engineConsumedFrames":if capture_mode { None } else { Some(crate::audio_signal::consumed_frames(frames_total, unsafe { stream.0.GetCurrentPadding() }.map_err(|e|format!("Read playback progress: {e}"))?)?) }}),
     )?;
     output(
         json!({"type":"status","status":"completed","reason":"Bounded stream completed; physical function remains user-observed"}),

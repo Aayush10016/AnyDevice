@@ -261,6 +261,81 @@
       "items": {
         "type": "string"
       }
+    },
+    "lightingInvestigation": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "model": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 160
+            },
+            "modelEvidence": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 512
+            },
+            "modelSource": {
+              "enum": [
+                "unknown",
+                "label",
+                "manual"
+              ]
+            },
+            "conditions": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 1000
+            },
+            "uniformModeCompared": {
+              "type": "boolean"
+            },
+            "affectedLight": {
+              "enum": [
+                "not checked",
+                "lit",
+                "dark"
+              ]
+            },
+            "otherLights": {
+              "enum": [
+                "not checked",
+                "lit",
+                "dark"
+              ]
+            },
+            "repeated": {
+              "type": "boolean"
+            },
+            "source": {
+              "const": "Owner report; no independent illumination measurement"
+            }
+          },
+          "required": [
+            "model",
+            "modelEvidence",
+            "modelSource",
+            "conditions",
+            "uniformModeCompared",
+            "affectedLight",
+            "otherLights",
+            "repeated",
+            "source"
+          ]
+        }
+      ]
     }
   },
   "additionalProperties": false

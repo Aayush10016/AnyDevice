@@ -119,7 +119,9 @@
               "Inconclusive",
               "Not supported",
               "Not tested",
-              "Cancelled or interrupted"
+              "Cancelled or interrupted",
+              "Warning",
+              "Skipped"
             ]
           },
           "confidence": {
@@ -208,6 +210,110 @@
               ]
             },
             "maxItems": 16
+          },
+          "definitionId": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "checkVersion": {
+            "const": 1
+          },
+          "category": {
+            "enum": [
+              "audio",
+              "input-and-protocol",
+              "inventory"
+            ]
+          },
+          "preconditions": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          "evidenceSource": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "confidenceRationale": {
+            "type": "string",
+            "maxLength": 2048
+          },
+          "supportingEvidence": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          "contradictingEvidence": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          "unknowns": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          "verificationRequirements": {
+            "type": "array",
+            "maxItems": 64,
+            "items": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          "repair": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "providerId": {
+                "enum": [
+                  "audio-endpoint-mute-v1",
+                  null
+                ]
+              },
+              "availability": {
+                "type": "string",
+                "maxLength": 2048
+              },
+              "reason": {
+                "type": "string",
+                "maxLength": 2048
+              }
+            },
+            "required": [
+              "providerId",
+              "availability",
+              "reason"
+            ]
+          },
+          "classification": {
+            "enum": [
+              "confirmed_issue",
+              "potential_issue",
+              "informational",
+              "inconclusive",
+              "unsupported",
+              "not_tested"
+            ]
+          },
+          "observedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 100
           }
         },
         "required": [
@@ -537,6 +643,56 @@
           },
           "cleanup": {
             "type": "boolean"
+          },
+          "engineConsumedFrames": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "elapsedMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12000
+          },
+          "sessionMute": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "sessionLevel": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1
+          },
+          "sessionVolumeError": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2048
+          },
+          "sessionVolumeObservedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 20,
+            "maxLength": 64,
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+          },
+          "signalPeak": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 0.25
           }
         },
         "required": [

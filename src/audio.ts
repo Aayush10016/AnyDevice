@@ -1,3 +1,4 @@
+import { audioFailureDiagnosis } from "./audioFailure";
 export interface AudioFormat {
   sampleRate: number;
   channels: number;
@@ -21,6 +22,13 @@ export interface AudioEndpoint {
 }
 export interface AudioInventory {
   endpoints: AudioEndpoint[];
+  services?: {
+    name: "Audiosrv" | "AudioEndpointBuilder";
+    state: number | null;
+    win32ExitCode: number | null;
+    serviceSpecificExitCode: number | null;
+    error: string | null;
+  }[];
   errors: string[];
   complete: boolean;
   source: string;
@@ -44,6 +52,13 @@ export interface AudioSession {
   startedAt: string;
   format: AudioFormat | null;
   frames: number;
+  engineConsumedFrames?: number | null;
+  elapsedMs?: number;
+  signalPeak?: number | null;
+  sessionMute?: boolean | null;
+  sessionLevel?: number | null;
+  sessionVolumeError?: string | null;
+  sessionVolumeObservedAt?: string | null;
   aggregate: Levels[];
   window: Levels[];
   discontinuities: number;
@@ -59,6 +74,19 @@ export function normalizeAudio(value: unknown): AudioInventory {
     !Array.isArray(r.errors) ||
     typeof r.complete !== "boolean" ||
     !Number.isFinite(Date.parse(r.observedAt)) ||
+    (r.services !== undefined &&
+      (!Array.isArray(r.services) ||
+        r.services.length > 2 ||
+        new Set(r.services.map((v) => v?.name)).size !== r.services.length ||
+        r.services.some(
+          (v) =>
+            !v ||
+            !["Audiosrv", "AudioEndpointBuilder"].includes(v.name) ||
+            (v.state !== null &&
+              (!Number.isInteger(v.state) || v.state < 1 || v.state > 7)) ||
+            (v.error !== null &&
+              (typeof v.error !== "string" || v.error.length > 2048)),
+        ))) ||
     r.endpoints.some(
       (e) =>
         !e ||
@@ -67,6 +95,9 @@ export function normalizeAudio(value: unknown): AudioInventory {
         typeof e.name !== "string" ||
         !["playback", "recording"].includes(e.kind) ||
         !["active", "disabled", "unplugged", "notPresent"].includes(e.state) ||
+        (e.mute !== null && typeof e.mute !== "boolean") ||
+        (e.volume !== null &&
+          (!Number.isFinite(e.volume) || e.volume < 0 || e.volume > 1)) ||
         !Array.isArray(e.defaultRoles),
     )
   )
@@ -84,6 +115,13 @@ export function routingAssessment(
   s: AudioSession,
   observation: EarObservation,
 ) {
+  if (
+    !s.cleanup ||
+    s.status !== "completed" ||
+    s.sessionMute === true ||
+    s.sessionLevel === 0
+  )
+    return audioConclusion(s);
   if (
     observation === "unsure" ||
     !s.cleanup ||
@@ -128,7 +166,19 @@ export function audioConclusion(
       outcome: "Cancelled or interrupted",
       text: "Focus, navigation or Stop interrupted this interval. Repeat under the same conditions.",
     };
-  if (s.status !== "completed" || !s.frames)
+  if (s.status === "failed") {
+    const diagnosis = audioFailureDiagnosis(s.reason);
+    return {
+      outcome: "Issue detected",
+      text: `The audio test failed at the software/Windows stream path. ${diagnosis.explanation} ${diagnosis.nextStep} No physical defect is established.`,
+    };
+  }
+  if (s.sessionMute === true || s.sessionLevel === 0)
+    return {
+      outcome: "Issue detected",
+      text: "Windows reports this actual test session muted or at zero volume. Review AnyDevice in Windows Volume mixer and repeat explicitly; no setting was changed and symptom resolution is unverified.",
+    };
+  if (s.status !== "completed" || !s.frames || !s.format?.supported)
     return {
       outcome: "Inconclusive",
       text: "The audio stream did not complete with frames. Check endpoint availability, Windows permissions and the advanced error.",
@@ -142,6 +192,18 @@ export function audioConclusion(
             ? "Issue detected"
             : "Inconclusive",
       text: `Windows accepted ${s.frames} frames for the selected endpoint. ${heard === "yes" ? "You reported audible sound in the expected channel." : heard === "no" ? "You reported no expected sound: this is an observation mismatch, not proof of a damaged speaker. Check routing, mute, volume and cabling." : "Audibility/channel correctness has not been confirmed by you."}`,
+    };
+  if (
+    !s.aggregate.length ||
+    s.aggregate.length !== s.format.channels ||
+    s.aggregate.some(
+      (c) =>
+        !c.samples || !Number.isFinite(c.rmsDbfs) || !Number.isFinite(c.peak),
+    )
+  )
+    return {
+      outcome: "Inconclusive",
+      text: "Channel measurements are missing or invalid; no microphone measurement passed.",
     };
   if (
     s.aggregate.some((c) => c.invalidSamples > 0) ||
@@ -193,6 +255,22 @@ export function compareQuietSpeech(
     quiet.format.float !== speech.format.float ||
     quiet.format.blockAlign !== speech.format.blockAlign ||
     quiet.format.channelMask !== speech.format.channelMask ||
+    !quiet.frames ||
+    !speech.frames ||
+    quiet.discontinuities > 0 ||
+    speech.discontinuities > 0 ||
+    quiet.timestampErrors > 0 ||
+    speech.timestampErrors > 0 ||
+    !quiet.format.supported ||
+    !speech.format.supported ||
+    quiet.aggregate.length !== quiet.format.channels ||
+    speech.aggregate.length !== speech.format.channels ||
+    quiet.aggregate.some(
+      (c) => !c.samples || c.invalidSamples > 0 || !Number.isFinite(c.rmsDbfs),
+    ) ||
+    speech.aggregate.some(
+      (c) => !c.samples || c.invalidSamples > 0 || !Number.isFinite(c.rmsDbfs),
+    ) ||
     !quiet.aggregate[0]?.samples ||
     !speech.aggregate[0]?.samples
   )

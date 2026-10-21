@@ -718,6 +718,11 @@ export default function App() {
             {route === "Diagnostics" && (
               <DiagnosticDashboard
                 checks={checks}
+                targetName={(id) =>
+                  audioInventory?.endpoints.find((e) => e.id === id)?.name ??
+                  candidates.find((c) => c.id === id)?.name ??
+                  (id === "system" ? "This computer" : "Selected test target")
+                }
                 onTest={(target) => {
                   const endpoint = audioInventory?.endpoints.find(
                     (e) => e.id === target,
@@ -740,6 +745,7 @@ export default function App() {
                       c.id === id
                         ? {
                             ...c,
+                            outcome: "Skipped",
                             conclusion:
                               "You skipped this interactive check for now; no functional evidence was recorded.",
                             nextStep: "Choose and run the test when ready.",
@@ -793,6 +799,12 @@ export default function App() {
             {route === "Audio" && (
               <AudioWorkspace
                 initialEndpoint={audioSelected}
+                onInvestigation={(c) =>
+                  setChecks((v) => [...v.filter((p) => p.id !== c.id), c])
+                }
+                onReadiness={(c) =>
+                  setChecks((v) => [...v.filter((p) => p.id !== c.id), c])
+                }
                 repairHistory={repairAudits}
                 routingHistory={routingReports}
                 onRouting={(r) => {
@@ -801,6 +813,16 @@ export default function App() {
                       -8,
                     ),
                   );
+                  const measured = audioSessions.some(
+                    (s) =>
+                      s.sessionId === r.sessionId &&
+                      s.targetId === r.targetId &&
+                      s.mode === r.mode &&
+                      s.cleanup &&
+                      s.status === "completed" &&
+                      s.frames > 0 &&
+                      s.format?.supported,
+                  );
                   setChecks((v) => [
                     ...v.filter((c) => c.id !== `ear:${r.sessionId}`),
                     {
@@ -808,7 +830,7 @@ export default function App() {
                       target: r.targetId,
                       test: "User-reported channel observation",
                       outcome:
-                        r.observation === "unsure"
+                        !measured || r.observation === "unsure"
                           ? "Inconclusive"
                           : r.mode === "tone"
                             ? r.observation === "neither"
@@ -821,6 +843,9 @@ export default function App() {
                       measurements: {
                         mode: r.mode,
                         observedEar: r.observation,
+                        observedAt:
+                          audioSessions.find((s) => s.sessionId === r.sessionId)
+                            ?.startedAt ?? null,
                         sessionId: r.sessionId,
                         independentPhysicalVerification: false,
                       },
@@ -847,6 +872,10 @@ export default function App() {
                       confidence: "Measured",
                       measurements: {
                         mode: s.mode,
+                        observedAt: s.startedAt,
+                        originalError: s.status === "failed" ? s.reason : "",
+                        sessionMuted: s.sessionMute ?? null,
+                        sessionLevel: s.sessionLevel ?? null,
                         frames: s.frames,
                         completed: s.status === "completed",
                         cleanup: s.cleanup,
