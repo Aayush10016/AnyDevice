@@ -19,6 +19,7 @@ pub fn signal_peak(level: &str) -> Result<f64, String> {
     match level {
         "veryQuiet" => Ok(0.03),
         "clearer" => Ok(0.10),
+        "moderate" => Ok(0.25),
         _ => Err("Unsupported test signal level".into()),
     }
 }
@@ -47,7 +48,7 @@ pub fn fill_at_level(
     peak: f64,
     levels: &mut [Accumulator],
 ) -> Result<(), String> {
-    if ![0.03, 0.10].contains(&peak)
+    if ![0.03, 0.10, 0.25].contains(&peak)
         || !(1..=8).contains(&channels)
         || !(8000..=384000).contains(&rate)
         || ![8, 16, 24, 32].contains(&bits)
@@ -157,7 +158,7 @@ mod level_tests {
     use super::*;
     #[test]
     fn approved_levels_change_real_little_endian_samples_with_hard_bounds() {
-        for (name, peak) in [("veryQuiet", 0.03), ("clearer", 0.10)] {
+        for (name, peak) in [("veryQuiet", 0.03), ("clearer", 0.10), ("moderate", 0.25)] {
             assert_eq!(signal_peak(name).unwrap(), peak);
             let mut bytes = [0u8; 8];
             let mut levels = vec![Accumulator::default(); 2];

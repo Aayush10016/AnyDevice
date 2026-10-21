@@ -692,7 +692,7 @@
               "null"
             ],
             "minimum": 0,
-            "maximum": 0.1
+            "maximum": 0.25
           }
         },
         "required": [

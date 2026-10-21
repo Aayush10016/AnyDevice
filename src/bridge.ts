@@ -130,7 +130,7 @@ export async function probeAudio(id: string, kind: "playback" | "recording") {
 export async function startAudioTest(
   targetId: string,
   mode: import("./audio").AudioSession["mode"],
-  signalLevel: "veryQuiet" | "clearer" = "clearer",
+  signalLevel: "veryQuiet" | "clearer" | "moderate" = "clearer",
 ): Promise<number> {
   if (!isTauri()) throw new Error("Audio tests require Windows desktop.");
   return invoke("start_audio_test", {

@@ -215,7 +215,7 @@ pub async fn start_audio_test(
         return Err("Invalid audio target/mode".into());
     }
     let signal_level = signal_level.unwrap_or_else(|| "clearer".into());
-    if !["veryQuiet", "clearer"].contains(&signal_level.as_str()) {
+    if !["veryQuiet", "clearer", "moderate"].contains(&signal_level.as_str()) {
         return Err("Unsupported test signal level".into());
     }
     let permit = activity.acquire()?;
@@ -231,11 +231,7 @@ pub async fn start_audio_test(
             target_id: target_id.clone(),
             mode: mode.clone(),
             signal_peak: if ["left", "right", "tone"].contains(&mode.as_str()) {
-                Some(if signal_level == "veryQuiet" {
-                    0.03
-                } else {
-                    0.10
-                })
+                Some(crate::audio_signal::signal_peak(&signal_level)?)
             } else {
                 None
             },
