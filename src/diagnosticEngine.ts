@@ -155,6 +155,39 @@ export function systemChecks(
       hypotheses: [],
     });
   else {
+    for (const service of audio.services ?? []) {
+      const known = service.state !== null && !service.error;
+      checks.push({
+        id: `audio-service:${service.name}`,
+        target: "system",
+        test: `Windows audio service � ${service.name}`,
+        outcome: !known
+          ? "Inconclusive"
+          : service.state === 4
+            ? "Passed"
+            : "Issue detected",
+        confidence: "Windows-reported",
+        measurements: {
+          observedAt: audio.observedAt,
+          serviceName: service.name,
+          state: service.state,
+          win32ExitCode: service.win32ExitCode,
+          serviceSpecificExitCode: service.serviceSpecificExitCode,
+          originalError: service.error ?? "",
+        },
+        conclusion: !known
+          ? "Windows service status could not be read; see the original error."
+          : service.state === 4
+            ? "This required Windows audio service is running. Sound and microphone function remain unverified."
+            : "This required Windows audio service is not running. The audio service path is unavailable or transitioning; this does not establish device damage.",
+        nextStep: !known
+          ? "Review the service-query error and retry without changing settings."
+          : service.state === 4
+            ? "Continue with exact-endpoint readiness and explicit functional tests."
+            : "Inspect Windows audio service status and its exit code; use Windows troubleshooting before an explicitly approved service action. AnyDevice has not restarted services.",
+        hypotheses: [],
+      });
+    }
     checks.push({
       id: "audio-enumeration",
       target: "system",
@@ -184,9 +217,12 @@ export function systemChecks(
         outcome:
           e.state !== "active"
             ? "Inconclusive"
-            : e.mute === true
+            : e.mute === true || e.volume === 0
               ? "Warning"
-              : e.mute === null || e.volume === null || !e.format
+              : e.mute === null ||
+                  e.volume === null ||
+                  !e.format ||
+                  !e.format.supported
                 ? "Inconclusive"
                 : "Passed",
         confidence: "Windows-reported",
@@ -202,13 +238,19 @@ export function systemChecks(
             ? `Windows remembers this ${e.kind} endpoint as ${e.state}; it is unavailable for testing, not established as faulty.`
             : e.mute === true
               ? "Windows reports this endpoint muted. That is a configuration observation, not a physical fault."
-              : `Windows reports ${e.state}; ${e.kind} audibility/capture quality has not been tested.`,
+              : e.volume === 0
+                ? "Windows reports zero endpoint volume. Expected audio may be suppressed; no setting or physical defect is inferred."
+                : e.format && !e.format.supported
+                  ? "The reported endpoint format is not supported by this test implementation; no functional test passed."
+                  : `Windows reports ${e.state}; ${e.kind} audibility/capture quality has not been tested.`,
         nextStep:
           e.state !== "active"
             ? "Connect/enable the intended endpoint manually and refresh."
             : e.mute === true
               ? "Review an unmute proposal; approve only if this is the intended endpoint."
-              : "Open Audio tests and explicitly start the appropriate test.",
+              : e.volume === 0
+                ? "Review the exact endpoint level in Windows Sound settings, then repeat explicitly at a comfortable level. AnyDevice does not raise it automatically."
+                : "Open Audio tests and explicitly start the appropriate test.",
         hypotheses:
           e.mute === true
             ? [
@@ -253,7 +295,14 @@ export function systemChecks(
   });
   return checks.map((c) => ({
     ...c,
-    measurements: { ...c.measurements, observedAt: scan.collectedAt },
+    measurements: {
+      ...c.measurements,
+      observedAt:
+        c.measurements.observedAt ??
+        (c.id.startsWith("audio")
+          ? (audio?.observedAt ?? scan.collectedAt)
+          : scan.collectedAt),
+    },
   }));
 }
 export function staticHypotheses(
@@ -349,6 +398,10 @@ export function diagnosticExport(
       ...s,
       targetId: sanitized ? alias(s.targetId) : s.targetId,
       reason: sanitized ? "Technical free-text withheld" : s.reason,
+      sessionVolumeError:
+        sanitized && s.sessionVolumeError
+          ? "Technical free-text withheld"
+          : (s.sessionVolumeError ?? null),
     })),
     repairs: repairs.slice(-8).map((a) => ({
       ...a,

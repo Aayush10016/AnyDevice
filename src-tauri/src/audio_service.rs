@@ -29,6 +29,10 @@ pub struct Snapshot {
     pub frames: u64,
     pub engine_consumed_frames: Option<u64>,
     pub elapsed_ms: u64,
+    pub session_mute: Option<bool>,
+    pub session_level: Option<f32>,
+    pub session_volume_error: Option<String>,
+    pub session_volume_observed_at: Option<String>,
     pub aggregate: Vec<Levels>,
     pub window: Vec<Levels>,
     pub discontinuities: u32,
@@ -61,6 +65,11 @@ fn helper_exit_error(snapshot: Option<&Snapshot>) -> String {
     deny_unknown_fields
 )]
 enum Packet {
+    SessionVolume {
+        mute: Option<bool>,
+        level: Option<f32>,
+        error: Option<String>,
+    },
     Status {
         status: String,
         reason: String,
@@ -84,6 +93,19 @@ fn decode_packet(bytes: &[u8]) -> Result<Packet, String> {
 }
 fn apply(s: &mut Snapshot, p: Packet) -> Result<(), String> {
     match p {
+        Packet::SessionVolume { mute, level, error } => {
+            if level.is_some_and(|v| !v.is_finite() || !(0.0..=1.0).contains(&v))
+                || error.as_ref().is_some_and(|e| e.len() > 2048)
+                || (error.is_none() && (mute.is_none() || level.is_none()))
+                || (error.is_some() && (mute.is_some() || level.is_some()))
+            {
+                return Err("Invalid session volume evidence".into());
+            }
+            s.session_mute = mute;
+            s.session_level = level;
+            s.session_volume_error = error;
+            s.session_volume_observed_at = Some(chrono::Utc::now().to_rfc3339());
+        }
         Packet::Status { status, reason } => {
             if ![
                 "running",
@@ -530,5 +552,36 @@ mod tests {
             }
         )
         .is_err());
+    }
+}
+
+#[cfg(test)]
+mod session_volume_tests {
+    use super::*;
+    #[test]
+    fn actual_session_volume_wire_is_bounded_and_cannot_reuse_old_success() {
+        let mut snapshot = Snapshot::default();
+        apply(
+            &mut snapshot,
+            decode_packet(br#"{"type":"sessionVolume","mute":true,"level":0.0,"error":null}"#)
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(snapshot.session_mute, Some(true));
+        assert_eq!(snapshot.session_level, Some(0.0));
+        apply(&mut snapshot, decode_packet(br#"{"type":"sessionVolume","mute":null,"level":null,"error":"Original API failure"}"#).unwrap()).unwrap();
+        assert!(snapshot.session_mute.is_none());
+        assert!(snapshot.session_level.is_none());
+        assert_eq!(
+            snapshot.session_volume_error.as_deref(),
+            Some("Original API failure")
+        );
+        assert!(apply(
+            &mut snapshot,
+            decode_packet(br#"{"type":"sessionVolume","mute":false,"level":2.0,"error":null}"#)
+                .unwrap()
+        )
+        .is_err());
+        assert!(Snapshot::default().session_level.is_none());
     }
 }

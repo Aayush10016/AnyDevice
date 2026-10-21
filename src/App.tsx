@@ -799,6 +799,9 @@ export default function App() {
             {route === "Audio" && (
               <AudioWorkspace
                 initialEndpoint={audioSelected}
+                onInvestigation={(c) =>
+                  setChecks((v) => [...v.filter((p) => p.id !== c.id), c])
+                }
                 onReadiness={(c) =>
                   setChecks((v) => [...v.filter((p) => p.id !== c.id), c])
                 }
@@ -840,6 +843,9 @@ export default function App() {
                       measurements: {
                         mode: r.mode,
                         observedEar: r.observation,
+                        observedAt:
+                          audioSessions.find((s) => s.sessionId === r.sessionId)
+                            ?.startedAt ?? null,
                         sessionId: r.sessionId,
                         independentPhysicalVerification: false,
                       },
@@ -866,6 +872,10 @@ export default function App() {
                       confidence: "Measured",
                       measurements: {
                         mode: s.mode,
+                        observedAt: s.startedAt,
+                        originalError: s.status === "failed" ? s.reason : "",
+                        sessionMuted: s.sessionMute ?? null,
+                        sessionLevel: s.sessionLevel ?? null,
                         frames: s.frames,
                         completed: s.status === "completed",
                         cleanup: s.cleanup,

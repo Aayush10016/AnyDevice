@@ -54,7 +54,7 @@ it("keeps actual initialization failure stages and distinguishes readiness from 
   const check = readinessCheck(
     validateReadiness(readiness, "synthetic-exact", "recording"),
   );
-  expect(check.outcome).toBe("Inconclusive");
+  expect(check.outcome).toBe("Issue detected");
   expect(check.measurements.originalError).toContain("0x88890004");
   const ready = readinessCheck({
     ...readiness,
@@ -137,7 +137,10 @@ it("exports classification/time and withholds identifying original free-text in 
     [],
     true,
   );
-  expect(report.checks[0].classification).toBe("inconclusive");
+  expect(report.checks[0].classification).toBe("confirmed_issue");
+  expect(report.checks[0].conclusion).toContain(
+    "No physical defect is established",
+  );
   expect(report.checks[0].observedAt).toBe(readiness.observedAt);
   expect(report.checks[0].measurements.originalError).toBe(
     "Technical free-text withheld",

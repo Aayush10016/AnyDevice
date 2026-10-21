@@ -1,3 +1,4 @@
+import { audioFailureDiagnosis } from "./audioFailure";
 import type { DiagnosticCheck } from "./diagnosticEngine";
 export interface Readiness {
   operation: "audio-readiness";
@@ -84,14 +85,21 @@ export function readinessCheck(r: Readiness): DiagnosticCheck {
     id: `audio-readiness:${r.targetId}`,
     target: r.targetId,
     test: "Selected endpoint initialization readiness",
-    outcome: r.complete ? "Passed" : "Inconclusive",
+    outcome: r.complete
+      ? "Passed"
+      : r.errors.length
+        ? "Issue detected"
+        : "Inconclusive",
     confidence: "Windows-reported",
     measurements: {
       initialized: r.complete,
       started: false,
       frames: 0,
       observedAt: r.observedAt,
-      stage: r.errors[0]?.stage ?? "Initialized and service opened",
+      stage: r.complete
+        ? "Initialized and service opened"
+        : (r.errors[0]?.stage ?? "Unknown native stage"),
+      hresult: audioFailureDiagnosis(r.errors[0]?.message ?? "").code,
       originalError: r.errors[0]?.message ?? "",
       bufferFrames: r.facts?.bufferFrames ?? null,
       sessionMuted: r.facts?.sessionVolume?.mute ?? null,
@@ -99,10 +107,10 @@ export function readinessCheck(r: Readiness): DiagnosticCheck {
     },
     conclusion: r.complete
       ? "Windows initialized the exact endpoint and opened its stream service. No stream was started, no sound/capture was performed, and physical function is not verified."
-      : `The selected-path check stopped at ${r.errors[0]?.stage ?? "an unknown stage"}; see the original error in advanced evidence`,
+      : `The selected-path check failed. ${audioFailureDiagnosis(r.errors[0]?.message ?? "").explanation} No physical defect is established; see the original stage in advanced evidence.`,
     nextStep: r.complete
       ? "Explicitly approve a bounded playback/capture interval; compare actual frame progress with your observation."
-      : "Resolve the reported API stage before testing physical output; refresh the exact endpoint, review Windows permissions or exclusive-use applications as applicable.",
+      : audioFailureDiagnosis(r.errors[0]?.message ?? "").nextStep,
     hypotheses: [],
   };
 }

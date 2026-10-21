@@ -10,7 +10,7 @@ import {
   compareRepair,
   type FunctionalVerification,
 } from "./repairVerification";
-import { investigateAudio } from "./audioInvestigation";
+import { investigateAudio, type OrdinaryPlayback } from "./audioInvestigation";
 import { RepairPanel } from "./RepairPanel";
 import type { RepairAudit } from "./bridge";
 import {
@@ -42,9 +42,11 @@ export function AudioWorkspace({
   routingHistory = [],
   onRouting,
   onReadiness,
+  onInvestigation,
 }: {
   initialEndpoint?: string;
   onReadiness?: (c: DiagnosticCheck) => void;
+  onInvestigation?: (c: DiagnosticCheck) => void;
   repairHistory?: RepairAudit[];
   routingHistory?: RoutingReport[];
   onRouting?: (r: RoutingReport) => void;
@@ -63,6 +65,9 @@ export function AudioWorkspace({
     [heard, setHeard] = useState<"yes" | "no" | "unknown">("unknown"),
     [staticReport, setStaticReport] = useState<boolean | null>(null),
     [preview, setPreview] = useState("");
+  const [ordinary, setOrdinary] = useState<OrdinaryPlayback>("unknown");
+  const investigationCallback = useRef(onInvestigation);
+  investigationCallback.current = onInvestigation;
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [failure, setFailure] = useState<AudioFailure | null>(null);
   const [starting, setStarting] = useState(false);
@@ -80,6 +85,12 @@ export function AudioWorkspace({
     focus = useRef<HTMLDivElement>(null);
   const endpoint = inventory?.endpoints.find((e) => e.id === target);
   const running = !!session && !session.cleanup;
+  useEffect(() => {
+    if (endpoint && session?.cleanup && session.targetId === endpoint.id)
+      investigationCallback.current?.(
+        investigateAudio(endpoint, session, ear, ordinary),
+      );
+  }, [endpoint, session, ear, ordinary]);
   function receive(v: AudioSession) {
     if (!mounted.current || v.sessionId !== current.current) return;
     setSession(v);
@@ -104,6 +115,10 @@ export function AudioWorkspace({
     }
   }
   async function refresh() {
+    setSession(null);
+    setOrdinary("unknown");
+    setHeard("unknown");
+    setEar("unsure");
     setReadiness(null);
     setPreview("");
     setBusy(true);
@@ -112,6 +127,14 @@ export function AudioWorkspace({
       if (mounted.current) {
         setInventory(v);
         onInventory(v);
+        const selected = v.endpoints.find((e) => e.id === target);
+        if (selected) {
+          const check = investigateAudio(selected, null, "unsure");
+          investigationCallback.current?.({
+            ...check,
+            measurements: { ...check.measurements, observedAt: v.observedAt },
+          });
+        }
         setMessage(
           v.errors.length
             ? "Some audio metadata is unavailable; review advanced evidence."
@@ -200,6 +223,7 @@ export function AudioWorkspace({
             setHeard("unknown");
             setStaticReport(null);
             setEar("unsure");
+            setOrdinary("unknown");
             setTrace([]);
             setPreview("");
           }
@@ -228,11 +252,13 @@ export function AudioWorkspace({
       return;
     setBusy(true);
     setStarting(true);
+    setReadiness(null);
     setFailure(null);
     setMessage("");
     setPreview("");
     setHeard("unknown");
     setEar("unsure");
+    setOrdinary("unknown");
     setTrace([]);
     setStaticReport(null);
     try {
@@ -286,6 +312,33 @@ export function AudioWorkspace({
         Windows endpoint identity is known; physical sound and microphone
         quality still require controlled observations.
       </p>
+      {inventory?.services
+        ?.filter((service) => service.state !== 4)
+        .map((service) => (
+          <article
+            className="finding"
+            key={service.name}
+            role={service.error ? "status" : "alert"}
+          >
+            <h3>
+              {service.error
+                ? "Audio service check unavailable"
+                : "Windows audio service is not running"}
+            </h3>
+            <p>
+              {service.name}: state {service.state ?? "unknown"}; Windows exit
+              code {service.win32ExitCode ?? "unknown"}.{" "}
+              {service.error
+                ? "Read access failed; service failure is not established."
+                : "Playback or recording may be unavailable while this required service is stopped or transitioning."}{" "}
+              No service was restarted.
+            </p>
+            <details>
+              <summary>Advanced evidence � audio service status</summary>
+              <pre>{JSON.stringify(service, null, 2)}</pre>
+            </details>
+          </article>
+        ))}
       <label>
         Audio endpoint{" "}
         <select
@@ -305,6 +358,7 @@ export function AudioWorkspace({
             setHeard("unknown");
             setStaticReport(null);
             setEar("unsure");
+            setOrdinary("unknown");
             setTrace([]);
             setPreview("");
           }}
@@ -588,6 +642,31 @@ export function AudioWorkspace({
                   path. If ordinary audio works, inspect AnyDevice in Windows
                   Volume mixer and compare its readiness evidence.
                 </p>
+                <label>
+                  Does ordinary audio play through this same endpoint?
+                  <select
+                    aria-label="Ordinary playback comparison"
+                    value={ordinary}
+                    onChange={(e) =>
+                      setOrdinary(e.target.value as OrdinaryPlayback)
+                    }
+                  >
+                    <option value="unknown">Not checked / unsure</option>
+                    <option value="works">Yes, ordinary audio works</option>
+                    <option value="silent">
+                      No, ordinary audio is also silent
+                    </option>
+                  </select>
+                </label>
+                <p>
+                  {
+                    investigateAudio(endpoint, session, ear, ordinary)
+                      .conclusion
+                  }
+                </p>
+                <p>
+                  {investigateAudio(endpoint, session, ear, ordinary).nextStep}
+                </p>
                 <p>
                   Record one change at a time and retry explicitly. No driver,
                   connection, mute or volume setting has been changed by this
@@ -652,27 +731,47 @@ export function AudioWorkspace({
           <summary>
             Investigate this audio path — evidence for and against
           </summary>
-          <p>{investigateAudio(endpoint, session, ear).conclusion}</p>
-          {investigateAudio(endpoint, session, ear).hypotheses.map((h) => (
-            <article key={h.cause}>
-              <strong>
-                {h.cause} — {h.confidence}
-              </strong>
-              <p>Next test: {h.distinguishingTest}</p>
-              <p>
-                Supports:{" "}
-                {h.supportingEvidence?.join(" ") ||
-                  "No supporting evidence yet."}
-              </p>
-              <p>
-                Against / limits:{" "}
-                {h.contradictingEvidence?.join(" ") ||
-                  "No contradicting evidence recorded."}
-              </p>
-              <p>Verify: {h.verificationCriterion}</p>
-            </article>
-          ))}
+          <p>{investigateAudio(endpoint, session, ear, ordinary).conclusion}</p>
+          {investigateAudio(endpoint, session, ear, ordinary).hypotheses.map(
+            (h) => (
+              <article key={h.cause}>
+                <strong>
+                  {h.cause} — {h.confidence}
+                </strong>
+                <p>Next test: {h.distinguishingTest}</p>
+                <p>
+                  Supports:{" "}
+                  {h.supportingEvidence?.join(" ") ||
+                    "No supporting evidence yet."}
+                </p>
+                <p>
+                  Against / limits:{" "}
+                  {h.contradictingEvidence?.join(" ") ||
+                    "No contradicting evidence recorded."}
+                </p>
+                <p>Verify: {h.verificationCriterion}</p>
+              </article>
+            ),
+          )}
         </details>
+      )}
+      {session && (
+        <p>
+          Actual test-session mute:{" "}
+          {session.sessionMute == null
+            ? "unknown"
+            : session.sessionMute
+              ? "muted"
+              : "not muted"}
+          ; volume:{" "}
+          {session.sessionLevel == null
+            ? "unknown"
+            : `${Math.round(session.sessionLevel * 100)}%`}
+          .{" "}
+          {session.sessionVolumeError
+            ? "Session query failed; see advanced evidence. No previous successful value is reused."
+            : "This is separate from endpoint and readiness values."}
+        </p>
       )}
       {session && (
         <p>
@@ -877,7 +976,9 @@ export function AudioWorkspace({
             JSON.stringify(
               diagnosticExport(
                 null,
-                endpoint ? [investigateAudio(endpoint, session, ear)] : [],
+                endpoint
+                  ? [investigateAudio(endpoint, session, ear, ordinary)]
+                  : [],
                 inventory,
                 history,
                 true,

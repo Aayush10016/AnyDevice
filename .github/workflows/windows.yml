@@ -69,6 +69,14 @@ jobs:
           $audio = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
           if ($null -eq $audio.endpoints -or $audio.endpoints.Count -gt 256) { throw 'Invalid audio inventory envelope' }
           Write-Host "Core Audio: $($audio.endpoints.Count) endpoints; $($audio.errors.Count) errors; complete=$($audio.complete). No sound/capture performed."
+          if ($audio.services.Count -ne 2) { throw 'Required audio-service status coverage missing' }
+          foreach ($service in $audio.services) {
+            if ($service.name -notin @('Audiosrv','AudioEndpointBuilder')) { throw 'Unexpected service query' }
+            if ($null -eq $service.state -and -not $service.error) { throw 'Missing service status and original error' }
+            if ($null -ne $service.state -and ($service.state -lt 1 -or $service.state -gt 7)) { throw 'Invalid service status' }
+          }
+          Write-Host 'Read-only required audio-service status coverage verified; no service changes.'
+
           $denied = & ./src-tauri/target/release/anydevice.exe --audio-test 'invalid-target' ambient $PID | Out-String
           if ($LASTEXITCODE -ne 3 -or $denied -match 'measurement|running') { throw 'Foreign audio collector was accepted' }
           $repairDenied = & ./src-tauri/target/release/anydevice.exe --approved-audio-mute 'invalid-target' true false $PID | Out-String

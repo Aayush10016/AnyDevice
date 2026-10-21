@@ -104,6 +104,15 @@ it("records both-ear mismatch and requires a new user action for the opposite ch
     "audible test did not pass",
   );
   expect(startAudioTest).toHaveBeenCalledTimes(1);
+  fireEvent.change(
+    screen.getByRole("combobox", { name: "Ordinary playback comparison" }),
+    { target: { value: "silent" } },
+  );
+  expect(
+    screen.getAllByText(
+      /shared Windows\/connection\/device path requires investigation/,
+    ).length,
+  ).toBeGreaterThan(0);
   fireEvent.change(answer, { target: { value: "both" } });
   expect(
     screen.getByRole("heading", { name: "Issue detected" }),
@@ -436,4 +445,65 @@ it("checks only the exact chosen endpoint readiness without starting playback or
       selector: "pre",
     }),
   ).toBeInTheDocument();
+});
+
+it("refresh clears prior completed playback and hearing comparison without starting a new stream", async () => {
+  const onInvestigation = vi.fn();
+  vi.mocked(audioTestStatus).mockResolvedValue({
+    sessionId: 17,
+    targetId: endpoint.id,
+    mode: "tone",
+    status: "completed",
+    reason: "Synthetic",
+    startedAt: "2026-10-21T10:00:00Z",
+    format,
+    frames: 144000,
+    aggregate: [],
+    window: [],
+    discontinuities: 0,
+    timestampErrors: 0,
+    cleanup: true,
+  });
+  render(
+    <AudioWorkspace
+      initialEndpoint={endpoint.id}
+      onInvestigation={onInvestigation}
+      {...callbacks()}
+    />,
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole("checkbox", { name: "Allow this audio test" }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Allow this audio test" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Play quiet tone" }));
+  fireEvent.change(
+    await screen.findByRole("combobox", { name: "Observed ear" }),
+    { target: { value: "neither" } },
+  );
+  fireEvent.change(
+    screen.getByRole("combobox", { name: "Ordinary playback comparison" }),
+    { target: { value: "silent" } },
+  );
+  await waitFor(() =>
+    expect(
+      onInvestigation.mock.calls.at(-1)?.[0].measurements.ordinaryPlayback,
+    ).toBe("silent"),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Refresh audio endpoints" }),
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole("combobox", { name: "Observed ear" })).toBeNull(),
+  );
+  expect(screen.getByRole("status")).toHaveTextContent(
+    "no test has been started",
+  );
+  expect(
+    onInvestigation.mock.calls.at(-1)?.[0].measurements.ordinaryPlayback,
+  ).toBe("unknown");
+  expect(startAudioTest).toHaveBeenCalledTimes(1);
 });

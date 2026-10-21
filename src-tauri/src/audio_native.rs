@@ -112,6 +112,60 @@ fn mix(client: &IAudioClient) -> Result<(Mix, Format), String> {
 fn volume(d: &IMMDevice) -> Option<IAudioEndpointVolume> {
     unsafe { d.Activate(CLSCTX_ALL, None) }.ok()
 }
+// Query status only: no service start/stop/configuration rights are requested.
+fn services() -> Vec<Value> {
+    use windows_sys::Win32::System::Services::*;
+    struct Handle(SC_HANDLE);
+    impl Drop for Handle {
+        fn drop(&mut self) {
+            unsafe {
+                CloseServiceHandle(self.0);
+            }
+        }
+    }
+    let manager = unsafe { OpenSCManagerW(std::ptr::null(), std::ptr::null(), SC_MANAGER_CONNECT) };
+    let manager = if manager.is_null() {
+        None
+    } else {
+        Some(Handle(manager))
+    };
+    let manager_error = if manager.is_none() {
+        Some(std::io::Error::last_os_error().to_string())
+    } else {
+        None
+    };
+    ["Audiosrv", "AudioEndpointBuilder"].into_iter().map(|name| {
+        let result = (|| -> Result<SERVICE_STATUS, String> {
+            let manager = manager.as_ref().ok_or_else(|| manager_error.clone().unwrap_or_default())?;
+            let name: Vec<u16> = name.encode_utf16().chain(Some(0)).collect();
+            let handle = unsafe { OpenServiceW(manager.0, name.as_ptr(), SERVICE_QUERY_STATUS) };
+            if handle.is_null() { return Err(std::io::Error::last_os_error().to_string()); }
+            let handle = Handle(handle);
+            let mut status: SERVICE_STATUS = unsafe { std::mem::zeroed() };
+            if unsafe { QueryServiceStatus(handle.0, &mut status) } == 0 { return Err(std::io::Error::last_os_error().to_string()); }
+            Ok(status)
+        })();
+        match result {
+            Ok(status) => json!({"name":name,"state":status.dwCurrentState,"win32ExitCode":status.dwWin32ExitCode,"serviceSpecificExitCode":status.dwServiceSpecificExitCode,"error":null}),
+            Err(error) => json!({"name":name,"state":null,"win32ExitCode":null,"serviceSpecificExitCode":null,"error":error}),
+        }
+    }).collect()
+}
+fn session_volume(client: &IAudioClient) -> Value {
+    let result = (|| -> Result<Value, String> {
+        let control: ISimpleAudioVolume =
+            unsafe { client.GetService() }.map_err(|e| format!("Open session volume: {e}"))?;
+        let mute = unsafe { control.GetMute() }
+            .map_err(|e| format!("Read session mute: {e}"))?
+            .as_bool();
+        let level = unsafe { control.GetMasterVolume() }
+            .map_err(|e| format!("Read session volume: {e}"))?;
+        Ok(json!({"type":"sessionVolume","mute":mute,"level":level,"error":null}))
+    })();
+    result.unwrap_or_else(
+        |error| json!({"type":"sessionVolume","mute":null,"level":null,"error":error}),
+    )
+}
 pub fn inventory() -> Result<Value, String> {
     let _com = Apartment::new()?;
     let en = enumerator()?;
@@ -163,7 +217,7 @@ pub fn inventory() -> Result<Value, String> {
         }
     }
     Ok(
-        json!({"endpoints":rows,"errors":errors,"complete":errors.is_empty(),"source":"Windows Core Audio","observedAt":chrono::Utc::now().to_rfc3339()}),
+        json!({"endpoints":rows,"services":services(),"errors":errors,"complete":errors.is_empty(),"source":"Windows Core Audio","observedAt":chrono::Utc::now().to_rfc3339()}),
     )
 }
 fn device(en: &IMMDeviceEnumerator, id: &str) -> Result<IMMDevice, String> {
@@ -274,23 +328,15 @@ pub fn readiness(id: &str, kind: &str) -> Value {
             let _: IAudioRenderClient = unsafe { stream.0.GetService() }
                 .map_err(|e| format!("Open render service: {e}"))?;
         }
-        let session_volume = (|| -> Result<Value, String> {
-            let control: ISimpleAudioVolume = unsafe { stream.0.GetService() }
-                .map_err(|e| format!("Open session volume: {e}"))?;
-            let mute = unsafe { control.GetMute() }
-                .map_err(|e| format!("Read session mute: {e}"))?
-                .as_bool();
-            let level = unsafe { control.GetMasterVolume() }
-                .map_err(|e| format!("Read session volume: {e}"))?;
-            Ok(json!({"mute":mute,"level":level}))
-        })();
-        let (session_volume, session_volume_error) = match session_volume {
-            Ok(value) => (value, Value::Null),
-            Err(error) => (
-                Value::Null,
-                json!(crate::audio_signal::failure_record(&error)),
-            ),
+        let volume = session_volume(&stream.0);
+        let session_volume = if volume["error"].is_null() {
+            json!({"mute":volume["mute"],"level":volume["level"]})
+        } else {
+            Value::Null
         };
+        let session_volume_error = volume["error"]
+            .as_str()
+            .map(crate::audio_signal::failure_record);
         Ok(
             json!({"initialized":true,"serviceReady":true,"format":format,"bufferFrames":size,"sessionVolume":session_volume,"sessionVolumeError":session_volume_error}),
         )
@@ -381,6 +427,7 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
     } else {
         None
     };
+    output(session_volume(&stream.0))?;
     let mut aggregate = vec![Accumulator::default(); format.channels as usize];
     let mut frames_total = 0u64;
     if let Some(render) = &render {
@@ -494,6 +541,7 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
             "Drain playback buffer: queued frames remain after the bounded deadline".into(),
         );
     }
+    output(session_volume(&stream.0))?;
     output(
         json!({"type":"measurement","format":format,"frames":frames_total,"aggregate":aggregate.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"window":window.iter().map(Accumulator::levels).collect::<Vec<Levels>>(),"discontinuities":glitches,"timestampErrors":timestamp_errors,"elapsedMs":started.elapsed().as_millis() as u64,"engineConsumedFrames":if capture_mode { None } else { Some(crate::audio_signal::consumed_frames(frames_total, unsafe { stream.0.GetCurrentPadding() }.map_err(|e|format!("Read playback progress: {e}"))?)?) }}),
     )?;
