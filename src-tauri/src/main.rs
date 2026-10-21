@@ -390,11 +390,15 @@ fn main() {
             return;
         }
         if args.get(1).map(String::as_str) == Some("--audio-test") {
-            if args.len() != 5 {
+            if args.len() != 5 && args.len() != 6 {
                 std::process::exit(2);
             }
-            if let Err(reason) = audio_native::run(&args[2], &args[3], args[4].parse().unwrap_or(0))
-            {
+            if let Err(reason) = audio_native::run(
+                &args[2],
+                &args[3],
+                args[4].parse().unwrap_or(0),
+                args.get(5).map(String::as_str).unwrap_or("clearer"),
+            ) {
                 use std::io::Write;
                 // Broken consumer pipes must not turn a denied collector into a panic exit.
                 let _ = writeln!(

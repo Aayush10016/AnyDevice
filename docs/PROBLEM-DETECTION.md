@@ -35,3 +35,10 @@ The fresh baseline on 21 October still reports both CMF Buds 2 endpoints notPres
 - https://learn.microsoft.com/en-us/windows/win32/api/audioclient/nf-audioclient-iaudioclient-initialize
 
 Service state is not audio function; session volume is not an acoustic measurement. No other application's sessions, process names or audio were enumerated/captured.
+
+
+## Owner-assisted playback comparison
+
+Later in the same session the owner reconnected CMF and reported ordinary playback audible, AnyDevice's original tone silent, and microphone capture working with nonzero frames. The screenshot shows actual stream session unmuted/100%, 144000 submitted/dequeued frames and a 0.03 generated peak. A separately generated 3%-peak PCM16 reference was also reported silent, while a 10%-peak PCM16 reference was reported audible. This supports investigating inadequate signal audibility; it does not by itself prove the app playback path is fixed.
+
+Playback now offers Very quiet (the original 3% peak) and Clearer quiet tone (10% peak), defaulting to the latter. Selecting a different level revokes consent and never starts sound. The native boundary accepts only these presets, and generated buffers reject arbitrary peaks above the 10% bound. The snapshot/export records signalPeak; Windows volume/mute is never changed. Tests inspect actual little-endian float bytes independently of the application's decoder. An owner-run test of the revised in-app clearer level is still required.

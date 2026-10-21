@@ -507,3 +507,37 @@ it("refresh clears prior completed playback and hearing comparison without start
   ).toBe("unknown");
   expect(startAudioTest).toHaveBeenCalledTimes(1);
 });
+
+it("signal-level changes require fresh consent and never start a tone automatically", async () => {
+  render(<AudioWorkspace initialEndpoint={endpoint.id} {...callbacks()} />);
+  const choice = await screen.findByRole("combobox", {
+    name: "Test signal level",
+  });
+  await waitFor(() =>
+    expect(
+      screen.getByRole("checkbox", { name: "Allow this audio test" }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Allow this audio test" }),
+  );
+  fireEvent.change(choice, { target: { value: "veryQuiet" } });
+  expect(
+    screen.getByRole("checkbox", { name: "Allow this audio test" }),
+  ).not.toBeChecked();
+  expect(
+    screen.getByRole("button", { name: "Play quiet tone" }),
+  ).toBeDisabled();
+  expect(startAudioTest).not.toHaveBeenCalled();
+  fireEvent.click(
+    screen.getByRole("checkbox", { name: "Allow this audio test" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Play quiet tone" }));
+  await waitFor(() =>
+    expect(startAudioTest).toHaveBeenCalledWith(
+      endpoint.id,
+      "tone",
+      "veryQuiet",
+    ),
+  );
+});

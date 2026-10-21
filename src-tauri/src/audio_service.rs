@@ -29,6 +29,7 @@ pub struct Snapshot {
     pub frames: u64,
     pub engine_consumed_frames: Option<u64>,
     pub elapsed_ms: u64,
+    pub signal_peak: Option<f64>,
     pub session_mute: Option<bool>,
     pub session_level: Option<f32>,
     pub session_volume_error: Option<String>,
@@ -201,6 +202,7 @@ pub async fn start_audio_test(
     target_id: String,
     mode: String,
     approved: bool,
+    signal_level: Option<String>,
 ) -> Result<u64, String> {
     if !approved {
         return Err("Explicit audio test approval is required".into());
@@ -211,6 +213,10 @@ pub async fn start_audio_test(
         || !["left", "right", "tone", "ambient", "speech"].contains(&mode.as_str())
     {
         return Err("Invalid audio target/mode".into());
+    }
+    let signal_level = signal_level.unwrap_or_else(|| "clearer".into());
+    if !["veryQuiet", "clearer"].contains(&signal_level.as_str()) {
+        return Err("Unsupported test signal level".into());
     }
     let permit = activity.acquire()?;
     let id = NEXT.fetch_add(1, Ordering::Relaxed);
@@ -224,6 +230,15 @@ pub async fn start_audio_test(
             session_id: id,
             target_id: target_id.clone(),
             mode: mode.clone(),
+            signal_peak: if ["left", "right", "tone"].contains(&mode.as_str()) {
+                Some(if signal_level == "veryQuiet" {
+                    0.03
+                } else {
+                    0.10
+                })
+            } else {
+                None
+            },
             status: "starting".into(),
             started_at: chrono::Utc::now().to_rfc3339(),
             ..Default::default()
@@ -235,7 +250,16 @@ pub async fn start_audio_test(
     tokio::spawn(async move {
         let _permit = permit;
         let cleanup = std::sync::atomic::AtomicBool::new(true);
-        let result = stream(&owned, id, &target_id, &mode, cancel, &cleanup).await;
+        let result = stream(
+            &owned,
+            id,
+            &target_id,
+            &mode,
+            &signal_level,
+            cancel,
+            &cleanup,
+        )
+        .await;
         if let Ok(mut inner) = owned.0.lock() {
             let interrupted = inner.interrupted;
             if let Some(s) = inner.snapshot.as_mut().filter(|s| s.session_id == id) {
@@ -262,6 +286,7 @@ async fn stream(
     id: u64,
     target: &str,
     mode: &str,
+    signal_level: &str,
     cancel: CancellationToken,
     cleanup: &std::sync::atomic::AtomicBool,
 ) -> Result<(), String> {
@@ -274,6 +299,7 @@ async fn stream(
             target,
             mode,
             &std::process::id().to_string(),
+            signal_level,
         ])
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())

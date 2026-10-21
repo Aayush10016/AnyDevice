@@ -356,6 +356,7 @@ fn render_frames(
     frames: u32,
     start: u64,
     mode: &str,
+    peak: f64,
     aggregate: &mut [Accumulator],
 ) -> Result<(), String> {
     let data =
@@ -367,7 +368,7 @@ fn render_frames(
     let slice = unsafe {
         std::slice::from_raw_parts_mut(data, frames as usize * format.block_align as usize)
     };
-    let generated = crate::audio_signal::fill(
+    let generated = crate::audio_signal::fill_at_level(
         slice,
         format.channels,
         format.bits,
@@ -375,6 +376,7 @@ fn render_frames(
         format.sample_rate,
         start,
         mode,
+        peak,
         aggregate,
     );
     let released = unsafe {
@@ -392,8 +394,9 @@ fn render_frames(
     generated?;
     Ok(())
 }
-pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
+pub fn run(id: &str, mode: &str, parent: u32, signal_level: &str) -> Result<(), String> {
     let owner = crate::raw_input::verify_parent(parent)?;
+    let peak = crate::audio_signal::signal_peak(signal_level)?;
     if !["left", "right", "tone", "ambient", "speech"].contains(&mode) {
         return Err("Unsupported audio mode".into());
     }
@@ -432,7 +435,7 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
     let mut frames_total = 0u64;
     if let Some(render) = &render {
         let initial = size.min(format.sample_rate * 3);
-        render_frames(render, &format, initial, 0, mode, &mut aggregate)?;
+        render_frames(render, &format, initial, 0, mode, peak, &mut aggregate)?;
         frames_total = initial as u64;
     }
     unsafe { stream.0.Start() }.map_err(|e| format!("Start WASAPI stream: {e}"))?;
@@ -505,7 +508,15 @@ pub fn run(id: &str, mode: &str, parent: u32) -> Result<(), String> {
             let remaining = (format.sample_rate as u64 * 3).saturating_sub(frames_total);
             let frames = available.min(remaining as u32);
             if frames > 0 {
-                render_frames(render, &format, frames, frames_total, mode, &mut aggregate)?;
+                render_frames(
+                    render,
+                    &format,
+                    frames,
+                    frames_total,
+                    mode,
+                    peak,
+                    &mut aggregate,
+                )?;
                 window = aggregate.clone();
                 frames_total += frames as u64;
             }

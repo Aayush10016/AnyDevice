@@ -65,6 +65,9 @@ export function AudioWorkspace({
     [heard, setHeard] = useState<"yes" | "no" | "unknown">("unknown"),
     [staticReport, setStaticReport] = useState<boolean | null>(null),
     [preview, setPreview] = useState("");
+  const [signalLevel, setSignalLevel] = useState<"veryQuiet" | "clearer">(
+    "clearer",
+  );
   const [ordinary, setOrdinary] = useState<OrdinaryPlayback>("unknown");
   const investigationCallback = useRef(onInvestigation);
   investigationCallback.current = onInvestigation;
@@ -268,7 +271,10 @@ export function AudioWorkspace({
         current.current = null;
         setSession(null);
       }
-      const id = await startAudioTest(endpoint.id, mode);
+      const id = await (signalLevel === "clearer" ||
+      endpoint.kind === "recording"
+        ? startAudioTest(endpoint.id, mode)
+        : startAudioTest(endpoint.id, mode, signalLevel));
       if (!mounted.current) {
         await discardAudioTest(id);
         return;
@@ -441,6 +447,28 @@ export function AudioWorkspace({
               ? "Level unavailable"
               : `Windows level ${Math.round(endpoint.volume * 100)}%`}
           </p>
+          {endpoint.kind === "playback" && (
+            <label>
+              Test signal level
+              <select
+                aria-label="Test signal level"
+                value={signalLevel}
+                disabled={running || busy}
+                onChange={(e) => {
+                  setSignalLevel(e.target.value as "veryQuiet" | "clearer");
+                  setConsent(false);
+                }}
+              >
+                <option value="veryQuiet">Very quiet (original level)</option>
+                <option value="clearer">Clearer quiet tone</option>
+              </select>
+              <p>
+                The clearer signal matches the reference tone you can compare in
+                a normal player. Windows volume stays unchanged. Keep a
+                comfortable listening level and allow the test explicitly.
+              </p>
+            </label>
+          )}
           <label>
             <input
               type="checkbox"
@@ -451,7 +479,7 @@ export function AudioWorkspace({
             />
             {endpoint.kind === "recording"
               ? "I agree to an 8-second local microphone level measurement. No recorded audio is saved or uploaded."
-              : "I agree to a quiet, bounded 3-second test tone on this endpoint. Lower normal listening volume first; the app does not change it."}
+              : `I agree to a bounded 3-second ${signalLevel === "clearer" ? "clearer quiet" : "very quiet"} test tone on this endpoint. Keep Windows volume comfortable; the app does not change it.`}
           </label>
           <div className="row">
             {endpoint.kind === "playback" ? (
@@ -757,7 +785,11 @@ export function AudioWorkspace({
       )}
       {session && (
         <p>
-          Actual test-session mute:{" "}
+          Test signal peak:{" "}
+          {session.signalPeak == null
+            ? "not recorded"
+            : `${Math.round(session.signalPeak * 100)}% of full scale`}
+          . Actual test-session mute:{" "}
           {session.sessionMute == null
             ? "unknown"
             : session.sessionMute

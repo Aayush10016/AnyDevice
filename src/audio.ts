@@ -54,6 +54,7 @@ export interface AudioSession {
   frames: number;
   engineConsumedFrames?: number | null;
   elapsedMs?: number;
+  signalPeak?: number | null;
   sessionMute?: boolean | null;
   sessionLevel?: number | null;
   sessionVolumeError?: string | null;
