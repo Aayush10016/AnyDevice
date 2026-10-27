@@ -1,3 +1,5 @@
+import { reportProblem } from "./reportedProblems";
+import type { LightingRecord } from "./LightingInvestigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
@@ -137,6 +139,14 @@ export default function App() {
     import("./bridge").RepairAudit[]
   >([]);
   const [checks, setChecks] = useState<DiagnosticCheck[]>([]);
+  const [reportedProblems, setReportedProblems] = useState<DiagnosticCheck[]>(
+    [],
+  );
+  const [lightingRecords, setLightingRecords] = useState<
+    Record<string, LightingRecord>
+  >({});
+  const [lightingFocus, setLightingFocus] = useState<string>();
+  const displayedChecks = [...checks, ...reportedProblems];
   const [diagnosticBusy, setDiagnosticBusy] = useState(false);
   const [diagnosticPaused, setDiagnosticPaused] = useState(false);
   const [diagnosticProgress, setDiagnosticProgress] = useState(
@@ -304,7 +314,7 @@ export default function App() {
         systemChecks(fresh, buildInventory(fresh.devices, inputs), audio),
       );
       setDiagnosticProgress(
-        "Read-only diagnostics complete. Input, audibility, microphone quality and LED tests were not performed automatically.",
+        "Read-only diagnostics complete. Functional input, sound, microphone quality and visible lighting require separate tests. Your reported problems remain open.",
       );
     } catch (e) {
       setChecks((v) =>
@@ -553,11 +563,11 @@ export default function App() {
                     : route === "Overview"
                       ? "Start with observations. Follow the evidence."
                       : route === "Diagnostics"
-                        ? "Deterministic checks, with safe next tests and explicit limits."
+                        ? "Start with a symptom, investigate its cause, and review supported fixes."
                         : route === "Reports"
                           ? "Review the exact JSON before saving or sharing."
                           : route === "Investigation"
-                            ? "Compare controlled observations and keep claims separate from evidence."
+                            ? "Advanced before/after snapshots. For a device problem, start in Diagnostics."
                             : route === "Binary workspace"
                               ? "Inspect local bytes and record reproducible hypotheses."
                               : route === "Audio"
@@ -613,6 +623,41 @@ export default function App() {
                 onAudio={(id) => {
                   setAudioSelected(id);
                   setRoute("Audio");
+                }}
+                lightingRecord={lightingRecords[device.id]}
+                lightingInitiallyOpen={lightingFocus === device.id}
+                onLightingRecord={(r) => {
+                  setLightingRecords((current) => ({
+                    ...current,
+                    [device.id]: r,
+                  }));
+                  if (r.affectedLight === "dark")
+                    setReportedProblems((current) => {
+                      const old = current.find(
+                        (c) =>
+                          c.target === device.id &&
+                          c.measurements.symptomType === "keyboard-light",
+                      );
+                      const next = reportProblem(
+                        device.id,
+                        "keyboard-light",
+                        `Right-arrow light: ${r.affectedLight}; neighboring lights: ${r.otherLights}; repeated: ${r.repeated}; model: ${r.model || "unknown"}. ${r.conditions || ""}`,
+                      );
+                      return old
+                        ? current.map((c) =>
+                            c === old
+                              ? {
+                                  ...next,
+                                  id: old.id,
+                                  measurements: {
+                                    ...next.measurements,
+                                    reportedAt: old.measurements.reportedAt,
+                                  },
+                                }
+                              : c,
+                          )
+                        : [...current, next].slice(-32);
+                    });
                 }}
                 onDiagnostics={() => {
                   setRoute("Diagnostics");
@@ -721,7 +766,24 @@ export default function App() {
             )}
             {route === "Diagnostics" && (
               <DiagnosticDashboard
-                checks={checks}
+                checks={displayedChecks}
+                problemTargets={[
+                  ...candidates
+                    .filter((c) => c.placement !== "Supporting infrastructure")
+                    .map((c) => ({ id: c.device.id, name: c.name })),
+                  ...(audioInventory?.endpoints ?? []).map((e) => ({
+                    id: e.id,
+                    name: `${e.name} (${e.kind})`,
+                  })),
+                ]}
+                onReport={(c) =>
+                  setReportedProblems((current) => [...current, c].slice(-32))
+                }
+                onReportedChange={(before, after) =>
+                  setReportedProblems((current) =>
+                    current.map((c) => (c === before ? after : c)),
+                  )
+                }
                 onRechecked={(before, after) =>
                   setChecks((current) =>
                     current.map((c) => (c === before ? after : c)),
@@ -733,7 +795,10 @@ export default function App() {
                   scan?.devices.find((d) => d.id === id)?.name ??
                   (id === "system" ? "This computer" : "Selected test target")
                 }
-                onTest={(target) => {
+                onTest={(target, symptom) => {
+                  setLightingFocus(
+                    symptom === "keyboard-light" ? target : undefined,
+                  );
                   const endpoint = audioInventory?.endpoints.find(
                     (e) => e.id === target,
                   );
@@ -792,7 +857,7 @@ export default function App() {
                         JSON.stringify(
                           diagnosticExport(
                             scan ?? null,
-                            checks,
+                            displayedChecks,
                             audioInventory,
                             audioSessions,
                             preferences.sanitize,

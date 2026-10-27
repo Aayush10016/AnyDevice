@@ -50,12 +50,18 @@ export function DeviceWorkbench({
   audio = null,
   onAudio,
   onDiagnostics,
+  lightingRecord,
+  onLightingRecord,
+  lightingInitiallyOpen = false,
 }: {
   device: Device;
   candidate?: Candidate;
   audio?: AudioInventory | null;
   onAudio?: (id?: string) => void;
   onDiagnostics?: () => void;
+  lightingRecord?: LightingRecord | null;
+  onLightingRecord?: (r: LightingRecord) => void;
+  lightingInitiallyOpen?: boolean;
   devices: Device[];
   findings: Finding[];
   sanitized: boolean;
@@ -72,7 +78,9 @@ export function DeviceWorkbench({
   const [history, setHistory] = useState<InputSnapshot[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [lighting, setLighting] = useState<LightingRecord | null>(null);
+  const [lighting, setLighting] = useState<LightingRecord | null>(
+    lightingRecord ?? null,
+  );
   const [attemptText, setAttemptText] = useState("");
   const [symptom, setSymptom] = useState("");
   const [conditions, setConditions] = useState("");
@@ -392,9 +400,11 @@ export function DeviceWorkbench({
             candidate?.kind === "keyboard" ||
             device.category === "Keyboard") && (
             <LightingInvestigation
+              initiallyOpen={lightingInitiallyOpen}
               record={lighting}
               onRecord={(r) => {
                 setLighting(r);
+                onLightingRecord?.(r);
                 setPreview("");
               }}
               input={snapshot}

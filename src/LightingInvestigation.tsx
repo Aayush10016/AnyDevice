@@ -1,4 +1,5 @@
 import { LightingDiscoveryPanel } from "./LightingDiscoveryPanel";
+import { useState } from "react";
 import type { InputSnapshot } from "./workbench";
 export interface LightingRecord {
   model: string | null;
@@ -23,6 +24,8 @@ export const emptyLighting: LightingRecord = {
   source: "Owner report; no independent illumination measurement",
 };
 export function lightingConclusion(r: LightingRecord) {
+  if (r.affectedLight === "dark")
+    return `${r.otherLights === "lit" ? "You report an individual-light mismatch." : "You report a light that stays dark."} ${r.repeated ? "You report that it repeats. " : "Repeat the observation to check consistency. "}Windows cannot automatically observe emitted light or distinguish the LED, driver circuit or board. ${!r.model?.trim() || !r.modelEvidence?.trim() || r.modelSource === "unknown" ? "Exact model/revision evidence is missing; this blocks model-specific commands, not recording your symptom. " : "Configuration/control behavior and a physical fault remain possible. "}No validated automated lighting repair is available.`;
   if (
     !r.model?.trim() ||
     !r.modelEvidence?.trim() ||
@@ -36,8 +39,6 @@ export function lightingConclusion(r: LightingRecord) {
     r.otherLights === "not checked"
   )
     return "Model evidence is owner-supplied, not protocol validation. Record a repeated comparison using a documented consistent lighting mode; no physical finding is established yet.";
-  if (r.affectedLight === "dark" && r.otherLights === "lit")
-    return "You report a repeatable individual-light mismatch. Configuration/control behavior and a physical lighting fault remain possible. Windows cannot distinguish the LED, driver circuit or board. No validated automated repair is available.";
   return "Your comparison does not establish an isolated failed light or a verified repair. Keep the observation separate from input events; consult the exact model's documented controls or service support.";
 }
 export function LightingInvestigation({
@@ -45,12 +46,15 @@ export function LightingInvestigation({
   onRecord,
   input,
   onInput,
+  initiallyOpen = false,
 }: {
   record: LightingRecord | null;
   onRecord: (r: LightingRecord) => void;
   input: InputSnapshot | null;
   onInput: () => void;
+  initiallyOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(initiallyOpen);
   const r = record ?? emptyLighting;
   const ready =
     !!r.model?.trim() &&
@@ -59,11 +63,18 @@ export function LightingInvestigation({
   const set = (patch: Partial<LightingRecord>) => onRecord({ ...r, ...patch });
   const right = input?.mode === "keyboard" ? input.stats.keys["39"] : undefined;
   return (
-    <details>
+    <details open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
       <summary>
         Investigate a key light — model and right-arrow comparison
       </summary>
       <LightingDiscoveryPanel />
+      <p>
+        <strong>Can the laptop detect a dark key light?</strong> Usually not
+        automatically. A USB lighting command or reported controller state does
+        not prove that the LED emitted light. Without device-provided
+        LED-failure telemetry, your visual observation is required. AnyDevice
+        has no validated LED-failure telemetry provider for this keyboard.
+      </p>
       <p>
         Keyboard input, physical layout, lock indicators, whole-keyboard
         backlighting, per-key RGB, vendor controls and visible illumination are
@@ -137,11 +148,12 @@ export function LightingInvestigation({
         Do not use reset, firmware or another model's commands as a speculative
         test.
       </p>
-      <fieldset disabled={!ready}>
+      <fieldset>
         <legend>Owner illumination comparison</legend>
         <label>
           <input
             type="checkbox"
+            disabled={!ready}
             checked={r.uniformModeCompared}
             onChange={(e) => set({ uniformModeCompared: e.target.checked })}
           />

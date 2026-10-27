@@ -348,8 +348,18 @@ export function diagnosticExport(
     checks: checks.slice(0, 8192).map((c, i) => ({
       ...structureCheck(c),
       measurements:
-        sanitized && "originalError" in c.measurements
-          ? { ...c.measurements, originalError: "Technical free-text withheld" }
+        sanitized &&
+        ("originalError" in c.measurements ||
+          "reportedDetail" in c.measurements)
+          ? {
+              ...c.measurements,
+              ...("originalError" in c.measurements
+                ? { originalError: "Technical free-text withheld" }
+                : {}),
+              ...("reportedDetail" in c.measurements
+                ? { reportedDetail: "Owner free-text withheld" }
+                : {}),
+            }
           : c.measurements,
       id: sanitized ? `check-${i + 1}` : c.id,
       target: sanitized ? alias(c.target) : c.target,

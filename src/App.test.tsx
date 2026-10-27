@@ -41,6 +41,48 @@ beforeEach(() => {
   vi.mocked(cancelScan).mockReset();
   vi.mocked(saveReport).mockReset();
 });
+it("keeps a reported dark light open through clean diagnostics and refresh, and exports it separately from Windows evidence", async () => {
+  vi.mocked(discover).mockResolvedValue(fixtureScan([healthyMouse]));
+  vi.mocked(saveReport).mockResolvedValue("local-report.json");
+  render(<App />);
+  fireEvent.click(screen.getByRole("button", { name: /^Diagnostics/ }));
+  fireEvent.change(screen.getByLabelText("Problem observation"), {
+    target: { value: "My right-arrow light stays dark" },
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Start investigating this problem" }),
+  );
+  expect(screen.getByLabelText("Your reported problems")).toHaveTextContent(
+    "right-arrow light stays dark",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Run diagnostics" }));
+  await screen.findByText(/Read-only diagnostics complete/);
+  expect(
+    screen.getByText(/0 detected findings · 1 unresolved reported problems/),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Refresh scan" }));
+  await screen.findByText(/Device inventory is refreshing/);
+  expect(screen.getByLabelText("Your reported problems")).toHaveTextContent(
+    "right-arrow light stays dark",
+  );
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Refresh scan" })).toBeEnabled(),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Export diagnostic report" }),
+  );
+  await waitFor(() => expect(saveReport).toHaveBeenCalledOnce());
+  const report = JSON.parse(vi.mocked(saveReport).mock.calls[0][0]);
+  const symptom = report.checks.find(
+    (c: { measurements: Record<string, unknown> }) =>
+      c.measurements.symptomType === "keyboard-light",
+  );
+  expect(symptom.classification).toBe("potential_issue");
+  expect(symptom.measurements.ownerResolved).toBe(false);
+  expect(JSON.stringify(report)).not.toContain("My right-arrow light");
+  expect(startAudioTest).not.toHaveBeenCalled();
+  expect(executeAudioRepair).not.toHaveBeenCalled();
+});
 it("refreshing inventory invalidates previous diagnostic findings rather than relabelling them as current", async () => {
   vi.mocked(discover).mockResolvedValue(fixtureScan([windowsProblem]));
   render(<App />);

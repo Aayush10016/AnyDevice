@@ -5,9 +5,15 @@ export function structureCheck(c: DiagnosticCheck) {
   const definitionId = c.id.split(":")[0];
   const category =
     definitionId.startsWith("audio") ||
+    (definitionId === "reported" &&
+      ["audio-output", "microphone"].includes(
+        String(c.measurements.symptomType),
+      )) ||
     ["stream", "ear", "selected-audio-investigation"].includes(definitionId)
       ? "audio"
-      : ["input", "hid", "protocol"].includes(definitionId)
+      : ["input", "hid", "protocol"].includes(definitionId) ||
+          (definitionId === "reported" &&
+            String(c.measurements.symptomType).startsWith("keyboard"))
         ? "input-and-protocol"
         : "inventory";
   const mute = c.test === "Audio endpoint state/configuration";

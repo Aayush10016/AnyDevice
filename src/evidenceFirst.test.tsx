@@ -131,7 +131,7 @@ it("keeps ordinary results concise and preserves grouped advanced coverage", () 
   ).toBeNull();
   expect(
     screen.getByText(
-      "No confirmed problems were detected by the checks that completed. Some functions still need testing.",
+      "These automatic checks found no current Windows-reported problem. They did not test every physical function. Report a symptom above even when Windows says OK.",
     ),
   ).toBeInTheDocument();
   expect(
@@ -244,7 +244,7 @@ it("missing or mismatched capture channels and discontinuities cannot pass or cr
     }),
   ).toContain("Inconclusive");
 });
-it("requires exact model evidence before owner lighting comparison and never infers LED circuit failure", () => {
+it("accepts lighting observations without exact model evidence while gating model-specific controls", () => {
   const onRecord = vi.fn();
   render(
     <LightingInvestigation
@@ -254,7 +254,10 @@ it("requires exact model evidence before owner lighting comparison and never inf
       onInput={vi.fn()}
     />,
   );
-  expect(screen.getByLabelText("Right-arrow light")).toBeDisabled();
+  expect(screen.getByLabelText("Right-arrow light")).toBeEnabled();
+  expect(
+    screen.getByLabelText(/I compared a documented consistent lighting mode/),
+  ).toBeDisabled();
   expect(
     screen.getByText(/No validated backlight control is currently available/),
   ).toBeInTheDocument();
@@ -272,7 +275,7 @@ it("requires exact model evidence before owner lighting comparison and never inf
     otherLights: "lit" as const,
   };
   expect(lightingConclusion(r)).toContain(
-    "cannot distinguish the LED, driver circuit or board",
+    "distinguish the LED, driver circuit or board",
   );
   const report = workbenchExport(scan.devices[0], "", "", null, [], true, r);
   expect(report.lightingInvestigation?.modelEvidence).toBeNull();
