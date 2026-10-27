@@ -1,7 +1,27 @@
 //! Exact interleaved render-buffer generation, shared by WASAPI and synthetic tests.
 use crate::audio_metrics::{decode, encode, Accumulator};
+pub fn consumed_frames(submitted: u64, padding: u32) -> Result<u64, String> {
+    submitted
+        .checked_sub(padding as u64)
+        .ok_or_else(|| "Playback progress: padding exceeds submitted frames".into())
+}
+pub fn failure_record(reason: &str) -> serde_json::Value {
+    let code = reason
+        .find("0x")
+        .and_then(|i| reason.get(i..i + 10))
+        .filter(|s| s[2..].chars().all(|c| c.is_ascii_hexdigit()));
+    serde_json::json!({"stage":reason.split(':').next().unwrap_or("Unknown"),"message":reason,"hresult":code})
+}
 pub fn stereo(channels: u16, mask: u32) -> bool {
     channels == 2 && (mask == 0 || mask == 3)
+}
+pub fn signal_peak(level: &str) -> Result<f64, String> {
+    match level {
+        "veryQuiet" => Ok(0.03),
+        "clearer" => Ok(0.10),
+        "moderate" => Ok(0.25),
+        _ => Err("Unsupported test signal level".into()),
+    }
 }
 pub fn fill(
     bytes: &mut [u8],
@@ -13,7 +33,23 @@ pub fn fill(
     mode: &str,
     levels: &mut [Accumulator],
 ) -> Result<(), String> {
-    if !(1..=8).contains(&channels)
+    fill_at_level(
+        bytes, channels, bits, float, rate, first, mode, 0.03, levels,
+    )
+}
+pub fn fill_at_level(
+    bytes: &mut [u8],
+    channels: u16,
+    bits: u16,
+    float: bool,
+    rate: u32,
+    first: u64,
+    mode: &str,
+    peak: f64,
+    levels: &mut [Accumulator],
+) -> Result<(), String> {
+    if ![0.03, 0.10, 0.25].contains(&peak)
+        || !(1..=8).contains(&channels)
         || !(8000..=384000).contains(&rate)
         || ![8, 16, 24, 32].contains(&bits)
         || float && bits != 32
@@ -31,7 +67,7 @@ pub fn fill(
     for (frame, samples) in bytes.chunks_exact_mut(align).enumerate() {
         let phase = (first + frame as u64) as f64 / rate as f64;
         let envelope = (phase / 0.05).min(1.0) * ((3.0 - phase) / 0.05).clamp(0.0, 1.0);
-        let value = 0.03 * envelope * (std::f64::consts::TAU * 440.0 * phase).sin();
+        let value = peak * envelope * (std::f64::consts::TAU * 440.0 * phase).sin();
         for (channel, sample) in samples.chunks_exact_mut(step).enumerate() {
             let value = if mode == "left" && channel != 0 || mode == "right" && channel != 1 {
                 0.0
@@ -92,6 +128,66 @@ mod tests {
             48000,
             0,
             "right",
+            &mut vec![Accumulator::default(); 2]
+        )
+        .is_err());
+    }
+}
+
+#[cfg(test)]
+mod investigation_tests {
+    use super::*;
+    #[test]
+    fn distinguishes_queued_frames_from_consumed_frames() {
+        assert_eq!(consumed_frames(4800, 4800).unwrap(), 0);
+        assert_eq!(consumed_frames(4800, 2400).unwrap(), 2400);
+        assert_eq!(consumed_frames(4800, 0).unwrap(), 4800);
+        assert!(consumed_frames(1, 2).is_err());
+    }
+    #[test]
+    fn preserves_original_stage_and_hresult_without_inventing_codes() {
+        let error = failure_record("Initialize shared stream: synthetic error (0x88890004)");
+        assert_eq!(error["stage"], "Initialize shared stream");
+        assert_eq!(error["hresult"], "0x88890004");
+        assert!(failure_record("Endpoint state: unavailable")["hresult"].is_null());
+    }
+}
+
+#[cfg(test)]
+mod level_tests {
+    use super::*;
+    #[test]
+    fn approved_levels_change_real_little_endian_samples_with_hard_bounds() {
+        for (name, peak) in [("veryQuiet", 0.03), ("clearer", 0.10), ("moderate", 0.25)] {
+            assert_eq!(signal_peak(name).unwrap(), peak);
+            let mut bytes = [0u8; 8];
+            let mut levels = vec![Accumulator::default(); 2];
+            fill_at_level(
+                &mut bytes,
+                2,
+                32,
+                true,
+                48000,
+                3027,
+                "left",
+                peak,
+                &mut levels,
+            )
+            .unwrap();
+            let actual = f32::from_le_bytes(bytes[..4].try_into().unwrap()) as f64;
+            assert!((actual + peak).abs() < 0.0001);
+            assert_eq!(&bytes[4..], &[0, 0, 0, 0]);
+        }
+        assert!(signal_peak("loud").is_err());
+        assert!(fill_at_level(
+            &mut [0; 8],
+            2,
+            32,
+            true,
+            48000,
+            3027,
+            "tone",
+            1.0,
             &mut vec![Accumulator::default(); 2]
         )
         .is_err());

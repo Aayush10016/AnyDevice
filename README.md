@@ -85,3 +85,7 @@ MIT licensed; see [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md).
 ## Discovery and dedicated workspaces (development)
 
 The `codex/discovery-workspaces` branch separates normal device candidates from advanced Windows nodes and opens category-specific workspaces in the existing window. See [discovery rules and manual acceptance](docs/DISCOVERY-WORKSPACES.md) and the [root-cause audit](docs/DISCOVERY-ROOT-CAUSES.md). This draft depends on the workbench/investigation branches. It does not mark physical input, particular receiver identity, trackpad gestures or the full milestone accepted. Run only the build matching the validation report; earlier candidate 5 does not contain these changes.
+
+## Evidence-first diagnostic milestone
+
+The next development milestone groups coverage separately from actionable findings, exposes audio failure stages, hardens interrupted test results and adds a model-gated owner lighting investigation. See [implementation and limitations](docs/EVIDENCE-FIRST-DIAGNOSTICS.md) and the [baseline audit](docs/EVIDENCE-FIRST-AUDIT.md). Physical acceptance remains separate from automated checks.

@@ -44,6 +44,19 @@ jobs:
       - name: Native discovery and fallback parity
         shell: pwsh
         run: ./scripts/verify-native.ps1 -Executable ./src-tauri/target/release/anydevice.exe
+      - name: Exact-node status recheck and missing-target evidence
+        shell: pwsh
+        run: |
+          $exe = './src-tauri/target/release/anydevice.exe'
+          $missing = & $exe --probe-device 'USB\ANYDEVICE-NONEXISTENT\EXACT-STATUS-SMOKE' | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $missing.complete -or $null -ne $missing.problemCode -or $null -ne $missing.status -or -not $missing.errors[0].stage -or $null -eq $missing.errors[0].configRet) { throw 'Missing-node probe invented a success or lost the original error' }
+          $inventory = & $exe --collect-native all-pnp | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Native inventory failed' }
+          $node = $inventory.devices | Where-Object { $_.present -eq $true -and $null -ne $_.problemCode } | Select-Object -First 1
+          if ($null -eq $node) { throw 'No present node for exact-node integration test' }
+          $probe = & $exe --probe-device $node.instanceId | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $probe.operation -ne 'device-status' -or $probe.targetId -ne $node.instanceId -or -not $probe.complete -or -not $probe.present -or $null -eq $probe.problemCode -or $null -eq $probe.statusFlags -or $probe.errors.Count -ne 0) { throw 'Present-node status probe failed' }
+          Write-Host "Exact-node status probe complete: code=$($probe.problemCode), status=$($probe.status); missing target remained unverified. No device or driver changes."
       - name: Read-only native input mapping smoke
         shell: pwsh
         run: |
@@ -69,6 +82,14 @@ jobs:
           $audio = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
           if ($null -eq $audio.endpoints -or $audio.endpoints.Count -gt 256) { throw 'Invalid audio inventory envelope' }
           Write-Host "Core Audio: $($audio.endpoints.Count) endpoints; $($audio.errors.Count) errors; complete=$($audio.complete). No sound/capture performed."
+          if ($audio.services.Count -ne 2) { throw 'Required audio-service status coverage missing' }
+          foreach ($service in $audio.services) {
+            if ($service.name -notin @('Audiosrv','AudioEndpointBuilder')) { throw 'Unexpected service query' }
+            if ($null -eq $service.state -and -not $service.error) { throw 'Missing service status and original error' }
+            if ($null -ne $service.state -and ($service.state -lt 1 -or $service.state -gt 7)) { throw 'Invalid service status' }
+          }
+          Write-Host 'Read-only required audio-service status coverage verified; no service changes.'
+
           $denied = & ./src-tauri/target/release/anydevice.exe --audio-test 'invalid-target' ambient $PID | Out-String
           if ($LASTEXITCODE -ne 3 -or $denied -match 'measurement|running') { throw 'Foreign audio collector was accepted' }
           $repairDenied = & ./src-tauri/target/release/anydevice.exe --approved-audio-mute 'invalid-target' true false $PID | Out-String
@@ -77,6 +98,14 @@ jobs:
           # GitHub's pwsh wrapper propagates the last native exit code. Both
           # expected denial codes were checked above; finish this smoke successfully.
           $global:LASTEXITCODE = 0
+      - name: Read-only readiness and lighting discovery smoke
+        shell: pwsh
+        run: |
+          $probe = & ./src-tauri/target/release/anydevice.exe --probe-audio invalid-target playback | ConvertFrom-Json
+          if ($probe.operation -ne 'audio-readiness' -or $probe.started -or $probe.frames -ne 0 -or $probe.complete -or -not $probe.errors[0].stage) { throw 'Invalid readiness failure evidence' }
+          $lighting = & ./src-tauri/target/release/anydevice.exe --inspect-lighting | ConvertFrom-Json
+          if ($lighting.operation -ne 'lighting-discovery' -or $lighting.interfaces.Count -gt 64 -or $lighting.controlOperations.Count -ne 0 -or $lighting.physicalIlluminationVerified) { throw 'Invalid lighting discovery evidence' }
+          Write-Host "Lighting: $($lighting.interfaces.Count) advertised interfaces; $($lighting.errors.Count) method errors. No control or illumination test."
       - name: Verify silent installation and installed desktop launch
         shell: pwsh
         run: |

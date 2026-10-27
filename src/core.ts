@@ -1,3 +1,4 @@
+import { problemAdvice } from "./deviceStatus";
 import type { CollectionError, Device, Finding, Report, Scan } from "./models";
 const text = (v: unknown): string | null =>
   typeof v === "string" && v.trim() ? v.slice(0, 8192) : null;
@@ -228,15 +229,9 @@ export function diagnose(scan: Scan, previous?: Scan): Finding[] {
           `Status: ${d.status ?? "unavailable"}`,
           `Problem code: ${d.problemCode ?? "unavailable"}`,
         ],
-        explanation:
-          d.problemCode === 22
-            ? "Windows reports that this device is disabled."
-            : d.problemCode === 28
-              ? "Windows reports that drivers are not installed."
-              : "Windows reports a problem; the root cause has not been established.",
+        explanation: `${problemAdvice(d.problemCode).meaning}. The physical root cause has not been established.`,
         evidence,
-        recommendation:
-          "Review this entry in Device Manager. Reconnect through a known-good cable and port when safe, then scan again.",
+        recommendation: problemAdvice(d.problemCode).nextStep,
         limitations:
           "A Windows problem code alone cannot prove a hardware fault or a cable failure.",
       });

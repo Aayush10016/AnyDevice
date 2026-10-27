@@ -27,6 +27,13 @@ pub struct Snapshot {
     pub started_at: String,
     pub format: Option<AudioFormat>,
     pub frames: u64,
+    pub engine_consumed_frames: Option<u64>,
+    pub elapsed_ms: u64,
+    pub signal_peak: Option<f64>,
+    pub session_mute: Option<bool>,
+    pub session_level: Option<f32>,
+    pub session_volume_error: Option<String>,
+    pub session_volume_observed_at: Option<String>,
     pub aggregate: Vec<Levels>,
     pub window: Vec<Levels>,
     pub discontinuities: u32,
@@ -42,9 +49,28 @@ struct Inner {
     interrupted: bool,
 }
 static NEXT: AtomicU64 = AtomicU64::new(1);
+// Preserve a validated terminal failure packet when a helper exits nonzero.
+// Otherwise the useful WASAPI stage/HRESULT would be overwritten by a generic
+// process-exit message in start_audio_test's final snapshot update.
+fn helper_exit_error(snapshot: Option<&Snapshot>) -> String {
+    snapshot
+        .filter(|s| s.status == "failed" && !s.reason.is_empty() && s.reason.len() <= 2048)
+        .map(|s| s.reason.clone())
+        .unwrap_or_else(|| "Audio helper exited with an error".into())
+}
 #[derive(Deserialize)]
-#[serde(tag = "type", rename_all = "camelCase", deny_unknown_fields)]
+#[serde(
+    tag = "type",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
 enum Packet {
+    SessionVolume {
+        mute: Option<bool>,
+        level: Option<f32>,
+        error: Option<String>,
+    },
     Status {
         status: String,
         reason: String,
@@ -56,10 +82,31 @@ enum Packet {
         window: Vec<Levels>,
         discontinuities: u32,
         timestamp_errors: u32,
+        #[serde(default)]
+        engine_consumed_frames: Option<u64>,
+        #[serde(default)]
+        elapsed_ms: u64,
     },
+}
+fn decode_packet(bytes: &[u8]) -> Result<Packet, String> {
+    serde_json::from_slice(bytes)
+        .map_err(|e| format!("Decode audio measurement/status packet: {e}"))
 }
 fn apply(s: &mut Snapshot, p: Packet) -> Result<(), String> {
     match p {
+        Packet::SessionVolume { mute, level, error } => {
+            if level.is_some_and(|v| !v.is_finite() || !(0.0..=1.0).contains(&v))
+                || error.as_ref().is_some_and(|e| e.len() > 2048)
+                || (error.is_none() && (mute.is_none() || level.is_none()))
+                || (error.is_some() && (mute.is_some() || level.is_some()))
+            {
+                return Err("Invalid session volume evidence".into());
+            }
+            s.session_mute = mute;
+            s.session_level = level;
+            s.session_volume_error = error;
+            s.session_volume_observed_at = Some(chrono::Utc::now().to_rfc3339());
+        }
         Packet::Status { status, reason } => {
             if ![
                 "running",
@@ -83,12 +130,16 @@ fn apply(s: &mut Snapshot, p: Packet) -> Result<(), String> {
             window,
             discontinuities,
             timestamp_errors,
+            engine_consumed_frames,
+            elapsed_ms,
         } => {
             if !(1..=8).contains(&format.channels)
                 || !(8000..=384000).contains(&format.sample_rate)
                 || frames > format.sample_rate as u64 * 10
                 || aggregate.len() != format.channels as usize
                 || window.len() != aggregate.len()
+                || elapsed_ms > 12000
+                || engine_consumed_frames.is_some_and(|n| n > frames)
                 || frames < s.frames
                 || aggregate.iter().chain(&window).any(|v| {
                     !v.rms.is_finite()
@@ -106,7 +157,9 @@ fn apply(s: &mut Snapshot, p: Packet) -> Result<(), String> {
             s.aggregate = aggregate;
             s.window = window;
             s.discontinuities = discontinuities;
-            s.timestamp_errors = timestamp_errors
+            s.timestamp_errors = timestamp_errors;
+            s.engine_consumed_frames = engine_consumed_frames;
+            s.elapsed_ms = elapsed_ms
         }
     }
     Ok(())
@@ -149,6 +202,7 @@ pub async fn start_audio_test(
     target_id: String,
     mode: String,
     approved: bool,
+    signal_level: Option<String>,
 ) -> Result<u64, String> {
     if !approved {
         return Err("Explicit audio test approval is required".into());
@@ -159,6 +213,10 @@ pub async fn start_audio_test(
         || !["left", "right", "tone", "ambient", "speech"].contains(&mode.as_str())
     {
         return Err("Invalid audio target/mode".into());
+    }
+    let signal_level = signal_level.unwrap_or_else(|| "clearer".into());
+    if !["veryQuiet", "clearer", "moderate"].contains(&signal_level.as_str()) {
+        return Err("Unsupported test signal level".into());
     }
     let permit = activity.acquire()?;
     let id = NEXT.fetch_add(1, Ordering::Relaxed);
@@ -172,6 +230,11 @@ pub async fn start_audio_test(
             session_id: id,
             target_id: target_id.clone(),
             mode: mode.clone(),
+            signal_peak: if ["left", "right", "tone"].contains(&mode.as_str()) {
+                Some(crate::audio_signal::signal_peak(&signal_level)?)
+            } else {
+                None
+            },
             status: "starting".into(),
             started_at: chrono::Utc::now().to_rfc3339(),
             ..Default::default()
@@ -183,7 +246,16 @@ pub async fn start_audio_test(
     tokio::spawn(async move {
         let _permit = permit;
         let cleanup = std::sync::atomic::AtomicBool::new(true);
-        let result = stream(&owned, id, &target_id, &mode, cancel, &cleanup).await;
+        let result = stream(
+            &owned,
+            id,
+            &target_id,
+            &mode,
+            &signal_level,
+            cancel,
+            &cleanup,
+        )
+        .await;
         if let Ok(mut inner) = owned.0.lock() {
             let interrupted = inner.interrupted;
             if let Some(s) = inner.snapshot.as_mut().filter(|s| s.session_id == id) {
@@ -210,6 +282,7 @@ async fn stream(
     id: u64,
     target: &str,
     mode: &str,
+    signal_level: &str,
     cancel: CancellationToken,
     cleanup: &std::sync::atomic::AtomicBool,
 ) -> Result<(), String> {
@@ -222,6 +295,7 @@ async fn stream(
             target,
             mode,
             &std::process::id().to_string(),
+            signal_level,
         ])
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
@@ -231,7 +305,7 @@ async fn stream(
     command.creation_flags(0x08000000);
     let mut child = command
         .spawn()
-        .map_err(|_| "Audio helper could not start")?;
+        .map_err(|e| format!("Start audio helper: {e}"))?;
     cleanup.store(false, Ordering::Release);
     let mut pipe = child
         .stdout
@@ -263,7 +337,7 @@ async fn stream(
         let read = tokio::select! {_=cancel.cancelled()=>break Ok(()),_=&mut timeout=>break Err("Audio test timed out".into()),read=pipe.read(&mut bytes)=>read};
         let count = match read {
             Ok(n) => n,
-            Err(_) => break Err("Audio pipe failed".into()),
+            Err(e) => break Err(format!("Read audio helper pipe: {e}")),
         };
         if count == 0 {
             break if pending.is_empty() {
@@ -279,8 +353,7 @@ async fn stream(
         let mut failure = None;
         for byte in &bytes[..count] {
             if *byte == b'\n' {
-                let packet = serde_json::from_slice(&pending)
-                    .map_err(|_| "Malformed audio packet".to_string());
+                let packet = decode_packet(&pending);
                 pending.clear();
                 let applied = packet.and_then(|p| {
                     let mut inner = state.0.lock().map_err(|_| "Audio state unavailable")?;
@@ -329,7 +402,10 @@ async fn stream(
     };
     cleanup.store(true, Ordering::Release);
     if result.is_ok() && !cancel.is_cancelled() && !exit.success() {
-        return Err("Audio helper exited with an error".into());
+        let inner = state.0.lock().map_err(|_| "Audio state unavailable")?;
+        return Err(helper_exit_error(
+            inner.snapshot.as_ref().filter(|s| s.session_id == id),
+        ));
     }
     result
 }
@@ -400,6 +476,45 @@ pub async fn discard_audio_test(
 mod tests {
     use super::*;
     #[test]
+    fn accepts_real_camel_case_measurement_wire_packets_and_rejects_unknown_fields() {
+        let level = serde_json::json!({"samples":480,"rms":0.1,"rmsDbfs":-20.0,"peak":0.2,"clippingProportion":0.0,"zeroProportion":0.0,"invalidSamples":0});
+        let mut wire = serde_json::json!({"type":"measurement","format":{"sampleRate":48000,"channels":1,"bits":32,"float":true,"blockAlign":4,"channelMask":0,"supported":true},"frames":480,"aggregate":[level.clone()],"window":[level],"discontinuities":0,"timestampErrors":0,"engineConsumedFrames":400,"elapsedMs":10});
+        let packet = decode_packet(&serde_json::to_vec(&wire).unwrap())
+            .expect("Actual helper wire format must parse");
+        let mut snapshot = Snapshot::default();
+        apply(&mut snapshot, packet).unwrap();
+        assert_eq!(snapshot.frames, 480);
+        assert_eq!(snapshot.engine_consumed_frames, Some(400));
+        assert_eq!(snapshot.elapsed_ms, 10);
+        wire["physicallyHeardFrames"] = serde_json::json!(480);
+        let error = decode_packet(&serde_json::to_vec(&wire).unwrap())
+            .err()
+            .unwrap();
+        assert!(error.contains("Decode audio measurement/status packet"));
+        assert!(error.contains("physicallyHeardFrames"));
+    }
+    #[test]
+    fn preserves_valid_terminal_native_failure_stage_only() {
+        let mut snapshot = Snapshot {
+            status: "failed".into(),
+            reason: "Initialize shared stream: synthetic HRESULT 0x88890004".into(),
+            ..Default::default()
+        };
+        assert!(helper_exit_error(Some(&snapshot)).starts_with("Initialize shared stream:"));
+        snapshot.status = "running".into();
+        assert_eq!(
+            helper_exit_error(Some(&snapshot)),
+            "Audio helper exited with an error"
+        );
+        snapshot.status = "failed".into();
+        snapshot.reason = "x".repeat(2049);
+        assert_eq!(
+            helper_exit_error(Some(&snapshot)),
+            "Audio helper exited with an error"
+        );
+        assert_eq!(helper_exit_error(None), "Audio helper exited with an error");
+    }
+    #[test]
     fn audio_packets_reject_stale_counts_invalid_levels_and_unbounded_channels() {
         let mut s = Snapshot::default();
         let level = Levels {
@@ -422,6 +537,8 @@ mod tests {
             window: vec![level],
             discontinuities: 0,
             timestamp_errors: 0,
+            elapsed_ms: 0,
+            engine_consumed_frames: None,
         };
         assert!(apply(&mut s, packet(10, level.clone())).is_ok());
         assert!(apply(&mut s, packet(9, level.clone())).is_err());
@@ -443,7 +560,9 @@ mod tests {
                 aggregate: vec![],
                 window: vec![],
                 discontinuities: 0,
-                timestamp_errors: 0
+                timestamp_errors: 0,
+                elapsed_ms: 0,
+                engine_consumed_frames: None
             }
         )
         .is_err());
@@ -455,5 +574,36 @@ mod tests {
             }
         )
         .is_err());
+    }
+}
+
+#[cfg(test)]
+mod session_volume_tests {
+    use super::*;
+    #[test]
+    fn actual_session_volume_wire_is_bounded_and_cannot_reuse_old_success() {
+        let mut snapshot = Snapshot::default();
+        apply(
+            &mut snapshot,
+            decode_packet(br#"{"type":"sessionVolume","mute":true,"level":0.0,"error":null}"#)
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(snapshot.session_mute, Some(true));
+        assert_eq!(snapshot.session_level, Some(0.0));
+        apply(&mut snapshot, decode_packet(br#"{"type":"sessionVolume","mute":null,"level":null,"error":"Original API failure"}"#).unwrap()).unwrap();
+        assert!(snapshot.session_mute.is_none());
+        assert!(snapshot.session_level.is_none());
+        assert_eq!(
+            snapshot.session_volume_error.as_deref(),
+            Some("Original API failure")
+        );
+        assert!(apply(
+            &mut snapshot,
+            decode_packet(br#"{"type":"sessionVolume","mute":false,"level":2.0,"error":null}"#)
+                .unwrap()
+        )
+        .is_err());
+        assert!(Snapshot::default().session_level.is_none());
     }
 }

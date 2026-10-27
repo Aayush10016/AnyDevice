@@ -240,6 +240,7 @@ export function workbenchExport(
   attempts: number | null,
   history: InputSnapshot[],
   sanitized: boolean,
+  lighting: import("./LightingInvestigation").LightingRecord | null = null,
 ) {
   const aliases = new Map<string, string>();
   for (const test of history.slice(-8)) {
@@ -265,6 +266,14 @@ export function workbenchExport(
       conditions: sanitized ? null : conditions,
       physicalAttempts: sanitized ? null : attempts,
     },
+    lightingInvestigation: lighting
+      ? {
+          ...lighting,
+          model: sanitized ? null : lighting.model,
+          modelEvidence: sanitized ? null : lighting.modelEvidence,
+          conditions: sanitized ? null : lighting.conditions,
+        }
+      : null,
     tests: history.slice(-8).map((s) => ({
       targetId: sanitized ? aliases.get(s.targetId.toUpperCase())! : s.targetId,
       mode: s.mode,

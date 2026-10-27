@@ -194,3 +194,39 @@ it("sanitized engine export excludes identities, PCM/text and technical free tex
   const malicious = { ...report, audioSamples: [1, 2] };
   expect(() => validateExport(JSON.stringify(malicious))).toThrow();
 });
+
+it("distinguishes drained playback, missing audibility and captured samples", async () => {
+  const { streamProgress } = await import("./audioLifecycle");
+  const { investigateAudio } = await import("./audioInvestigation");
+  const playback = {
+    ...session,
+    mode: "tone" as const,
+    frames: 144000,
+    engineConsumedFrames: 144000,
+  };
+  expect(streamProgress(playback, null, false)).toContain(
+    "Audible sound has not been confirmed",
+  );
+  expect(streamProgress(playback, null, false, "no")).toContain(
+    "audible test did not pass",
+  );
+  expect(streamProgress(session, null, false)).toContain("frames captured");
+  const endpoint = {
+    id: playback.targetId,
+    name: "Synthetic",
+    kind: "playback" as const,
+    state: "active" as const,
+    mute: false,
+    volume: 0.44,
+    format,
+    defaultRoles: [],
+    instanceId: null,
+    containerId: null,
+  };
+  expect(investigateAudio(endpoint, playback, "neither").outcome).toBe(
+    "Issue detected",
+  );
+  expect(
+    investigateAudio({ ...endpoint, id: "other" }, playback, "neither").outcome,
+  ).toBe("Inconclusive");
+});

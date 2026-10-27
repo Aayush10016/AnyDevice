@@ -56,3 +56,18 @@ it("does not pass empty, active or focus-lost sessions", () => {
     )[0].state,
   ).toBe("Inconclusive");
 });
+
+it("never passes mouse movement or scrolling after disconnect or cancellation", () => {
+  for (const status of ["disconnected", "cancelled", "focusLost"]) {
+    const checks = testOutcome(
+      {
+        ...s,
+        mode: "mouse",
+        status,
+        stats: { ...s.stats, movements: 2, wheelUp: 1, horizontal: 1 },
+      },
+      null,
+    );
+    expect(checks.filter((c) => c.state === "Passed")).toHaveLength(0);
+  }
+});

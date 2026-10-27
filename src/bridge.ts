@@ -1,4 +1,13 @@
-import {normalizeAudio} from "./audio";
+import { normalizeAudio } from "./audio";
+import { normalizeDeviceStatus } from "./deviceStatus";
+export async function probeDevice(targetId: string) {
+  if (!isTauri())
+    throw new Error("Device status recheck requires the Windows desktop app.");
+  return normalizeDeviceStatus(
+    await invoke("probe_device", { targetId }),
+    targetId,
+  );
+}
 import type { ProviderId, DiscoveryScope } from "./models";
 import { providers } from "./providers";
 import { validateExport } from "./reporting";
@@ -90,12 +99,55 @@ export async function inspectAudio(): Promise<
 
   return normalizeAudio(await invoke("inspect_audio"));
 }
+
+export async function inspectLighting(): Promise<
+  import("./nativeInvestigation").LightingDiscovery
+> {
+  if (!isTauri())
+    throw new Error("Lighting discovery requires the Windows desktop app.");
+  const r =
+    await invoke<import("./nativeInvestigation").LightingDiscovery>(
+      "inspect_lighting",
+    );
+  if (
+    !r ||
+    r.operation !== "lighting-discovery" ||
+    !Array.isArray(r.interfaces) ||
+    r.interfaces.length > 64 ||
+    !Array.isArray(r.nodes) ||
+    r.nodes.length > 128 ||
+    !Array.isArray(r.errors) ||
+    !Array.isArray(r.methods) ||
+    r.physicalIlluminationVerified !== false ||
+    !Array.isArray(r.controlOperations) ||
+    r.controlOperations.length ||
+    !Number.isFinite(Date.parse(r.observedAt))
+  )
+    throw new Error("Invalid lighting discovery evidence");
+  return r;
+}
+export async function probeAudio(id: string, kind: "playback" | "recording") {
+  if (!isTauri())
+    throw new Error("Audio readiness requires the Windows desktop app.");
+  const { validateReadiness } = await import("./nativeInvestigation");
+  return validateReadiness(
+    await invoke("probe_audio", { targetId: id, kind }),
+    id,
+    kind,
+  );
+}
 export async function startAudioTest(
   targetId: string,
   mode: import("./audio").AudioSession["mode"],
+  signalLevel: "veryQuiet" | "clearer" | "moderate" = "clearer",
 ): Promise<number> {
   if (!isTauri()) throw new Error("Audio tests require Windows desktop.");
-  return invoke("start_audio_test", { targetId, mode, approved: true });
+  return invoke("start_audio_test", {
+    targetId,
+    mode,
+    signalLevel,
+    approved: true,
+  });
 }
 export async function audioTestStatus(
   sessionId: number,
