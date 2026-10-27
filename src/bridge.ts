@@ -1,4 +1,13 @@
 import { normalizeAudio } from "./audio";
+import { normalizeDeviceStatus } from "./deviceStatus";
+export async function probeDevice(targetId: string) {
+  if (!isTauri())
+    throw new Error("Device status recheck requires the Windows desktop app.");
+  return normalizeDeviceStatus(
+    await invoke("probe_device", { targetId }),
+    targetId,
+  );
+}
 import type { ProviderId, DiscoveryScope } from "./models";
 import { providers } from "./providers";
 import { validateExport } from "./reporting";

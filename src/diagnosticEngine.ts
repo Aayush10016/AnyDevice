@@ -1,3 +1,4 @@
+import { pnpChecks } from "./deviceStatus";
 import { structureCheck } from "./evidence";
 import type { Scan } from "./models";
 import type { Candidate } from "./inventoryModel";
@@ -60,41 +61,6 @@ export function systemChecks(
   for (const c of candidates.filter(
     (c) => c.placement !== "Supporting infrastructure",
   )) {
-    const problems = c.nodes.filter(
-      (n) => (n.problemCode ?? 0) > 0 || n.status === "ERROR",
-    );
-    checks.push({
-      id: `status:${c.id}`,
-      target: c.id,
-      test: "Windows device status",
-      outcome: problems.length
-        ? "Issue detected"
-        : c.nodes.every((n) => n.problemCode === 0 && n.status === "OK")
-          ? "Passed"
-          : "Inconclusive",
-      confidence: "Windows-reported",
-      measurements: {
-        nodes: c.nodes.length,
-        problemNodes: problems.length,
-        inputCollections: c.endpoints.length,
-      },
-      conclusion: problems.length
-        ? "Windows reported a device-node problem. This does not localise a physical defect."
-        : "Observed Windows status; input/audio/LED function is not tested by it.",
-      nextStep: problems.length
-        ? "Read the problem code and compare a controlled reconnect or vendor-supported check."
-        : "Run the relevant explicit functional test.",
-      hypotheses: problems.length
-        ? [
-            {
-              cause: "Driver, connection or device path issue",
-              confidence: "Possible",
-              distinguishingTest:
-                "Compare the same device/port in a controlled repeat; do not replace drivers automatically.",
-            },
-          ]
-        : [],
-    });
     if (c.endpoints.length)
       checks.push({
         id: `input:${c.id}`,
@@ -141,6 +107,7 @@ export function systemChecks(
       });
     }
   }
+  checks.push(...pnpChecks(scan));
   if (!audio)
     checks.push({
       id: "audio-unavailable",

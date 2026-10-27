@@ -22,6 +22,21 @@ async fn probe(state: tauri::State<'_, crate::ScanState>, args: &[&str]) -> Resu
     result
 }
 #[tauri::command]
+pub async fn probe_device(
+    state: tauri::State<'_, crate::ScanState>,
+    activity: tauri::State<'_, crate::activity::Activity>,
+    target_id: String,
+) -> Result<Value, String> {
+    if target_id.is_empty()
+        || target_id.encode_utf16().count() > 2048
+        || target_id.chars().any(char::is_control)
+    {
+        return Err("Invalid device identity".into());
+    }
+    let _permit = activity.acquire()?;
+    probe(state, &["--probe-device", &target_id]).await
+}
+#[tauri::command]
 pub async fn inspect_lighting(state: tauri::State<'_, crate::ScanState>) -> Result<Value, String> {
     probe(state, &["--inspect-lighting"]).await
 }

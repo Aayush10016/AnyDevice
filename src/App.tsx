@@ -208,6 +208,10 @@ export default function App() {
     setBusy(true);
     setFailure(false);
     setMessage("Reading present device nodes from Windows…");
+    setChecks([]);
+    setDiagnosticProgress(
+      "Device inventory is refreshing. Run diagnostics to collect a new set of findings.",
+    );
     try {
       const next = normalize(await discover(provider, scope));
       const last = scan;
@@ -718,9 +722,15 @@ export default function App() {
             {route === "Diagnostics" && (
               <DiagnosticDashboard
                 checks={checks}
+                onRechecked={(before, after) =>
+                  setChecks((current) =>
+                    current.map((c) => (c === before ? after : c)),
+                  )
+                }
                 targetName={(id) =>
                   audioInventory?.endpoints.find((e) => e.id === id)?.name ??
                   candidates.find((c) => c.id === id)?.name ??
+                  scan?.devices.find((d) => d.id === id)?.name ??
                   (id === "system" ? "This computer" : "Selected test target")
                 }
                 onTest={(target) => {
@@ -732,10 +742,17 @@ export default function App() {
                     setRoute("Audio");
                     return;
                   }
-                  const c = candidates.find((c) => c.id === target);
+                  const c = candidates.find(
+                    (c) =>
+                      c.id === target || c.nodes.some((n) => n.id === target),
+                  );
                   if (c) {
                     setSelected(c.device.id);
                     setCandidateId(c.id);
+                    setRoute("Devices");
+                  } else if (scan?.devices.some((d) => d.id === target)) {
+                    setSelected(target);
+                    setCandidateId(undefined);
                     setRoute("Devices");
                   }
                 }}

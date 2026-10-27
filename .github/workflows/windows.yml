@@ -44,6 +44,19 @@ jobs:
       - name: Native discovery and fallback parity
         shell: pwsh
         run: ./scripts/verify-native.ps1 -Executable ./src-tauri/target/release/anydevice.exe
+      - name: Exact-node status recheck and missing-target evidence
+        shell: pwsh
+        run: |
+          $exe = './src-tauri/target/release/anydevice.exe'
+          $missing = & $exe --probe-device 'USB\ANYDEVICE-NONEXISTENT\EXACT-STATUS-SMOKE' | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $missing.complete -or $null -ne $missing.problemCode -or $null -ne $missing.status -or -not $missing.errors[0].stage -or $null -eq $missing.errors[0].configRet) { throw 'Missing-node probe invented a success or lost the original error' }
+          $inventory = & $exe --collect-native all-pnp | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Native inventory failed' }
+          $node = $inventory.devices | Where-Object { $_.present -eq $true -and $null -ne $_.problemCode } | Select-Object -First 1
+          if ($null -eq $node) { throw 'No present node for exact-node integration test' }
+          $probe = & $exe --probe-device $node.instanceId | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $probe.operation -ne 'device-status' -or $probe.targetId -ne $node.instanceId -or -not $probe.complete -or -not $probe.present -or $null -eq $probe.problemCode -or $null -eq $probe.statusFlags -or $probe.errors.Count -ne 0) { throw 'Present-node status probe failed' }
+          Write-Host "Exact-node status probe complete: code=$($probe.problemCode), status=$($probe.status); missing target remained unverified. No device or driver changes."
       - name: Read-only native input mapping smoke
         shell: pwsh
         run: |

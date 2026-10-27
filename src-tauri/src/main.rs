@@ -6,6 +6,8 @@ mod audio_native;
 mod audio_service;
 mod audio_signal;
 #[cfg(windows)]
+mod device_status;
+#[cfg(windows)]
 mod hid_inspection;
 mod input_service;
 mod investigation_service;
@@ -382,6 +384,13 @@ fn main() {
             println!("{}", lighting_native::collect());
             return;
         }
+        if args.get(1).map(String::as_str) == Some("--probe-device") {
+            if args.len() != 3 || !device_status::valid_target(&args[2]) {
+                std::process::exit(2);
+            }
+            println!("{}", device_status::collect(&args[2]));
+            return;
+        }
         if args.get(1).map(String::as_str) == Some("--probe-audio") {
             if args.len() != 4 {
                 std::process::exit(2);
@@ -457,6 +466,7 @@ fn main() {
             repair_service::execute_audio_repair,
             investigation_service::inspect_lighting,
             investigation_service::probe_audio,
+            investigation_service::probe_device,
             audio_service::inspect_audio,
             audio_service::start_audio_test,
             audio_service::audio_test_status,

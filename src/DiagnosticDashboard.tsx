@@ -1,5 +1,6 @@
 import type { DiagnosticCheck } from "./diagnosticEngine";
 import { diagnosticView, structureCheck } from "./evidence";
+import { PnpRecheck } from "./PnpRecheck";
 export function DiagnosticDashboard({
   checks,
   progress,
@@ -13,8 +14,10 @@ export function DiagnosticDashboard({
   onTest,
   onSkip,
   targetName = () => "Selected test target",
+  onRechecked,
 }: {
   checks: DiagnosticCheck[];
+  onRechecked?: (before: DiagnosticCheck, after: DiagnosticCheck) => void;
   targetName?: (id: string) => string;
   onTest?: (target: string) => void;
   onSkip?: (id: string) => void;
@@ -48,6 +51,9 @@ export function DiagnosticDashboard({
         </p>
         <p>Unknown: {e.unknowns.join(" ")}</p>
         <p>Next test: {c.nextStep}</p>
+        {c.id.startsWith("pnp:") && onRechecked && (
+          <PnpRecheck check={c} disabled={busy} onResult={onRechecked} />
+        )}
         <p>
           Repair: {e.repair.availability}. {e.repair.reason}
         </p>
@@ -131,6 +137,13 @@ export function DiagnosticDashboard({
                 <li key={c.id}>
                   <strong>{c.test}</strong> · {targetName(c.target)} —{" "}
                   {c.conclusion}
+                  {c.id.startsWith("pnp:") && onRechecked && (
+                    <PnpRecheck
+                      check={c}
+                      disabled={busy}
+                      onResult={onRechecked}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -155,6 +168,13 @@ export function DiagnosticDashboard({
                 {g.checks.map((c) => (
                   <div key={c.id}>
                     <strong>{targetName(c.target)}</strong>
+                    {c.id.startsWith("pnp:") && onRechecked && (
+                      <PnpRecheck
+                        check={c}
+                        disabled={busy}
+                        onResult={onRechecked}
+                      />
+                    )}
                     {c.target !== "system" && onTest && (
                       <button disabled={busy} onClick={() => onTest(c.target)}>
                         Choose and run this test
