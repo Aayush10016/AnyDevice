@@ -19,7 +19,7 @@ import { DiagnosticDashboard } from "./DiagnosticDashboard";
 import { ProblemIntake } from "./ProblemIntake";
 it("a dark light with unknown model is recorded as an owner symptom, not discarded or diagnosed as a failed circuit", () => {
   const c = reportProblem(
-    "USB\\KEYBOARD",
+    "system",
     "keyboard-light",
     "Right arrow dark; neighbors lit",
   );
@@ -90,6 +90,9 @@ it("a report is prominent even with no Windows fault and its repair limit is exp
     screen.getByText(/0 detected findings · 1 unresolved reported problems/),
   ).toBeInTheDocument();
   const panel = within(screen.getByLabelText("Your reported problems"));
+  expect(
+    panel.getByRole("heading", { name: /Reported symptom/ }),
+  ).toBeVisible();
   expect(panel.getByText(/Your observation: right arrow dark/)).toBeVisible();
   expect(
     panel.getByText(/No automatic lighting fix is available/),

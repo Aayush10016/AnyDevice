@@ -59,9 +59,15 @@ export function DiagnosticDashboard({
     return (
       <article className="finding" key={c.id}>
         <h3>
-          {c.test} — {c.outcome}
+          {c.test} —{" "}
+          {c.id.startsWith("reported:") ? "Reported symptom" : c.outcome}
         </h3>
-        <p>Affected: {targetName(c.target)}</p>
+        <p>
+          Affected:{" "}
+          {c.id.startsWith("reported:") && c.target === "system"
+            ? "Not identified yet"
+            : targetName(c.target)}
+        </p>
         <p>{c.conclusion}</p>
         {c.id.startsWith("reported:") &&
           c.measurements.symptomType &&

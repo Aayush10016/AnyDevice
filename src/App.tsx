@@ -656,7 +656,9 @@ export default function App() {
                                 }
                               : c,
                           )
-                        : [...current, next].slice(-32);
+                        : current.length < 32
+                          ? [...current, next]
+                          : current;
                     });
                 }}
                 onDiagnostics={() => {
@@ -777,7 +779,9 @@ export default function App() {
                   })),
                 ]}
                 onReport={(c) =>
-                  setReportedProblems((current) => [...current, c].slice(-32))
+                  setReportedProblems((current) =>
+                    current.length < 32 ? [...current, c] : current,
+                  )
                 }
                 onReportedChange={(before, after) =>
                   setReportedProblems((current) =>
